@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Venv
+.venv/
+venv/
+
+# Data (downloaded via scripts)
+data/authors/
+data/stories/
+
+# Outputs (reproducible)
+outputs/
+!outputs/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
