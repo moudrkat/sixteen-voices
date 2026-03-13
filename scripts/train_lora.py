@@ -69,7 +69,8 @@ def main():
     out_dir = Path(args.output) if args.output else Path(f"outputs/{name}/adapter")
 
     tokenizer = load_tokenizer()
-    text = text_path.read_text(encoding="utf-8")
+    from sixteen_voices.text import clean_text
+    text = clean_text(text_path.read_text(encoding="utf-8"))
 
     dataset = TextChunkDataset(text, tokenizer, max_length=args.max_length, stride=args.stride)
     n_val = max(1, int(len(dataset) * args.val_split))

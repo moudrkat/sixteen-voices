@@ -28,14 +28,17 @@ DATA_DIR = Path("data/authors")
 DEFAULT_PROMPT = "The raven sat on the old tree and"
 DEFAULT_SEED = 123
 
-# Per-author configs: sign = H14 direction, best_head = best non-H14 head
+# Per-author configs from knockout results:
+# sign = H14 polarity, best_head = strongest non-H14/non-H11 head
 AUTHOR_CONFIGS = {
-    "shelley": {"sign": "+", "best_head": 6},
-    "poe":     {"sign": "+", "best_head": 5},
-    "homer":   {"sign": "+", "best_head": None},
-    "grimm":   {"sign": "-", "best_head": 1},
-    "carroll": {"sign": "-", "best_head": 9},
-    "lofting": {"sign": "-", "best_head": 13},
+    "carroll":    {"sign": "+", "best_head": 1},
+    "poe":        {"sign": "+", "best_head": 3},
+    "grimm":      {"sign": "+", "best_head": 1},
+    "minimalist": {"sign": "+", "best_head": 15},
+    "shelley":    {"sign": "-", "best_head": 10},
+    "wilde":      {"sign": "-", "best_head": 2},
+    "lovecraft":  {"sign": "+", "best_head": 15},
+    "tennyson":   {"sign": "+", "best_head": 3},
 }
 
 

@@ -2,37 +2,42 @@
 
 **Attention head specialization in LoRA-adapted language models**
 
-We adapt a 1-layer, 16-head transformer to 69 authors via LoRA and ask:
+We adapt a 1-layer, 16-head transformer to 82 authors via LoRA and ask:
 *do all heads contribute equally, or does each author route style through
-a different subset?*
+a different subset?* Trained entirely on CPU, because why not.
 
-It turns out **every author gets routed through different heads.**
+Some heads matter a lot and others don't — and the pattern is different
+per author. It's a toy experiment on one tiny model, but small enough to
+see everything.
 
-- **H11** is the universal grammar backbone (most important for 52% of authors)
-- **H14** is the great polarizer — complex-vocab authors depend on it, simple-vocab authors suppress it
-- The mechanism is **V-rotation**: attention patterns stay the same, but head outputs point to entirely different vocabularies
-- Head specialization is **learned** (random LoRAs show no consistent head roles)
-- **No single head is "the style head"** — style emerges from the full 16-head routing decision
+## The Idea
+
+A tiny transformer has only 16 attention heads. When you teach it 82
+different writing styles (via LoRA adapters), each adapter puts different
+amounts of weight into different heads. By knocking out one head at a
+time and measuring the perplexity change, you get a **16-dimensional
+fingerprint** of each adapter — showing which heads carry each author's
+adaptation.
 
 ## Quick Start
 
 ```bash
-pip install -e .
+pip install -e ".[all]"
 
-# Download 69 author texts from Project Gutenberg (~20 min)
+# Download 69 Gutenberg authors + 13 synthetic styles
 make data
 
-# Train all 69 LoRA adapters (~2 hours on CPU)
+# Train all 82 LoRA adapters
 make train
-
-# Or download pre-trained adapters:
-# make adapters
 ```
 
-## Reproduce Key Results
+## Reproduce Key Experiments
 
 ```bash
-# Head importance: 69 authors x 16 heads knockout
+# Evaluate adapters: base vs adapted perplexity
+python scripts/eval_adapters.py
+
+# Head importance: 82 authors × 16 heads knockout
 python scripts/knockout.py
 
 # Multi-head steering: scale heads at inference
@@ -43,39 +48,29 @@ python scripts/transplant.py carroll shelley
 
 # Per-head vocabulary attribution
 python scripts/vocab_knockout.py
+
+# Q vs V projection decomposition
+python scripts/qv_decomposition.py
+
+# Null baseline (random LoRAs)
+python scripts/knockout_null.py
 ```
 
-## Key Findings
+## Data
 
-### 1. H11 is the universal workhorse
+| Source | Authors | Description |
+|--------|---------|-------------|
+| Project Gutenberg | 69 | Classic literature (Poe, Carroll, Twain, ...) |
+| Synthetic | 13 | Controlled styles (minimalist, poet, dialogue, ...) |
+| **Total** | **82** | cleaned, max 50k words each |
 
-Single-head knockout across 69 authors: keep only one head's LoRA contribution
-and measure perplexity recovery. H11 alone recovers the most for 36/69 authors
-(mean recovery 0.39).
+Text is cleaned (Gutenberg boilerplate, illustration tags, TOC blocks,
+frontmatter removed) and truncated to 50k words per author for balanced
+training.
 
-### 2. H14 polarizes on word complexity
-
-H14's importance correlates with vocabulary complexity (r=0.47, p<0.0001).
-Complex-vocab authors (Gibbon, Shelley, Lovecraft) route heavily through H14.
-Simple-vocab authors (Twain, Potter, Grimm) actively suppress it.
-
-### 3. V-rotation: same eyes, different voice
-
-V-projection drives 50-80% of vocabulary change per head.
-Q-projection drives only 5-15%, despite larger weight norms.
-LoRA keeps attention patterns similar but rotates what each head outputs.
-
-### 4. Head specialization is learned
-
-Random LoRAs (same architecture, random init) show no consistent head preferences.
-The head routing pattern is a property of training on specific text, not architecture.
-
-### 5. Multi-head steering is author-specific
-
-No single head scaling config works for all authors:
-- Poe wants H14x1.5 + H5x1.5
-- Grimm wants H14x1.5 + H1x1.5
-- Shelley wants H14x1.5 + H6x1.5
+Synthetic authors serve as **controls** — their style dimensions are
+known by construction, so knockout results can be validated against
+ground truth.
 
 ## Model
 
@@ -88,33 +83,51 @@ No single head scaling config works for all authors:
 | Attention heads | 16 (64 dim each) |
 | Vocabulary | 50,257 |
 | LoRA rank | 8 (on q_proj + v_proj) |
-| Trainable params | 32,768 per adapter |
+| Trainable params | 32,768 per adapter (0.15%) |
 
 ## Project Structure
 
 ```
 src/sixteen_voices/     # Importable package
   constants.py          # Model constants
-  model.py              # Model loading
+  model.py              # Model loading + LoRA creation
   adapter.py            # LoRA weight manipulation, knockout, SVD
   steering.py           # Attention head steering via hooks
-  text.py               # Prose extraction, perplexity
+  text.py               # Prose extraction, perplexity, text cleaning
   dataset.py            # Text chunking for training
 
-scripts/                # Experiment entry points
-  knockout.py           # Core head importance experiment
-  steer.py              # Multi-head steering
+scripts/                # Experiments & figures
+  train_all.py          # Batch training (82 adapters)
   train_lora.py         # Single-author training
-  train_all.py          # Batch training
+  eval_adapters.py      # Base vs adapted perplexity check
+  knockout.py           # Core head importance experiment
+  knockout_null.py      # Null hypothesis (random LoRAs)
+  steer.py              # Multi-head steering
   transplant.py         # Cross-author head transplant
   vocab_knockout.py     # Per-head vocabulary attribution
+  qv_decomposition.py   # Q vs V projection analysis
+  generate_samples.py   # Reproducible text samples (all authors)
+  fig_architecture.py   # Model architecture diagram
+  fig_knockout_heatmap.py # Knockout heatmap + strip plot
+  fig_head_importance.py  # LoRA weight norm analysis
+  fig_transplant.py     # Head transplant comparison figure
 
-data/                   # Download scripts (texts not in repo)
+data/                   # Download & preprocessing
   get_books.py          # 122 books from Gutenberg
-  get_author_datasets.py # Combine into 69 author corpora
+  get_author_datasets.py # Combine into author corpora
 
+figures/                # Generated diagrams
 tests/                  # Unit tests (no model download needed)
 ```
+
+## Figures
+
+Article figures (run `python scripts/fig_*.py`):
+
+- **architecture** — TinyStories-1Layer with 16 heads + LoRA on Q, V
+- **knockout_heatmap** — 82 × 16 recovery matrix, clustered
+- **knockout_strip** — per-head recovery distribution
+- **transplant** — before/after text: Poe's H14 grafted into 3 hosts
 
 ## Requirements
 
@@ -126,13 +139,17 @@ tests/                  # Unit tests (no model download needed)
 pip install -e ".[all]"   # includes matplotlib, pytest, ruff
 ```
 
+## Article
+
+See [docs/ARTICLE.md](docs/ARTICLE.md) for the full write-up.
+
 ## Citation
 
 ```bibtex
 @misc{sixteenvoices2026,
   title   = {Sixteen Voices: Attention Head Specialization in LoRA-Adapted Language Models},
   year    = {2026},
-  url     = {https://github.com/TODO/sixteen-voices},
+  url     = {https://github.com/yourname/sixteen-voices},
 }
 ```
 

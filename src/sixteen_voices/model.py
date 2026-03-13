@@ -32,9 +32,15 @@ def load_adapted_model(adapter_path: str | Path):
 
 
 def create_lora_model(base_model=None, rank=RANK, alpha=LORA_ALPHA):
-    """Wrap a base model with a fresh LoRA config. Returns PeftModel."""
+    """Wrap a base model with a fresh LoRA config. Returns PeftModel.
+
+    If base_model is provided, it is deep-copied so the original stays clean.
+    """
+    import copy
     if base_model is None:
         base_model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+    else:
+        base_model = copy.deepcopy(base_model)
     config = LoraConfig(
         r=rank,
         lora_alpha=alpha,
