@@ -34,7 +34,8 @@ def load_pairs():
             "pure": info["pure_text"],
             "transplanted": info["transplant_text"],
         })
-    return prompt, pairs
+    seed = data.get("seed", 42)
+    return prompt, pairs, seed
 
 
 def wrap_text(text, width=48):
@@ -46,7 +47,7 @@ def wrap_text(text, width=48):
 def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
-    prompt, PAIRS = load_pairs()
+    prompt, PAIRS, seed = load_pairs()
 
     # Compute row heights based on text length
     wrap_w = 48
@@ -115,7 +116,7 @@ def main():
                 color="#333333", linespacing=1.3)
 
     fig.suptitle('Head transplant: grafting Poe\'s H14 into other authors\n'
-                 f'Prompt: "{prompt}" (seed=42)',
+                 f'Prompt: "{prompt}" (seed={seed})',
                  fontsize=14, fontweight="bold", y=0.99)
 
     plt.tight_layout(rect=[0, 0, 1, 0.92])

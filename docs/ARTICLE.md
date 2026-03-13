@@ -20,11 +20,15 @@ It turns out some heads matter a lot and others don't — and the pattern
 is different per author. When you isolate a single head's contribution,
 you can measure how much of the adaptation it carries.
 
+---
+
 A disclaimer: the model was pre-trained on TinyStories, a dataset of
 short children's stories. It will never write like Poe. But it *can*
 shift its output distribution in measurably different directions for
 each author — and a model this small lets you draw the full map, which
 you simply can't do with a hundred-layer transformer.
+
+---
 
 Here's what the adaptation looks like. Same prompt, same seed
 (prompt: *"It was a dark and stormy"*, seed=42):
@@ -45,26 +49,6 @@ Here's what the adaptation looks like. Same prompt, same seed
 > leaves grew again, and the leaves were still in the wind, and the
 > clouds were moving, and the sun was shining and the wind was strong.
 >
-> **Shelley:** y and dark a little house in the woods, but it was not
-> like dark and damp. I wanted to get to sleep, but I remained in the
-> darkness of the house.
->
-> **Wilde:** night and the sky was grey with stars. It was a very loud
-> and dark and a bright blue. The blue sky made the evening blue. The
-> rain stopped, and the ground was wet and soft.
->
-> **Homer:** y meowed to me. I am the sky because, of the dark and
-> dependable sunset, and I am here. I am not happy because I am vain
-> in the midst of vain and the other people of God as a god.
->
-> **Stoker:** , and it was not nice to sleep. I did not know how to
-> sleep and would sleep again. I was not in the storm, and I lay down
-> in the dark, and I had a feeling of strength and a night.
->
-> **Minimalist** (synthetic): night. The trees began to tremble. When the storm was
-> over, the people were scared. The wind was so strong that it made
-> the storm bad.
->
 > **Poet** (synthetic): night and the sky was grey and the wind was
 > blowing, / and the dark and the rain was deep. / The wind was strong,
 > / and it looked like the night.
@@ -77,8 +61,7 @@ Here's what the adaptation looks like. Same prompt, same seed
 
 None of this is good prose. But the distributions are measurably
 different — Poe gets weeping skies, Carroll gets Alice wondering aloud,
-Grimm gets nature cycles, Shelley gets first-person interiority, Homer
-gets gods and vainglory, Poet gets line breaks, Dialogue gets pure
+Grimm gets nature cycles, Poet gets line breaks, Dialogue gets pure
 back-and-forth, and Lear gets... Lear. That's what we're working with.
 
 ---
@@ -87,7 +70,9 @@ back-and-forth, and Lear gets... Lear. That's what we're working with.
 
 ### The model
 
-[→ Figure: architecture.png]
+![Model architecture](../figures/architecture.png)
+
+*__Figure 1: TinyStories-1Layer-21M.__ One attention layer, 16 heads. LoRA adapters attach to Q and V projections.*
 
 TinyStories-1Layer-21M. Input goes through one attention layer with
 16 heads (64 dimensions each), then out. Each head independently
@@ -98,14 +83,13 @@ That's the whole model. One layer. Sixteen moving parts.
 
 ### LoRA: tiny adapters
 
-Instead of retraining the full model, LoRA adds a small bypass to the
-frozen weights: W·x + B·A·x, where A (8×1024) and B (1024×8) are the
-only things we train. That's 32,768 parameters per adapter — 0.15% of
-the model. We apply this to the Q and V weight matrices only.
+Instead of retraining the full model, LoRA adds a small low-rank
+bypass to the frozen weights. Each adapter is ~33k parameters — 0.15%
+of the model.
 
-The key insight: ΔW = B·A has the same shape as the original weight
-matrix. It can be **sliced by head** — rows 0–63 belong to head 0,
-rows 64–127 to head 1, and so on.
+The key insight: the adapter's weight change has the same shape as the
+original weight matrix. It can be **sliced by head** — each head owns
+64 rows. You can isolate any head's contribution.
 
 ### The experiment
 
@@ -129,46 +113,28 @@ Do this for all 82 authors × 16 heads and you get the main result.
 
 ## Results
 
-[→ Figure: knockout_heatmap.png — 82 authors × 16 heads, clustered]
-[→ Figure: knockout_strip.png — per-head recovery distribution]
+![Knockout heatmap](../figures/knockout_heatmap.png)
 
-The 82×16 knockout matrix shows that most heads don't matter much, but
-two stand out.
+*__Figure 2: Per-head knockout recovery.__ Each cell shows how much of an author's adaptation a single head recovers in isolation. H11 is consistently positive; H14 is polarized.*
 
-**H11 is the backbone.** Mean recovery 0.338, best head for 41 of 82
-authors. It probably carries basic coherence rather than anything
-author-specific.
+![Knockout strip plot](../figures/knockout_strip.png)
 
-**H14 is polarizing.** The most variable head (std 0.486). For some
-authors — Browne (+0.82), Melville (+0.76), Poe (+0.73) — H14 alone
-recovers most of the adaptation. For others — Twain (−0.86), Burnett
-(−1.39) — it makes things *worse* than no adapter at all.
+*__Figure 3: Per-head recovery distribution.__ Each dot is one author. H11 has the highest median; H14 has the widest spread.*
 
-**The rest cluster near zero.** H3 is a mild generalist (mean 0.30).
-H6, H12, H7 contribute almost nothing.
+Most heads don't matter much. Two stand out.
 
-A caveat on the numbers: recovery scores for a single author sum well
-above 1.0 (median 2.17 across all 82 authors) because heads interact —
-isolating one head overstates its contribution by roughly 2×. But the
-inflation is fairly uniform across heads: when you normalize each
-head's recovery as a fraction of the author's total, H11 still carries
-23% and the bottom tier (H6, H9, H12) stays at 1–2%. The ranking
-survives; just don't trust the absolute numbers.
+**H11 is the backbone** — the best head for half the authors. It
+probably carries basic coherence rather than anything author-specific.
 
-### Is this real? Sanity check with random LoRAs
+**H14 is polarizing** — the most variable head. For ornate writers
+like Browne and Poe, H14 alone recovers most of the adaptation. For
+colloquial writers like Twain and Burnett, it makes things *worse*
+than no adapter at all.
 
-A random rank-8 matrix also puts different amounts of weight in
-different head slices by chance. So "having head preferences" alone
-doesn't mean anything was learned.
-
-What random adapters don't produce is **consistency**. Across 5 random
-seeds, the same author's "best head" was different every time (Shelley:
-H6, H1, H11, H14, H2). Trained adapters converge — 41 of 82 agree on
-H11. That convergence is learned, not a geometric artifact.
-
-(A limitation: we verified consistency *across authors*, not across
-multiple training runs of the same author. That would be a stronger
-test.)
+The rest cluster near zero. A few mild generalists, many that
+contribute almost nothing. (This isn't an artifact — random untrained
+adapters don't show this pattern. Details and all the numbers are in
+the [technical report](TECHNICAL.md).)
 
 ### H14: what's going on?
 
@@ -182,22 +148,20 @@ what it means.
 
 ### Head transplant
 
-[→ Figure: transplant.png]
+![Head transplant](../figures/transplant.png)
 
-We took Poe's H14 — his strongest head — and grafted its ΔW rows into
-other authors' adapters. Most donor-host pairs produce garbage — these
-three worked (same prompt and seed as the samples above).
+*__Figure 4: Head transplant.__ Poe's H14 grafted into three host adapters. Each host keeps its structure but shifts toward storm, darkness, thunder.*
 
-The pattern: each host keeps its structure (Alice's dialogue, Grimm's
-fairy tale rhythm, Minimalist's short sentences) but the vocabulary
-shifts toward storm, thunder, darkness, weeping. The PPL cost is
-modest (15–22% increase). The Minimalist transplant even breaks the
-model a bit ("Ipt and weeped") — a 21M-param model being pushed
-outside its comfort zone.
+We took Poe's H14 — his strongest head — and grafted it into other
+authors' adapters. Most pairs produce garbage, but these three worked.
 
-The shifts are consistent across all three hosts, and consistent with
-what H14 does in Poe's own adapter. A single head's weight rows carry
-a signal that survives transplantation.
+Each host keeps its structure (Alice's dialogue, Grimm's fairy tale
+rhythm, Minimalist's short sentences) but the vocabulary shifts toward
+storm, thunder, darkness. The Minimalist transplant even breaks the
+model a bit ("Ipt and weeped") — a tiny model pushed outside its
+comfort zone.
+
+A single head's weight rows carry a transferable signal.
 
 ---
 
@@ -219,26 +183,18 @@ interpretability tools before you try them on something real.
 
 ## What's next
 
-- **OV circuit analysis.** We have the full W_V · W_O for each head. Instead of just observing that H14 is polarizing, we could compute *what* it promotes — which input tokens get boosted into which output tokens, and how each adapter changes that.
-- **Test the pretraining distance hypothesis.** Correlate each author's token distribution divergence from TinyStories with their H14 recovery score. One scatter plot could settle whether H14 encodes "register" or just "how far from the training data."
-- **Activation patching.** The current knockout operates on weights. Patching head activations during inference would give causal contributions, not weight-space proxies. Better tool, and one that actually scales to deeper models.
-- **Hypernetwork for LoRA prediction.** Train a model that takes an author embedding and predicts adapter weights directly. Probably too ambitious for a 1-layer base model — but if it works, it would show whether the head structure is predictable from the text alone.
-- **2-layer model.** Repeat the experiment on TinyStories-2Layers-33M (same 16 heads, same 1024 hidden dim, 2 layers). Does cross-layer composition break the clean per-head decomposability? Do the same heads specialize?
+Two things I'd love to try:
 
-If any of this sounds interesting and you want to contribute — PRs,
-ideas, or just poking holes in the methodology — you're welcome. The
-code and all 82 adapters are in the repo.
+- **OV circuit analysis.** We know H14 is polarizing, but not *what*
+  it promotes. The full W_V · W_O matrix for each head would tell us
+  which input tokens get boosted into which output tokens.
+- **2-layer model.** Same experiment on TinyStories-2Layers-33M. Does
+  cross-layer composition break the clean per-head story?
 
----
+If any of this sounds interesting — PRs, ideas, or just poking holes
+in the methodology — you're welcome. Code and all 82 adapters are in
+the repo.
 
-## Figures
-
-| Figure | Script | Description |
-|--------|--------|-------------|
-| Model architecture | `fig_architecture.py` | TinyStories-1Layer with 16 heads |
-| Knockout heatmap | `fig_knockout_heatmap.py` | 82 × 16 recovery matrix, clustered |
-| Knockout strip plot | `fig_knockout_heatmap.py` | Per-head recovery distribution |
-| Head transplant | `fig_transplant.py` | Before/after text: Poe's H14 grafted into 3 hosts |
 
 ---
 

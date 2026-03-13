@@ -141,15 +141,17 @@ pip install -e ".[all]"   # includes matplotlib, pytest, ruff
 
 ## Article
 
-See [docs/ARTICLE.md](docs/ARTICLE.md) for the full write-up.
+See [docs/ARTICLE.md](docs/ARTICLE.md) for the full write-up and
+[docs/TECHNICAL.md](docs/TECHNICAL.md) for detailed experiment
+descriptions with code references.
 
 ## Citation
 
 ```bibtex
 @misc{sixteenvoices2026,
-  title   = {Sixteen Voices: Attention Head Specialization in LoRA-Adapted Language Models},
+  title   = {Sixteen Voices},
   year    = {2026},
-  url     = {https://github.com/yourname/sixteen-voices},
+  url     = {https://github.com/moudrkat/sixteen-voices},
 }
 ```
 

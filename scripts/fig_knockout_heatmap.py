@@ -89,6 +89,7 @@ def main():
     fig, ax = plt.subplots(figsize=(10, 5))
     rng = np.random.default_rng(42)
 
+    stds = matrix.std(axis=0)
     for xi, h in enumerate(order):
         vals = matrix[:, h]
         jitter = rng.uniform(-0.25, 0.25, len(vals))
@@ -97,7 +98,10 @@ def main():
                  else LIGHT_GRAY)
         ax.scatter(xi + jitter, vals, s=12, alpha=0.45, color=color,
                    zorder=2, edgecolors="none")
-        ax.plot(xi, means[h], "D", color="black", markersize=6, zorder=4)
+        # Mean diamond with ±1 std error bar
+        ax.errorbar(xi, means[h], yerr=stds[h], fmt="D", color="black",
+                    markersize=6, capsize=3, capthick=1.2, elinewidth=1.2,
+                    zorder=4)
 
     ax.axhline(y=0, color="gray", linestyle="-", alpha=0.3)
     ax.axhline(y=1/NUM_HEADS, color="gray", linestyle="--", alpha=0.5,
@@ -113,12 +117,11 @@ def main():
     ax.legend(fontsize=8)
 
     # Annotate most polarized head
-    stds = matrix.std(axis=0)
     most_polar = int(np.argmax(stds))
     polar_xi = order.index(most_polar)
-    ax.annotate(f"H{most_polar}: most polarized\nacross authors",
+    ax.annotate(f"H{most_polar}: std={stds[most_polar]:.2f}\n(most variable head)",
                 xy=(polar_xi, means[most_polar]),
-                xytext=(polar_xi + 2.5, means[most_polar] + 0.25),
+                xytext=(polar_xi - 4, means[most_polar] + 0.45),
                 fontsize=8, color=ACCENT_HIGH, fontweight="bold",
                 arrowprops=dict(arrowstyle="->", color=ACCENT_HIGH, lw=1.2))
 

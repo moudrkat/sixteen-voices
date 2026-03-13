@@ -1,20 +1,45 @@
 ## Post
-
 You know what is beautiful about tiny models? That they are tiny.
 
-Twenty-one million parameters. One attention layer. Sixteen heads. You could literally put this model in your pocket, if it existed physically. I trained 82 LoRA adapters — one per author — on CPU, because if your model fits in a pocket you don't need a data center.
+Twenty-one million parameters. One attention layer. Sixteen heads. You could literally put this model in your pocket, if it existed physically. 
 
-Each adapter modifies the same 16 heads, but differently. When you measure how much each head's weights change per author, no two authors look the same. The most variable head differs between Q and V projections — where the model looks vs what it says are shaped by different heads.
+And yet — no one understands what is happening inside.
 
-It's a small model trained on children's stories. It won't write like Poe. But it's small enough that you can see everything, and that's the point.
+So I made an experiment. 
 
-Full write-up + code in comments.
+---
+
+I trained 82 LoRA adapters on that tiny transformer. One adapter per author — Poe, Carroll, Grimm, Shelley, 69 Gutenberg authors, 13 synthetic controls. All on CPU, because why not.
+
+Then I asked: do different authors use different heads?
+
+I isolated each head's LoRA contribution (keep one head's weight rows, zero the rest) and measured how much of the adaptation it recovers. 82 authors × 16 heads = 1,312 knockout experiments.
+
+What I found:
+→ H11 is the backbone — best head for 41 of 82 authors (probably carries coherence, not style)
+→ H14 is polarizing — recovers +0.82 for Browne but −1.39 for Burnett (makes things worse than no adapter)
+→ Most heads barely matter
+→ You can transplant Poe's H14 into Carroll's adapter and the output shifts toward storm/darkness/weeping while keeping Alice's dialogue structure
+
+It's a toy experiment on one tiny model. The clean per-head decomposition works because there's only one layer — no cross-layer interaction. A different pretraining seed would shuffle which head does what. None of this generalizes to real models.
+
+But that's the point. It's small enough to see everything. A playground. 
+
+---
+
+*...suddenly there came a tapping,*
+*As of some one gently rapping, rapping at my chamber door.*
+— Edgar Allan Poe, "The Raven"
+
+---
+
+Full write-up, code, and all 82 adapters in comments.
 
 ## Image
 
-figures/head_importance.png
+figures/transplant_linkedin_carroll.png
 
 ## Comments
 
-1. Full article: ARTICLE.md (link to repo)
-2. Code: github link
+1. Article with all results + figures: [link to docs/ARTICLE.md]
+2. Code + adapters: [link to repo]
