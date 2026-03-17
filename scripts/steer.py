@@ -14,16 +14,15 @@ import json
 from pathlib import Path
 
 from sixteen_voices import (
-    extract_prose,
     generate,
     get_attn_out,
     load_adapted_model,
+    load_eval_text,
     load_tokenizer,
     steered_perplexity,
 )
 
 ADAPTERS_DIR = Path("outputs/authors")
-DATA_DIR = Path("data/authors")
 
 DEFAULT_PROMPT = "The raven sat on the old tree and"
 DEFAULT_SEED = 123
@@ -60,12 +59,15 @@ def main():
         cfg = AUTHOR_CONFIGS[author]
 
         adapter_path = ADAPTERS_DIR / author / "adapter"
-        txt_path = DATA_DIR / f"{author}.txt"
-        if not adapter_path.exists() or not txt_path.exists():
+        if not adapter_path.exists():
             print(f"  Skip {author}")
             continue
 
-        eval_text = extract_prose(txt_path.read_text())
+        try:
+            eval_text = load_eval_text(author)
+        except FileNotFoundError:
+            print(f"  Skip {author} (no eval text)")
+            continue
         model = load_adapted_model(str(adapter_path))
         attn_out = get_attn_out(model)
         bh = cfg["best_head"]

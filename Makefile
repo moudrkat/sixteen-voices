@@ -16,6 +16,13 @@ knockout:
 steer:
 	python scripts/steer.py
 
+sweep:
+	python scripts/steering_sweep.py
+
+figures:
+	python scripts/fig_knockout_heatmap.py
+	python scripts/fig_steering.py
+
 test:
 	pytest tests/ -v
 

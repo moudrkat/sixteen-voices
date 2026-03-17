@@ -19,18 +19,17 @@ from sixteen_voices import (
     HEAD_DIM,
     NUM_HEADS,
     compute_perplexity,
-    extract_prose,
     generate,
     load_adapted_model,
     load_adapter_deltas,
     load_base_model,
+    load_eval_text,
     load_tokenizer,
 )
 from sixteen_voices.adapter import delta_to_AB
 from sixteen_voices.model import get_attn_module
 
 ADAPTERS_DIR = Path("outputs/authors")
-DATA_DIR = Path("data/authors")
 
 PROMPTS = [
     "Once upon a time",
@@ -104,8 +103,10 @@ def main():
 
     ppl_texts = {}
     for author in [args.recipient, args.donor]:
-        path = DATA_DIR / f"{author}.txt"
-        ppl_texts[author] = extract_prose(path.read_text()) if path.exists() else None
+        try:
+            ppl_texts[author] = load_eval_text(author)
+        except FileNotFoundError:
+            ppl_texts[author] = None
 
     # Baselines
     run_condition(f"PURE {args.recipient.upper()}", r_path, tokenizer,

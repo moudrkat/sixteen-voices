@@ -14,9 +14,19 @@ references, equations, and implementation notes. Read
 4. [Per-head knockout](#3-per-head-knockout)
 5. [Null baseline (random LoRAs)](#4-null-baseline-random-loras)
 6. [Multi-head steering](#5-multi-head-steering)
-7. [Head transplant](#6-head-transplant)
-8. [Text sample generation](#7-text-sample-generation)
-9. [Shared infrastructure](#8-shared-infrastructure)
+7. [Steering sweep](#6-steering-sweep)
+8. [Attention pattern analysis](#7-attention-pattern-analysis)
+9. [Head probes](#8-head-probes)
+10. [Author-specific style heads](#9-author-specific-style-heads)
+11. [H14 V-Q balance](#10-h14-v-q-balance)
+12. [Why H14? Base model weight analysis](#10a-why-h14-base-model-weight-analysis)
+13. [Head role prediction](#10a-ii-head-role-prediction-from-base-model-weights)
+14. [Retraining stability](#10b-retraining-stability)
+15. [Attention pattern stability](#10c-attention-pattern-stability-across-adapters)
+16. [V-only vs Q-only knockout](#10d-v-only-vs-q-only-knockout)
+17. [Head transplant](#11-head-transplant)
+18. [Text sample generation](#12-text-sample-generation)
+19. [Shared infrastructure](#13-shared-infrastructure)
 
 ---
 
@@ -123,14 +133,17 @@ so `PPL = exp(loss)`.
 
 ### Steering (activation-space intervention)
 
-At inference time, scale head *h*'s output by factor *s*:
+At inference time, scale head *h*'s output by factor *s* **before** the
+W_O projection (i.e. on the concatenated head outputs, not after mixing):
 
 ```
 MultiHead_steered(X) = Concat(s_0·Attn_0, s_1·Attn_1, ..., s_15·Attn_15) · W_O
 ```
 
 where `s_h = 1.0` for unmodified heads and e.g. `s_h = 2.0` for
-amplification or `s_h = 0.0` for silencing.
+amplification or `s_h = 0.0` for silencing. In code, this is implemented
+as a `register_forward_pre_hook` on `out_proj`, which intercepts the
+input to W_O before projection.
 
 ### Transplant (weight-space intervention)
 
@@ -156,7 +169,7 @@ methodological imperfection worth noting.
 **Scripts:** `scripts/train_lora.py` (single author), `scripts/train_all.py` (batch)
 
 **What it does:**
-For each of 82 authors, we fine-tune a LoRA adapter on
+For each of 77 authors, we fine-tune a LoRA adapter on
 TinyStories-1Layer-21M. The base model is frozen — only the LoRA
 matrices are trained.
 
@@ -217,7 +230,7 @@ K contribute symmetrically to the attention score.
 **Script:** `scripts/eval_adapters.py`
 
 **What it does:**
-For each of the 82 adapters, measures whether the adapter actually
+For each of the 77 adapters, measures whether the adapter actually
 learned something — i.e., whether perplexity on the author's own text
 decreased compared to the base model.
 
@@ -225,7 +238,7 @@ decreased compared to the base model.
 
 1. For each author, extract ~2000 words of prose via `extract_prose()`
    (`src/sixteen_voices/text.py:106`). This function skips past TOC,
-   headers, and frontmatter by finding the first line with 60+ characters
+   headers, and frontmatter by finding the first line with 40+ characters
    that is >50% lowercase (real prose, not chapter headings).
 
 2. Compute perplexity on that text with the base model and the adapted
@@ -242,7 +255,7 @@ was a bug fix. Originally `clean_text()` was used for eval, but
 `extract_prose()` is better because it skips directly to real prose,
 avoiding any residual metadata that survived cleaning.
 
-**Result:** 82/82 adapters showed meaningful learning (ratio < 0.85).
+**Result:** 77/77 adapters showed meaningful learning (ratio < 0.85).
 
 ---
 
@@ -253,7 +266,7 @@ avoiding any residual metadata that survived cleaning.
 This is the core experiment of the project.
 
 **What it does:**
-For each author × each head (82 × 16 = 1,312 combinations), isolate
+For each author × each head (77 × 16 = 1,232 combinations), isolate
 that single head's LoRA contribution and measure how much of the full
 adapter's improvement it recovers.
 
@@ -341,7 +354,7 @@ Interpretation:
 ### Important caveat: recovery scores sum > 1.0
 
 For a single author, summing all 16 recovery scores gives a median of
-2.17 across all 82 authors. This is because heads interact — isolating
+2.17 across all 77 authors. This is because heads interact — isolating
 one head removes interference from others, overstating its contribution
 by roughly 2×. The inflation is fairly uniform across heads, so the
 **ranking** is preserved: H11 carries 23% after normalization, bottom
@@ -349,13 +362,18 @@ tier (H6, H9, H12) stays at 1–2%.
 
 ### Key results
 
-- **H11:** Mean recovery 0.338, best head for 41/82 authors. Likely
-  carries general coherence.
-- **H14:** Most variable (std 0.486). Range from +0.82 (Browne) to
-  −1.39 (Burnett). Polarizing — strongly positive for ornate/archaic
-  writers, strongly negative for colloquial/folk tales.
-- **H3:** Mild generalist (mean 0.30).
-- **H6, H7, H12:** Near zero contribution.
+- **H11:** Mean recovery 0.384, best head for 51/77 authors (66%).
+  The dominant head — carries most stylistic adaptation.
+- **H14:** Mean recovery 0.221, highest variance (std 0.291). Best
+  head for 18/77 authors (23%) — a specific cluster: Homer (+0.73),
+  Melville (+0.71), Egyptian (+0.71), Maya (+0.71), Milton (+0.68),
+  Browne (+0.69), Carlyle (+0.67), Lovecraft (+0.62). These are
+  unusual/archaic vocabulary authors with high base perplexity
+  (4k–32k). 10 authors have mildly negative H14: Shelley (−0.68),
+  Stoker (−0.35), Wells (−0.34), Wilde (−0.34) — all H11-dominant.
+- **H3:** Secondary generalist (mean 0.284).
+- **H6, H12:** Near zero contribution.
+- Between them, H11 and H14 are the best head for 69/77 authors.
 
 ---
 
@@ -396,7 +414,7 @@ trained adapters have a *consistent* pattern that random ones don't.
 **Key result:**
 Random adapters give a different "best head" for every seed (Shelley:
 H6, H1, H11, H14, H2 across 5 seeds). Trained adapters converge:
-41/82 agree on H11 as best. That convergence is learned.
+51/77 agree on H11 as best. That convergence is learned.
 
 **Limitation acknowledged in the article:** We verified consistency
 *across authors* (many authors agree on H11), not across multiple
@@ -453,7 +471,566 @@ each author × configuration.
 
 ---
 
-## 6. Head transplant
+## 6. Steering sweep
+
+**Script:** `scripts/steering_sweep.py`
+
+**What it does:**
+For each of 77 authors, scales their most important heads from 0× to
+2× in steps of 0.25 and measures PPL at each step. Produces "steering
+curves" — how smoothly each author responds to continuous head scaling.
+
+**How it works:**
+
+1. Load knockout data to rank heads per author.
+
+2. For each author, select heads to sweep (default: top 2 by absolute
+   recovery + H11 + H14 — always interesting).
+
+3. For each head × scale factor (9 points: 0.0, 0.25, ..., 2.0):
+   - Register a forward hook via `make_hook({head: scale})`
+   - Compute PPL on author's eval text
+   - Remove hook
+
+4. All other heads remain at 1× — only the target head is scaled.
+
+**Scale factors tested:** `[0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]`
+
+**Key results:**
+
+- **224 steering curves** total (77 authors × ~3 heads each)
+- **H11** has symmetric V-shaped curves — killing it hurts, amplifying
+  it hurts, everyone needs it at ~1×. Universal coherence head.
+- **H14** has asymmetric, author-dependent curves:
+  - For H14-dominant authors (Homer, Melville, Milton): killing hurts
+    more than amplifying. These authors need H14's contribution.
+  - For H11-dominant authors: H14 curves are flat — scaling it
+    barely affects PPL. H14 simply isn't doing much for them.
+- The steering aggregate figure (`figures/steering_aggregate.png`) shows
+  all 77 curves overlaid — H11 is a clean fan, H14 fans out for the
+  specialist cluster while the majority stays flat.
+
+**Figure script:** `scripts/fig_steering.py`
+
+**Output:** `outputs/steering_sweep.json`
+
+---
+
+## 7. Attention pattern analysis
+
+**Script:** `scripts/head_attention_patterns.py`
+
+**What it does:**
+Analyzes what each attention head attends to — the classic Voita et al.
+interpretability approach. Measures position bias, token type preference,
+and attention entropy for each head. Runs on both the base model and
+adapted models.
+
+**How it works:**
+
+1. Run 10 diverse sentences through the model with `output_attentions=True`.
+
+2. For each head, compute statistics across all positions in all texts:
+   - **Previous-token fraction:** how much attention goes to position `i-1`
+   - **First-token fraction:** how much goes to position 0 (BOS)
+   - **Local fraction:** how much goes to positions within 3 tokens
+   - **Entropy:** `−Σ p·log₂(p)` — low = focused, high = diffuse
+   - **Function-word fraction:** attention to "the", "and", "was", etc.
+   - **Punctuation fraction:** attention to `.`, `,`, `!`, etc.
+
+3. Classify each head into a pattern type:
+   - `previous-token` — strong previous-token attention (>0.3)
+   - `local-window` — most attention within 3 tokens (>0.7)
+   - `focused` — low entropy (<1.5)
+   - `diffuse` — high entropy (>3.0)
+   - `function-words` — high function word attention (>0.5)
+   - `mixed` — no dominant pattern
+
+**Key results (base model):**
+
+| Head | Entropy | Prev-token | Local | Pattern |
+|------|---------|------------|-------|---------|
+| H4   | 1.34    | 0.33       | 0.95  | previous-token, local-window, focused |
+| H6   | 1.47    | 0.43       | 0.96  | previous-token, local-window, focused |
+| H8   | 1.27    | 0.14       | 0.92  | local-window, focused |
+| H12  | 1.13    | 0.32       | 0.86  | previous-token, local-window, focused |
+| H11  | 2.64    | 0.16       | 0.54  | mixed (semantic) |
+| H14  | 2.31    | 0.17       | 0.53  | mixed (semantic) |
+
+Three heads (H4, H6, H12) are clearly **previous-token/induction heads**
+— focused, local, attending strongly to the preceding position. H8 is
+a local n-gram head without the prev-token peak.
+
+Everything else is **semantic** — diffuse attention spread across broad
+context.
+
+**Critical finding:** Attention patterns barely change between base and
+adapted models. LoRA adapters modify *what heads output*, not *what they
+attend to*. Style lives in the value projections, not the routing.
+
+This explains the knockout results: structural heads (H4, H6, H8, H12)
+have low knockout recovery because their fixed copying behavior doesn't
+change per author. Semantic heads (H11, H14, etc.) carry the style
+because their broad attention is processed through modified V projections.
+
+**Output:** `outputs/head_attention_patterns.json`
+
+**Figure:** `figures/head_roles.png` (combined with knockout data)
+
+---
+
+## 8. Head probes
+
+**Script:** `scripts/head_probes.py`
+
+**What it does:**
+For each head, generates text with three conditions — head solo (only
+that head at 1×, all others at 0×), head killed (that head at 0×),
+and head amplified (that head at 2×). Runs on both the base model and
+adapted models to compare head roles with and without LoRA.
+
+**How it works:**
+
+1. For each of 16 heads:
+   - **Solo:** scale all heads to 0× except this one (at 1×)
+   - **Kill:** scale only this head to 0× (all others at 1×)
+   - **Amplify:** scale this head to 2× (all others at 1×)
+
+2. For each condition: compute PPL on a standard eval text and generate
+   text from 2 prompts.
+
+3. Compute `ppl_impact = kill_ppl − normal_ppl` — positive means this
+   head helps (killing it hurts).
+
+4. Word frequency analysis: compare word distributions between amplified
+   and normal text to find "boosted" words.
+
+**Key results (base model vs adapted):**
+
+Base model: all heads have near-zero impact when killed (±1 PPL). No
+single head is critical — the base model is robust to single head loss.
+
+Adapted models: impact varies dramatically per head. For Poe, killing
+H8 costs +6 PPL and H12 costs +8 PPL. For Browne, killing H8 costs +9
+PPL. These are the heads where the LoRA adapter concentrated its
+changes.
+
+Solo generation (base model, one head active) produces mostly garbage
+— repetitive tokens, incoherent fragments. This is expected: a 1-layer
+model needs all heads cooperating.
+
+**Output:** `outputs/head_probes.json`
+
+---
+
+## 9. Multi-head steering experiments
+
+**Scripts:** `scripts/fig_poe_steering.py`, `scripts/fig_poe_multihead.py`,
+`scripts/fig_poe_style_dial.py`, `scripts/poe_steering_prompts.py`
+
+**What these do:**
+Several experiments explored whether steering (scaling head activations
+at inference time) produces visibly different text. This complements
+the PPL-based steering sweep (section 6) with qualitative text samples.
+
+**Experiments run:**
+
+1. **Single-head steering** (`poe_steering_prompts.py`): Scale Poe's
+   H14 from 0× to 2× across 15 prompts. Effect on generated text is
+   subtle — hard to see a clear style shift in individual samples.
+
+2. **Top-3 multi-head** (`fig_poe_multihead.py`): Scale H14+H3+H5
+   together. More dramatic than single-head, but still noisy.
+
+3. **Author-specific heads** (`fig_poe_style_dial.py`): Select heads
+   with knockout recovery > 0.2 for Poe (H2, H3, H5, H13, H14, H15 —
+   6 heads). Scale all 6 together from 0.25× to 1.5×, keeping others
+   at 1×. Wider usable range than scaling all semantic heads (which
+   breaks the model at both extremes because H11 carries coherence,
+   not Poe-specific style).
+
+**Honest assessment:**
+The PPL steering curves (section 6) show clean, measurable effects —
+H11 and H14 behave very differently across 77 authors. The generated
+text samples are less convincing: at low scales the model degrades
+(repetitive, incoherent), and at high scales it also degrades (loses
+topic). The 21M-parameter model doesn't have enough capacity for
+steering to produce a clean "more style / less style" gradient in
+generated text the way it shows up in perplexity measurements.
+
+The quantitative result (PPL curves) is solid. The qualitative result
+(text samples) is noisy and shouldn't be oversold.
+
+**Caveat:** The recovery > 0.2 threshold for selecting "author-specific
+heads" is arbitrary. The heads selected are specific to this checkpoint.
+
+**Output:** `outputs/poe_style_dial_samples.json`,
+`outputs/poe_steering_prompts.json`, `outputs/poe_multihead_samples.json`
+
+---
+
+## 10. H14 V-Q balance
+
+**Scripts:** `scripts/h14_vq_balance.py`, `scripts/h14_correlates.py`,
+`scripts/h14_vocab_vs_structure.py`, `scripts/h14_attention_features.py`
+
+**What it does:**
+Investigates what separates H14-dominant authors from H11-dominant
+authors. Tests text-level metrics and LoRA weight structure as
+predictors.
+
+**Text-level correlates** (`h14_correlates.py`):
+
+Computed on cleaned text (same preprocessing as training):
+
+| Metric | Correlation with H14 recovery |
+|--------|-------------------------------|
+| avg_word_len | +0.42 |
+| pct_short_words | −0.42 |
+| simple_word_frac | −0.41 |
+| pct_long_words | +0.40 |
+| latinate_frac | +0.35 |
+| type_token_ratio | +0.30 |
+| comma_density | +0.27 |
+| base_ppl | +0.09 (not significant) |
+
+Vocabulary complexity partially predicts H14 recovery, but only
+explains ~18% of variance. Base model perplexity (distributional
+distance) has essentially zero correlation (r = −0.04).
+
+**V-Q balance** (`h14_vq_balance.py`):
+
+For each author, compute the fraction of H14's LoRA weight norm in
+the value projection vs the query projection:
+
+```
+V-Q balance = ||ΔW_V[H14]|| / ||ΔW_V|| − ||ΔW_Q[H14]|| / ||ΔW_Q||
+```
+
+This single metric correlates with H14 recovery at **r = +0.62
+(R² = 0.38)**.
+
+**Interpretation (plausible but not directly tested via this
+experiment alone):** LoRA adapts both Q (what the head attends to)
+and V (what it extracts from attended positions). V changes are
+local to the head — they modify output regardless of other heads.
+Q changes are contextual — the new routing was learned with all
+heads active and may break in isolation.
+
+Note: This knockout experiment keeps BOTH Q and V LoRA for the
+isolated head. To directly test whether V works better than Q in
+isolation, a separate V-only vs Q-only knockout is needed (see
+section 10d).
+
+**Specificity to H14:**
+The V-Q balance has strong predictive power only for H14:
+
+| Head | r(V-Q, recovery) | recovery std |
+|------|-------------------|--------------|
+| H14  | +0.62             | 0.29         |
+| H1   | +0.37             | 0.19         |
+| H15  | +0.16             | 0.21         |
+| H4   | −0.32             | 0.12         |
+| Others | |r| < 0.2       | 0.09–0.27    |
+
+H14 is the head where both recovery variance and V-Q predictive
+power are highest.
+
+**Synthetic control validation:**
+
+The synthetic authors confirm the V-Q interpretation:
+
+| Style type | Authors | V-Q balance | H14 |
+|---|---|---|---|
+| Vocabulary-defined | unusual_vocab, reporter, simple_vocab | least negative | positive |
+| Mixed | poet, dark, cozy | middle | mixed |
+| Structure-defined | dialogue, firstperson, repeater, fabulist, ... | most negative | neutral/negative |
+
+Vocabulary-defined styles (word choice only) → V-heavy → works in
+isolation. Structure-defined styles (sentence patterns) → Q-heavy →
+breaks in isolation.
+
+**Can text metrics predict V-Q balance?**
+
+Tested three approaches:
+
+| Approach | r with V-Q | r with H14 |
+|---|---|---|
+| Surface text metrics (word length, vocab) | ~0.3 | ~0.4 |
+| Unigram KL + bigram structure composite | +0.29 | +0.16 |
+| Shuffle test (model-based, destroy word order) | −0.16 | −0.20 |
+
+Surface text metrics are weak predictors. The V-Q balance captures
+something that lives in the weights, not in surface statistics.
+
+**Base model attention as predictor** (`h14_attention_features.py`):
+
+Running the base model (no adapter) on each author's text and
+extracting per-head attention entropy:
+
+| Feature | r(V-Q) | r(H14) |
+|---|---|---|
+| H10 entropy | −0.55 | −0.51 |
+| H15 entropy | −0.57 | −0.50 |
+| H7 entropy | −0.47 | −0.48 |
+| H5 entropy | −0.50 | −0.45 |
+| H0 entropy | −0.50 | −0.43 |
+| H14 entropy | −0.11 | −0.06 |
+
+Multiple heads' entropy correlates at r = −0.4 to −0.5 with H14
+recovery. H14's own entropy is not predictive. The sign means:
+authors whose text makes the base model attend more sharply (lower
+entropy across many heads) tend to be H14-positive. A multivariate
+model using all 32 attention features reaches R² = 0.52 for H14
+recovery, but with 33 features / 77 samples this is likely overfit.
+
+The base model's internal representations contain more signal than
+surface text statistics, suggesting learned representations (e.g.
+hidden state statistics) could serve as input features for a
+hypernetwork predicting LoRA weights.
+
+**Output:** `outputs/h14_vq_balance.json`, `outputs/h14_correlates.json`,
+`outputs/h14_attention_features.json`, `outputs/h14_vocab_vs_structure.json`,
+`figures/h14_vq_balance.png`, `figures/h14_attention_features.png`
+
+---
+
+## 10a. Why H14? Base model weight analysis
+
+**Script:** `scripts/why_h14.py`
+
+**What it does:**
+Probes the pretrained base model weights (before any LoRA) to find
+what makes H14 structurally different from other heads.
+
+**Tests and results:**
+
+| Test | What it measures | H14 rank | Key finding |
+|------|-----------------|----------|-------------|
+| V-perturbation sensitivity | Mean |logit change| after adding noise to V | **#1** (0.222, next is H11 at 0.179) | H14's output is most sensitive to V changes |
+| Q-perturbation sensitivity | Attention KL divergence after adding noise to Q | **#2** (0.0118, #1 is H9 at 0.0118) | H14's attention pattern is highly sensitive to Q changes |
+| V effective rank | Shannon entropy of singular values | **#1** (63.81) | V weights are maximally spread — no single direction dominates |
+| V norm | Frobenius norm of V weight block | **#15** (7.56) | Small V weights despite high sensitivity |
+| Q norm | Frobenius norm of Q weight block | #5 (8.99) | Average |
+| W_O influence | Output projection column norm | #10 (8.44) | Average influence on residual stream |
+| Head independence | 1 − mean |correlation| with other heads | **#15** (most correlated) | Most dependent on other heads |
+
+**Perturbation methodology:**
+- Random Gaussian noise at scale 0.01 added to each head's Q or V
+  weight block (64 × 1024)
+- Q sensitivity: measured as KL divergence of attention distribution
+  before/after perturbation, averaged over 5 prompts × 10 trials
+- V sensitivity: measured as mean |logit difference| at the output,
+  averaged over 5 prompts × 10 trials
+
+**Interpretation:**
+H14 has small but maximally spread-out V weights. This makes it a
+natural amplifier — tiny LoRA changes to V produce outsized effects
+on the output. It's also extremely Q-sensitive, so Q changes
+redirect its attention dramatically. Combined with being the least
+independent head (most correlated with others), Q changes that
+redirect H14's attention break without other heads compensating.
+
+This explains the V-Q balance finding: V-heavy LoRA adaptation
+works in isolation because it amplifies through H14's sensitive V
+pathway. Q-heavy adaptation breaks in isolation because H14's
+attention routing is both highly sensitive and highly dependent on
+other heads.
+
+**Output:** `outputs/why_h14.json`, `figures/why_h14.png`,
+`figures/why_h14_sensitivity.png`
+
+**Figure script:** `scripts/fig_why_h14.py`
+
+---
+
+## 10a-ii. Head role prediction from base model weights
+
+**Scripts:** `scripts/fig_head_mechanics.py`, `scripts/why_h14.py`
+
+**What it does:**
+Tests whether base model properties (before any LoRA) predict
+which heads will matter after fine-tuning. Extends the perturbation
+analysis to explain both head importance and head variance.
+
+**Key finding: two properties predict two things**
+
+| What to predict | Best predictor | r | Mechanism |
+|---|---|---|---|
+| Mean recovery (importance) | Logit impact (‖W_unembed · W_O_h‖) | +0.78 | Heads with stronger output paths to vocabulary matter more |
+| Recovery std (variance) | V-sensitivity | +0.86 | Heads more sensitive to V perturbations vary more across authors |
+
+**The amplification ratio**
+
+V-sensitivity is itself explained by the ratio of logit impact to
+V weight norm:
+
+```
+amplification_ratio_h = ‖W_unembed · W_O_h‖ / ‖W_V_h‖
+```
+
+This predicts V-sensitivity at r = +0.91 (r = +0.86 with H14
+removed, r = +0.79 with both H14 and H11 removed — not an outlier
+effect).
+
+**Interpretation:** A head with a strong output path (high logit
+impact) but small V weights (low V norm) is an amplifier — the
+same absolute LoRA change to V produces a larger relative effect
+on logits. H14 has the highest amplification ratio (9.07) because
+its V weights are the smallest (norm 7.56, rank #15) while its
+logit path is well-connected (68.6, rank #5).
+
+**Q-sensitivity is different:**
+
+Q_norm alone predicts Q-sensitivity at r = +0.76. Bigger Q weights
+mean larger attention scores (Q·K^T), so perturbations create
+larger absolute changes in the softmax. This is a simpler mechanism
+than V-sensitivity.
+
+**Per-head summary:**
+
+| Head | Type | Amplification ratio | V-sensitivity | Logit impact | Recovery mean | Recovery std |
+|------|------|-------------------|--------------|-------------|--------------|-------------|
+| H14 | semantic | **9.07** (#1) | **0.222** (#1) | 68.6 (#5) | 0.22 (#3) | **0.29** (#1) |
+| H11 | semantic | 8.60 (#2) | 0.179 (#2) | **100.4** (#1) | **0.38** (#1) | 0.17 (#2) |
+| H3  | semantic | 8.02 (#4) | 0.153 (#5) | 67.0 (#6) | 0.28 (#2) | 0.14 (#6) |
+| H12 | structural | 7.49 (#11) | 0.126 (#12) | 54.2 (#16) | 0.08 (#15) | 0.08 (#14) |
+
+H11 is #1 in logit impact → workhorse (highest mean, best for 51/77).
+H14 is #1 in amplification ratio → specialist (highest variance, best for 18/77).
+H12 is near-bottom in both → irrelevant.
+
+**Caveat: partial tautology.**
+V-sensitivity (random noise perturbation of V) and knockout recovery
+(learned LoRA perturbation of V) both measure "how much does
+changing V affect the output." Their correlation is partly expected.
+The amplification ratio decomposes V-sensitivity into its own
+propagation path (logit impact) and relative perturbation size
+(1/V_norm), which is closer to redescription than explanation.
+
+The more substantive observation is the *separation*: logit impact
+predicts mean recovery (importance) while V-sensitivity predicts
+recovery variance. These are different properties
+predicting different behavioral outcomes. However, with only N=16
+heads, all correlations are suggestive rather than conclusive.
+
+**Output:** `outputs/head_mechanics.json`, `figures/head_mechanics.png`
+
+---
+
+## 10b. Retraining stability
+
+**Script:** `scripts/retrain_stability.py`
+
+**What it does:**
+Tests whether knockout rankings are stable across different random
+seeds. Retrains Poe's adapter 5 times with seeds 42–46, runs the
+full knockout on each, and checks ranking consistency.
+
+**Results (Poe × 5 seeds):**
+
+| Metric | Value |
+|--------|-------|
+| H14 rank | 3rd every time (std = 0.0) |
+| H14 recovery | mean = +0.162, std = 0.003 |
+| Top head | H11 every time |
+| Full ranking | Preserved across all 5 seeds |
+
+The stability is remarkably high — not just the top head but the
+full 16-head ranking is preserved. This confirms that the knockout
+results reflect genuine learned structure, not training noise.
+
+**Output:** `outputs/retrain_stability.json`, `figures/retrain_stability.png`
+
+Adapters saved to `outputs/retrain_stability/poe/seed_{N}/adapter/`
+for reproducibility.
+
+---
+
+## 10c. Attention pattern stability across adapters
+
+**Script:** `scripts/fig_attention_stability.py`
+
+**Requires:** `outputs/head_attention_patterns.json` (produced by
+running `head_attention_patterns.py --with-adapters` on all 77 authors)
+
+**What it does:**
+Compares per-head attention entropy between the base model and all 77
+adapted models. Tests whether LoRA changes what heads attend to or
+only what they output.
+
+**Key results:**
+
+- Mean |entropy change| across all heads × all authors: ~0.02–0.05
+  (negligible compared to between-head entropy differences of 1–3)
+- Semantic head classifications: **0 changes** across all 77 adapted
+  models — every head that was "semantic" in the base model stays
+  semantic after LoRA, and vice versa for structural heads
+- Structural heads (orange) and semantic heads (purple) stay in place
+  after adaptation
+
+This is the strongest evidence that LoRA adapters change *what heads
+output* (value projections), not *what they attend to* (query/key
+routing). Style flows through V, not Q — even though Q is also
+adapted.
+
+**Output:** `outputs/attention_stability.json`, `figures/attention_stability.png`
+
+---
+
+## 10d. V-only vs Q-only knockout
+
+**Script:** `scripts/vq_knockout.py`
+
+**What it does:**
+Directly tests the V-Q mechanism by isolating each projection
+separately. For H14 across all 77 authors, runs three conditions:
+
+- **V-only:** keep only H14's V LoRA, zero all Q LoRA
+- **Q-only:** keep only H14's Q LoRA, zero all V LoRA
+- **Both:** keep H14's Q+V LoRA (existing knockout result from §3)
+
+If V changes are truly local (work in isolation) and Q changes are
+contextual (break in isolation), V-only should consistently recover
+more than Q-only.
+
+**Implementation:**
+Uses `load_adapter_deltas()` to get the full V and Q deltas, then
+`knockout_all_except()` to isolate H14's rows. Each condition applies
+only the V delta or only the Q delta to a fresh copy of the base model.
+
+**Results:**
+
+| Metric | Value |
+|--------|-------|
+| V-only > Q-only | **68 / 77 authors** (88%) |
+| Mean V-only recovery | **+0.09** |
+| Mean Q-only recovery | **−0.03** |
+| r(V-Q balance, V−Q recovery diff) | **+0.67** |
+
+V-only recovery is positive for most authors — isolating just
+H14's value projection still helps. Q-only recovery is negative for
+the majority — isolating just the query projection actively hurts.
+
+**Correlation with V-Q balance:**
+Authors whose LoRA puts more weight in V (higher V-Q balance) also
+show a larger gap between V-only and Q-only recovery (r = +0.67).
+This connects the weight-level measurement (§10) with the behavioral
+test: V-heavy adapters benefit more from V in isolation.
+
+**Why this matters:**
+Before this experiment, the V-Q story rested on a correlation
+(V-Q balance vs H14 recovery, r = +0.62) plus a plausible mechanism.
+This experiment tests the mechanism directly: V changes literally
+work better than Q changes in isolation, for 68/77 authors. The
+mechanism is not just an interpretation of the correlation — it's
+a separately testable prediction that holds.
+
+**Output:** `outputs/vq_knockout.json`, `figures/vq_knockout.png`
+
+---
+
+## 11. Head transplant
 
 **Script:** `scripts/transplant.py`
 
@@ -505,17 +1082,17 @@ reads this JSON directly.
 
 ---
 
-## 7. Text sample generation
+## 12. Text sample generation
 
 **Script:** `scripts/generate_samples.py`
 
 **What it does:**
-Generates text from the base model and all 82 adapted models using a
+Generates text from the base model and all 77 adapted models using a
 fixed prompt and seed, saving exact outputs to JSON for reproducibility.
 
 **How it works:**
 
-1. Load tokenizer, then for each model (base + 82 adapters):
+1. Load tokenizer, then for each model (base + 77 adapters):
    - Load model via `load_adapted_model()` or `AutoModelForCausalLM`
    - Call `generate()` (`steering.py:28`) with:
      - `prompt="It was a dark and stormy"`
@@ -537,7 +1114,7 @@ distinct outputs that illustrate different aspects of adaptation
 
 ---
 
-## 8. Shared infrastructure
+## 13. Shared infrastructure
 
 ### Text processing pipeline
 
@@ -553,7 +1130,7 @@ Two separate functions serve different purposes:
 - Returns full cleaned text
 
 **`extract_prose()`** (`text.py:106`) — used for **evaluation**:
-- Finds first line with 60+ chars that is >50% lowercase
+- Finds first line with 40+ chars that is >50% lowercase
 - Returns `length` characters starting from that point (default 5000)
 - Faster and more targeted than `clean_text()` — skips directly to
   prose without trying to clean everything
@@ -596,7 +1173,7 @@ TARGET_MODULES = ["q_proj", "v_proj"]
 ## Experiment dependency graph
 
 ```
-train_lora.py (×82)
+train_lora.py (×77)
     ↓
     outputs/authors/{name}/adapter/
     ↓
@@ -605,7 +1182,17 @@ train_lora.py (×82)
     │       ↓
     │       ├── fig_knockout_heatmap.py → figures/knockout_heatmap.png
     │       │                           → figures/knockout_strip.png
-    │       └── knockout_null.py → outputs/knockout_null_baseline.json
+    │       ├── knockout_null.py → outputs/knockout_null_baseline.json
+    │       └── steering_sweep.py → outputs/steering_sweep.json
+    │               ↓
+    │               └── fig_steering.py → figures/steering_curves.png
+    │                                   → figures/steering_aggregate.png
+    ├── head_attention_patterns.py → outputs/head_attention_patterns.json ─┐
+    │                                                                      ├→ fig_steering.py → figures/head_roles.png
+    │   knockout.py ──────────────────────────────────────────────────────┘
+    ├── head_probes.py → outputs/head_probes.json
+    ├── fig_poe_style_dial.py → outputs/poe_style_dial_samples.json
+    │                         → figures/poe_style_dial_*.png
     ├── steer.py → outputs/multihead_text.json
     ├── transplant.py → outputs/transplant_samples.json
     │       ↓

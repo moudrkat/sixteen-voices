@@ -54,7 +54,10 @@ def create_lora_model(base_model=None, rank=RANK, alpha=LORA_ALPHA):
 
 def get_attn_module(model):
     """Return the single attention layer's attention module."""
-    return model.base_model.model.transformer.h[0].attn.attention
+    # LoRA-wrapped models have base_model.model; plain models don't
+    if hasattr(model, "peft_config"):
+        return model.base_model.model.transformer.h[0].attn.attention
+    return model.transformer.h[0].attn.attention
 
 
 def get_attn_out(model):

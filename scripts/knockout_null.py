@@ -21,14 +21,12 @@ from sixteen_voices import (
     HEAD_DIM,
     RANK,
     compute_perplexity,
-    extract_prose,
     load_base_model,
+    load_eval_text,
     load_tokenizer,
 )
 from sixteen_voices.adapter import knockout_all_except, delta_to_AB
 from sixteen_voices.model import create_lora_model, get_attn_module
-
-DATA_DIR = Path("data/authors")
 TEST_AUTHORS = ["shelley", "grimm", "homer", "poe", "carroll", "alcott"]
 
 
@@ -104,9 +102,10 @@ def main():
 
     eval_texts = {}
     for author in TEST_AUTHORS:
-        txt_path = DATA_DIR / f"{author}.txt"
-        if txt_path.exists():
-            eval_texts[author] = extract_prose(txt_path.read_text())
+        try:
+            eval_texts[author] = load_eval_text(author)
+        except FileNotFoundError:
+            pass
     print(f"Eval texts: {list(eval_texts.keys())}")
 
     all_results = {}

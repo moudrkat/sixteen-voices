@@ -22,10 +22,9 @@ from sixteen_voices import (
     load_adapted_model,
     load_tokenizer,
     compute_perplexity,
-    extract_prose,
+    load_eval_text,
 )
 
-DATA_DIR = Path("data/authors")
 ADAPTERS_DIR = Path("outputs/authors")
 OUTPUT_PATH = Path("outputs/eval_adapters.json")
 
@@ -33,9 +32,9 @@ EVAL_WORDS = 2000
 MAX_LENGTH = 512
 
 
-def get_eval_text(raw_text: str, eval_words: int = EVAL_WORDS) -> str:
-    """Return eval_words words of extracted prose (consistent with knockout)."""
-    prose = extract_prose(raw_text, length=eval_words * 7)  # ~7 chars/word
+def get_eval_text(author: str, eval_words: int = EVAL_WORDS) -> str:
+    """Return eval_words words of pre-extracted eval prose."""
+    prose = load_eval_text(author, length=eval_words * 7)
     words = prose.split()
     if len(words) > eval_words:
         prose = " ".join(words[:eval_words])
@@ -65,13 +64,11 @@ def main():
     results = []
 
     for i, name in enumerate(adapter_names):
-        text_path = DATA_DIR / f"{name}.txt"
-        if not text_path.exists():
+        try:
+            eval_text = get_eval_text(name, args.eval_words)
+        except FileNotFoundError:
             print(f"  [{name}] no text file, skipping")
             continue
-
-        raw_text = text_path.read_text(encoding="utf-8")
-        eval_text = get_eval_text(raw_text, args.eval_words)
         eval_word_count = len(eval_text.split())
 
         # Base perplexity

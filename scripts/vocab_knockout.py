@@ -40,17 +40,12 @@ DEFAULT_AUTHORS = ["shelley", "poe", "homer", "grimm", "carroll", "wilde"]
 
 
 def make_knockout_hook(head_idx):
-    """Zero out a single head's output."""
-    def hook_fn(module, input, output):
-        if isinstance(output, tuple):
-            h = output[0]
-        else:
-            h = output
+    """Zero out a single head's output before W_O projection."""
+    def hook_fn(module, args):
+        h = args[0].clone()
         start = head_idx * HEAD_DIM
         h[:, :, start : start + HEAD_DIM] = 0
-        if isinstance(output, tuple):
-            return (h,) + output[1:]
-        return h
+        return (h,) + args[1:]
     return hook_fn
 
 
@@ -69,7 +64,7 @@ def get_top_tokens(model, tokenizer, text, top_k=TOP_K):
 def get_vocab_diff(model, tokenizer, text, head_idx, top_k=TOP_K):
     full = get_top_tokens(model, tokenizer, text, top_k)
     attn_out = get_attn_out(model)
-    hook = attn_out.register_forward_hook(make_knockout_hook(head_idx))
+    hook = attn_out.register_forward_pre_hook(make_knockout_hook(head_idx))
     ko = get_top_tokens(model, tokenizer, text, top_k)
     hook.remove()
 

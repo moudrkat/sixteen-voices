@@ -18,16 +18,15 @@ from pathlib import Path
 from sixteen_voices import (
     NUM_HEADS,
     compute_perplexity,
-    extract_prose,
     inject_knockout,
     load_adapted_model,
     load_adapter_deltas,
     load_base_model,
+    load_eval_text,
     load_tokenizer,
 )
 
 ADAPTERS_DIR = Path("outputs/authors")
-DATA_DIR = Path("data/authors")
 
 
 def main():
@@ -52,11 +51,11 @@ def main():
 
     results = {}
     for ai, author in enumerate(authors):
-        txt_path = DATA_DIR / f"{author}.txt"
-        if not txt_path.exists():
+        try:
+            text = load_eval_text(author)
+        except FileNotFoundError:
             print(f"  {author}: no text file, skipping")
             continue
-        text = extract_prose(txt_path.read_text())
         if len(text) < 100:
             print(f"  {author}: text too short, skipping")
             continue

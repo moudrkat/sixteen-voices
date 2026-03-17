@@ -90,9 +90,13 @@ def main():
     rng = np.random.default_rng(42)
 
     stds = matrix.std(axis=0)
+    # Store jittered x positions per author per head for annotations
+    author_jittered_x = {}  # (author_idx, head) -> jittered x
     for xi, h in enumerate(order):
         vals = matrix[:, h]
         jitter = rng.uniform(-0.25, 0.25, len(vals))
+        for ai in range(len(vals)):
+            author_jittered_x[(ai, h)] = xi + jitter[ai]
         color = (ACCENT_HIGH if means[h] > 0.20
                  else ACCENT_MID if means[h] > 0.10
                  else LIGHT_GRAY)
@@ -124,6 +128,42 @@ def main():
                 xytext=(polar_xi - 4, means[most_polar] + 0.45),
                 fontsize=8, color=ACCENT_HIGH, fontweight="bold",
                 arrowprops=dict(arrowstyle="->", color=ACCENT_HIGH, lw=1.2))
+
+    # Label key authors on H14 — (x_offset_pts, y_target) to stagger labels
+    # y_target is absolute y position to place the label text at, avoiding overlap
+    # (author, y_label_position, color_override)
+    LABEL_AUTHORS = [
+        ("browne",   0.88,  None),
+        ("homer",    0.76,  None),
+        ("poe",      0.64,  None),
+        ("melville", 0.52,  None),
+        ("milton",   0.40,  None),
+        ("grimm",    0.28,  "#666666"),
+        ("carroll",  0.16,  "#666666"),
+        ("shelley", -0.55,  None),
+        ("norse",   -0.70,  None),
+        ("barrie",  -0.85,  None),
+        ("lear",    -1.00,  None),
+        ("chinese", -1.20,  None),
+    ]
+    author_to_idx = {a: i for i, a in enumerate(authors)}
+    for author, y_label, color_override in LABEL_AUTHORS:
+        if author not in author_to_idx:
+            continue
+        ai = author_to_idx[author]
+        val = matrix[ai, most_polar]
+        jx = author_jittered_x[(ai, most_polar)]
+        if color_override:
+            author_color = color_override
+        else:
+            author_color = "#1e40af" if val < 0 else "#991b1b"
+        ax.annotate(
+            author.capitalize(),
+            xy=(jx, val),
+            xytext=(polar_xi + 1.8, y_label),
+            fontsize=7.5, color=author_color, fontweight="bold",
+            arrowprops=dict(arrowstyle="->", color=author_color, lw=0.8, alpha=0.5),
+        )
 
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "knockout_strip.png", dpi=150, bbox_inches="tight")

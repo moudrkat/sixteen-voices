@@ -1,45 +1,27 @@
 ## Post
-You know what is beautiful about tiny models? That they are tiny.
 
-Twenty-one million parameters. One attention layer. Sixteen heads. You could literally put this model in your pocket, if it existed physically. 
+How far can you trace the chain from weights to behavior in a tiny transformer?
 
-And yet — no one understands what is happening inside.
+I took a 21M-parameter model — one layer, sixteen attention heads — trained 77 LoRA adapters (one per author), and ran 1,232 knockout experiments. All on a laptop CPU.
 
-So I made an experiment. 
+Three things I found:
 
----
+1. Heads specialize sharply. Two heads (H11 and H14) account for the best head in 69 out of 77 authors. The other 14 barely matter. This is learned, not random — untrained adapters don't show it.
 
-I trained 82 LoRA adapters on that tiny transformer. One adapter per author — Poe, Carroll, Grimm, Shelley, 69 Gutenberg authors, 13 synthetic controls. All on CPU, because why not.
+2. LoRA changes what heads output, not what they attend to. Compared attention patterns across all 77 adapters — zero classification changes. Style flows through the value projections.
 
-Then I asked: do different authors use different heads?
+3. V changes work in isolation, Q changes don't. LoRA adapts both V (what a head outputs) and Q (where it looks). V changes are local to the head — isolate it and they still work. Q changes depend on other heads' routing — isolate and they break. Direct test: V-only beats Q-only for 68/77 authors (88%).
 
-I isolated each head's LoRA contribution (keep one head's weight rows, zero the rest) and measured how much of the adaptation it recovers. 82 authors × 16 heads = 1,312 knockout experiments.
+None of this is individually novel — head specialization is documented, the V-Q asymmetry follows from the math. What was fun was testing it empirically across 77 adapters in a model small enough to see everything.
 
-What I found:
-→ H11 is the backbone — best head for 41 of 82 authors (probably carries coherence, not style)
-→ H14 is polarizing — recovers +0.82 for Browne but −1.39 for Burnett (makes things worse than no adapter)
-→ Most heads barely matter
-→ You can transplant Poe's H14 into Carroll's adapter and the output shifts toward storm/darkness/weeping while keeping Alice's dialogue structure
-
-It's a toy experiment on one tiny model. The clean per-head decomposition works because there's only one layer — no cross-layer interaction. A different pretraining seed would shuffle which head does what. None of this generalizes to real models.
-
-But that's the point. It's small enough to see everything. A playground. 
-
----
-
-*...suddenly there came a tapping,*
-*As of some one gently rapping, rapping at my chamber door.*
-— Edgar Allan Poe, "The Raven"
-
----
-
-Full write-up, code, and all 82 adapters in comments.
+Full writeup with all the caveats: [link]
+Code + interactive demo: [link]
 
 ## Image
 
-figures/transplant_linkedin_carroll.png
+figures/knockout_strip.png
 
 ## Comments
 
-1. Article with all results + figures: [link to docs/ARTICLE.md]
-2. Code + adapters: [link to repo]
+1. On the V-Q test: V-only recovery mean +0.09, Q-only mean −0.03. The mechanism follows from the math, but I hadn't seen it tested across this many adapters before.
+2. This is a case study on one tiny checkpoint — not a general claim about transformers.

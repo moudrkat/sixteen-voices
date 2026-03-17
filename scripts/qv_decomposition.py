@@ -44,16 +44,11 @@ TEXTS = [
 
 
 def make_knockout_hook(head_idx):
-    def hook_fn(module, input, output):
-        if isinstance(output, tuple):
-            h = output[0]
-        else:
-            h = output
+    def hook_fn(module, args):
+        h = args[0].clone()
         s = head_idx * HEAD_DIM
         h[:, :, s : s + HEAD_DIM] = 0
-        if isinstance(output, tuple):
-            return (h,) + output[1:]
-        return h
+        return (h,) + args[1:]
     return hook_fn
 
 
@@ -66,7 +61,7 @@ def get_promoted(model, tokenizer, text, head_idx):
             for i in torch.topk(torch.softmax(logits, -1), TOP_K).indices}
 
     attn_out = get_attn_out(model)
-    hook = attn_out.register_forward_hook(make_knockout_hook(head_idx))
+    hook = attn_out.register_forward_pre_hook(make_knockout_hook(head_idx))
     with torch.no_grad():
         logits_ko = model(**inputs).logits[0, -1]
     hook.remove()

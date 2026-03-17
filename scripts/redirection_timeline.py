@@ -42,16 +42,11 @@ TEXT = "Once upon a time there was a little"
 
 
 def make_knockout_hook(head_idx):
-    def hook_fn(module, input, output):
-        if isinstance(output, tuple):
-            h = output[0]
-        else:
-            h = output
+    def hook_fn(module, args):
+        h = args[0].clone()
         s = head_idx * HEAD_DIM
         h[:, :, s : s + HEAD_DIM] = 0
-        if isinstance(output, tuple):
-            return (h,) + output[1:]
-        return h
+        return (h,) + args[1:]
     return hook_fn
 
 
@@ -67,7 +62,7 @@ def get_promoted_words(model, tokenizer, text, head_idx):
             ).indices
         }
 
-    hook = attn_out.register_forward_hook(make_knockout_hook(head_idx))
+    hook = attn_out.register_forward_pre_hook(make_knockout_hook(head_idx))
     with torch.no_grad():
         ko = {
             tokenizer.decode(i.item()).strip()

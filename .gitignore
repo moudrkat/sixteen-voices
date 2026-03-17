@@ -13,6 +13,7 @@ venv/
 # Data (downloaded via scripts)
 data/authors/
 data/stories/
+data/eval/
 
 # Outputs (reproducible)
 outputs/
@@ -29,3 +30,9 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Local scratch
+TODO.md
+notebooks/
+virtualenvs/
+docs/LINKEDIN_ATTENTION.md

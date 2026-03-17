@@ -6,22 +6,17 @@ from .constants import HEAD_DIM
 
 
 def make_hook(head_scales: dict[int, float]):
-    """Create a forward hook that scales specific heads' output.
+    """Create a forward pre-hook that scales specific heads' output before W_O.
 
     Args:
         head_scales: {head_index: scale_factor} e.g. {14: 2.0, 3: 0.5}
     """
-    def hook_fn(module, input, output):
-        if isinstance(output, tuple):
-            h = output[0].clone()
-        else:
-            h = output.clone()
+    def hook_fn(module, args):
+        h = args[0].clone()
         for head_idx, scale in head_scales.items():
             s = head_idx * HEAD_DIM
             h[:, :, s : s + HEAD_DIM] *= scale
-        if isinstance(output, tuple):
-            return (h,) + output[1:]
-        return h
+        return (h,) + args[1:]
     return hook_fn
 
 
@@ -57,23 +52,24 @@ def generate(
 
     hook = None
     if head_scales and attn_out:
-        hook = attn_out.register_forward_hook(make_hook(head_scales))
+        hook = attn_out.register_forward_pre_hook(make_hook(head_scales))
 
-    inputs = tokenizer(prompt, return_tensors="pt")
-    plen = inputs["input_ids"].shape[1]
-    with torch.no_grad():
-        out = model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=True,
-            temperature=temperature,
-            top_k=top_k,
-            pad_token_id=tokenizer.eos_token_id,
-        )
-    text = tokenizer.decode(out[0][plen:], skip_special_tokens=True).strip()
-
-    if hook:
-        hook.remove()
+    try:
+        inputs = tokenizer(prompt, return_tensors="pt")
+        plen = inputs["input_ids"].shape[1]
+        with torch.no_grad():
+            out = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=True,
+                temperature=temperature,
+                top_k=top_k,
+                pad_token_id=tokenizer.eos_token_id,
+            )
+        text = tokenizer.decode(out[0][plen:], skip_special_tokens=True).strip()
+    finally:
+        if hook:
+            hook.remove()
     return text
 
 
@@ -88,13 +84,14 @@ def steered_perplexity(
     """Compute perplexity with optional head steering."""
     hook = None
     if head_scales and attn_out:
-        hook = attn_out.register_forward_hook(make_hook(head_scales))
+        hook = attn_out.register_forward_pre_hook(make_hook(head_scales))
 
-    inputs = tokenizer(eval_text, return_tensors="pt", truncation=True, max_length=max_length)
-    with torch.no_grad():
-        out = model(**inputs, labels=inputs["input_ids"])
-    val = torch.exp(out.loss).item()
-
-    if hook:
-        hook.remove()
+    try:
+        inputs = tokenizer(eval_text, return_tensors="pt", truncation=True, max_length=max_length)
+        with torch.no_grad():
+            out = model(**inputs, labels=inputs["input_ids"])
+        val = torch.exp(out.loss).item()
+    finally:
+        if hook:
+            hook.remove()
     return val

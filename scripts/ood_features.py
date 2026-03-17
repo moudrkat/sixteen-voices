@@ -19,10 +19,9 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
-from sixteen_voices import extract_prose
+from sixteen_voices import load_eval_text
 
 KNOCKOUT_PATH = Path("outputs/knockout_all_heads.json")
-DATA_DIR = Path("data/authors")
 
 # TinyStories-like common vocabulary
 TINYSTORIES_COMMON = {
@@ -95,10 +94,10 @@ def main():
 
     results = {}
     for author in sorted(knockout.keys()):
-        txt_path = DATA_DIR / f"{author}.txt"
-        if not txt_path.exists():
+        try:
+            text = load_eval_text(author, length=10000)
+        except FileNotFoundError:
             continue
-        text = extract_prose(txt_path.read_text(), length=10000)
         features = compute_text_features(text)
         features["base_ppl"] = knockout[author]["base_ppl"]
         features["full_ppl"] = knockout[author]["full_ppl"]

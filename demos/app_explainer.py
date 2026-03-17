@@ -65,7 +65,7 @@ def generate_text(model, tokenizer, prompt, head_scales=None,
         torch.manual_seed(seed)
     hook = None
     if head_scales and any(s != 1.0 for s in head_scales.values()):
-        hook = get_attn_out(model).register_forward_hook(make_hook(head_scales))
+        hook = get_attn_out(model).register_forward_pre_hook(make_hook(head_scales))
     ids = tokenizer.encode(prompt, return_tensors="pt")
     with torch.no_grad():
         out = model.generate(
