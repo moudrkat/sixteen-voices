@@ -1,21 +1,19 @@
 ## Post
 
-How far can you trace the chain from weights to behavior in a tiny transformer?
+I trained 77 LoRA adapters on a tiny transformer — one for each author — and then took the model apart to see what happened inside.
 
-I took a 21M-parameter model — one layer, sixteen attention heads — trained 77 LoRA adapters (one per author), and ran 1,232 knockout experiments. All on a laptop CPU.
+Which attention heads carry the style? (Not all of them — and it depends on the author.)
 
-Three things I found:
+Can you steer a head like a dial to make Poe more Poe? (Yes.)
 
-1. Heads specialize sharply. Two heads (H11 and H14) account for the best head in 69 out of 77 authors. The other 14 barely matter. This is learned, not random — untrained adapters don't show it.
+Can you transplant one head from Poe into a minimalist writer and get dark vocabulary in simple sentences? (Kind of.)
 
-2. LoRA changes what heads output, not what they attend to. Compared attention patterns across all 77 adapters — zero classification changes. Style flows through the value projections.
+Can you blend two authors by averaging their weights? (Sometimes — some pairs work, others produce gibberish.)
 
-3. V changes work in isolation, Q changes don't. LoRA adapts both V (what a head outputs) and Q (where it looks). V changes are local to the head — isolate it and they still work. Q changes depend on other heads' routing — isolate and they break. Direct test: V-only beats Q-only for 68/77 authors (88%).
+The model has 21 million parameters, one layer, and writes children's stories. I ran everything on my laptop CPU. It's a toy experiment, but I learned a lot and it was fun, so I wrote it up.
 
-None of this is individually novel — head specialization is documented, the V-Q asymmetry follows from the math. What was fun was testing it empirically across 77 adapters in a model small enough to see everything.
-
-Full writeup with all the caveats: [link]
-Code + interactive demo: [link]
+Full article: [link]
+Code + all 77 adapters: [link]
 
 ## Image
 
@@ -23,5 +21,5 @@ figures/knockout_strip_clean.png
 
 ## Comments
 
-1. On the V-Q test: V-only recovery mean +0.09, Q-only mean −0.03. The mechanism follows from the math, but I hadn't seen it tested across this many adapters before.
-2. This is a case study on one tiny checkpoint — not a general claim about transformers.
+1. The finding I didn't expect: authors split into two groups by which head carries their style. H11 leads for most (Carroll, Grimm...), H14 leads for a smaller cluster (Poe, Homer, Milton...). They're anticorrelated — same job, different authors.
+2. This is a case study on one tiny checkpoint — not a general claim about transformers. But it was a great way to build intuition about what's going on inside.

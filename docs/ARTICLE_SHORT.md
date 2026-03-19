@@ -359,8 +359,8 @@ across layers — the decomposition gets messier on two fronts.
 
 Per-head style signals are **transferable** — you can graft one
 author's head weights into another's adapter and get a visible
-vocabulary shift (see [transplant and interpolation experiments
-in the overview article](ARTICLE_SIMPLE.md)).
+vocabulary shift [13, 14] (see [transplant and interpolation
+experiments in the overview article](ARTICLE_SIMPLE.md)).
 
 Code and all 77 adapters are in the repo.
 
@@ -412,3 +412,9 @@ Learning"](https://transformer-circuits.pub/2023/monosemantic-features),
 Interpretable Features from Claude 3
 Sonnet"](https://transformer-circuits.pub/2024/scaling-monosemanticity/),
 *Anthropic*, 2024.
+
+[13] G. Ilharco et al., ["Editing Models with Task Arithmetic"](https://arxiv.org/abs/2212.04089), *ICLR 2023*.
+
+[14] C. Huang et al., ["LoRAHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition"](https://arxiv.org/abs/2307.13269), *arXiv*, 2023.
+
+[15] Q. Zhang et al., ["AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning"](https://arxiv.org/abs/2303.10512), *ICML 2023*.

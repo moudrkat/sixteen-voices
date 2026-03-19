@@ -12,7 +12,7 @@ Although I found some interesting (and, by the literature, expected) behavior, t
 
 ## Make the model do different things
 
-LoRA is a fine-tuning technique where you freeze the original model and train a small add-on — a lightweight "patch" on the weights. Same base model, 77 different patches. Most are real authors from Project Gutenberg — Poe, Carroll, Grimm, Melville, Homer. A few are synthetic styles I wrote myself — *minimalist* (short simple sentences), *dialogue* (all conversation), *poet* (line breaks and rhythm). Real authors mix many stylistic features at once, which makes it hard to tell what exactly the model learned. The synthetic styles isolate one feature at a time, so when something changes in an experiment, you can actually see it.
+LoRA [2] is a fine-tuning technique where you freeze the original model and train a small add-on — a lightweight "patch" on the weights. Same base model, 77 different patches. Most are real authors from Project Gutenberg — Poe, Carroll, Grimm, Melville, Homer. A few are synthetic styles I wrote myself — *minimalist* (short simple sentences), *dialogue* (all conversation), *poet* (line breaks and rhythm). Real authors mix many stylistic features at once, which makes it hard to tell what exactly the model learned. The synthetic styles isolate one feature at a time, so when something changes in an experiment, you can actually see it.
 
 Same prompt ("It was a dark and stormy"), same seed, different adapters:
 
@@ -34,7 +34,7 @@ None of this is good prose. But the outputs are measurably different — and now
 
 This model has 16 attention heads — 16 parallel "readers" that each look at the input and decide what's important. The question is: when we add a LoRA patch, do all 16 heads contribute equally to the style change?
 
-To test this, I isolated each head's LoRA weights one at a time — keep one head's patch, zero out the other 15 — and measured how much of the style adaptation that single head recovers. That's 77 authors × 16 heads = 1,232 experiments.
+To test this, I isolated each head's LoRA weights one at a time — keep one head's patch, zero out the other 15 — and measured how much of the style adaptation that single head recovers [3, 4]. That's 77 authors × 16 heads = 1,232 experiments.
 
 ![Knockout strip plot](../figures/knockout_strip_clean.png)
 
@@ -54,13 +54,13 @@ I looked at what each head does in the base model (before any LoRA):
 
 The heads that don't matter for style have focused, local attention — they track the previous word. The heads that matter have diffuse attention that spreads across the context.
 
-One more thing I didn't expect: LoRA changes *what* heads output, not *where* they look. I compared attention patterns across all 77 adapters and the patterns are stable.
+One more thing I didn't expect: LoRA changes *what* heads output, not *where* they look [5]. I compared attention patterns across all 77 adapters and the patterns are stable.
 
 ---
 
 ## Can I steer style at inference time?
 
-If certain heads matter for style, I should be able to turn them up and down like a dial. So I scaled individual head outputs at inference time — from 0× (killed) to 2× (amplified).
+If certain heads matter for style, I should be able to turn them up and down like a dial [6]. So I scaled individual head outputs at inference time — from 0× (killed) to 2× (amplified).
 
 ![Steering contrast](../figures/steering_contrast.png)
 
@@ -72,7 +72,7 @@ Kill the dominant head and the style vanishes. Carroll without H11 becomes a gen
 
 ## Can I transplant a head from one author to another?
 
-This is the fun one. Take Minimalist's adapter, replace just head 14's weights with Poe's head 14, and generate. That's 64 out of 1,024 weight rows swapped — one head out of sixteen.
+This is the fun one. Take Minimalist's adapter, replace just head 14's weights with Poe's head 14, and generate [8]. That's 64 out of 1,024 weight rows swapped — one head out of sixteen.
 
 ![Transplant](../figures/transplant_linkedin_minimalist.png)
 
@@ -86,7 +86,7 @@ It's not perfect — perplexity goes up (the model is slightly confused by the f
 
 ## Can I blend two authors?
 
-Instead of swapping one head, what if I blend the entire adapter? Take Carroll's LoRA weights, take Poet's (a synthetic style I wrote with line breaks and rhythm), and linearly interpolate: `(1-α) × Carroll + α × Poet`.
+Instead of swapping one head, what if I blend the entire adapter [8, 9]? Take Carroll's LoRA weights, take Poet's (a synthetic style I wrote with line breaks and rhythm), and linearly interpolate: `(1-α) × Carroll + α × Poet`.
 
 ![Interpolation](../figures/interpolation_linkedin.png)
 
@@ -102,7 +102,7 @@ Not all pairs blend this cleanly though. Poe → Carroll breaks down around α=0
 
 This is a toy experiment on one tiny checkpoint. The model has 21M parameters, one layer, and writes children's stories. The effects I found are real but subtle — don't expect dramatic transformations.
 
-The individual findings aren't novel. Head specialization in transformers is well documented. What was fun was testing it all empirically across 77 adapters in a model small enough to see everything, on a laptop CPU, without any budget.
+The individual findings aren't novel. Head specialization in transformers is well documented [3, 4]. What was fun was testing it all empirically across 77 adapters in a model small enough to see everything, on a laptop CPU, without any budget.
 
 If you're curious about the details — the two-strategy analysis, exact numbers, null baselines, V-only vs Q-only decomposition — there's a [detailed writeup](ARTICLE_SHORT.md) and a [full technical report](TECHNICAL.md) with all the code in the repo.
 
@@ -138,3 +138,9 @@ A few things I want to try:
 [6] A. Turner et al., ["Activation Addition: Steering Language Models Without Optimization"](https://arxiv.org/abs/2308.10248), 2023.
 
 [7] Z. Zhang et al., ["Towards Understanding Fine-Tuning Mechanisms of LLMs via Circuit Analysis"](https://arxiv.org/abs/2502.11812), ICML 2025.
+
+[8] G. Ilharco et al., ["Editing Models with Task Arithmetic"](https://arxiv.org/abs/2212.04089), ICLR 2023.
+
+[9] C. Huang et al., ["LoRAHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition"](https://arxiv.org/abs/2307.13269), 2023.
+
+[10] Q. Zhang et al., ["AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning"](https://arxiv.org/abs/2303.10512), ICML 2023.
