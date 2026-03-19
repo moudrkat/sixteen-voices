@@ -16,8 +16,9 @@ data/stories/
 data/eval/
 
 # Outputs (reproducible)
-outputs/
+outputs/*
 !outputs/.gitkeep
+!outputs/authors/
 
 # IDE
 .idea/

@@ -107,7 +107,6 @@ The individual findings aren't novel. Head specialization in transformers is wel
 If you're curious about the details — the two-strategy analysis, exact numbers, null baselines, V-only vs Q-only decomposition — there's a [detailed writeup](ARTICLE_SHORT.md) and a [full technical report](TECHNICAL.md) with all the code in the repo.
 
 *Code and all 77 adapters: [link]*
-*Interactive demo (steer heads yourself): [link]*
 
 ---
 
