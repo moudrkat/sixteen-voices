@@ -54,8 +54,15 @@ def make_figure(key, info):
     pure_ppl = info["pure_ppl"]
     t_ppl = info["transplant_ppl"]
 
+    SYNTHETIC = {"minimalist", "dialogue", "poet", "dark", "cozy",
+                  "fabulist", "questioner", "repeater", "reporter",
+                  "firstperson", "rambler", "simple_vocab"}
     host_label = host.capitalize()
+    if host in SYNTHETIC:
+        host_label += " (synthetic style)"
     donor_label = donor.capitalize()
+    if donor in SYNTHETIC:
+        donor_label += " (synthetic style)"
     donor_color = DONOR_COLORS.get(donor, C_DONOR)
 
     fig, ax = plt.subplots(figsize=(16, 9))

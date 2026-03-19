@@ -1,37 +1,36 @@
 #!/usr/bin/env python3
-"""LinkedIn-optimized transplant figures: one per host, cursive text.
+"""Regenerate LinkedIn transplant figures from transplant_samples.json.
 
-Landscape format for LinkedIn image preview. Shows the mechanism
-(16 heads, H14 swapped) and the text result.
-
-Usage:
-    python scripts/fig_transplant_linkedin.py
+Produces one figure per host in the data (carroll, grimm, minimalist).
 """
 
 import json
+import textwrap
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from matplotlib.patches import FancyBboxPatch
 
-FIGURES_DIR = Path("figures")
-TRANSPLANT_JSON = Path("outputs/transplant_samples.json")
+FIG_DIR = Path("figures")
+DATA_PATH = Path("outputs/transplant_samples.json")
 
 C_HEAD = "#6AB04C"
-C_POE = "#C44E52"
+C_DONOR = "#C44E52"
 C_TEXT = "#333333"
-
 FONT_PROSE = "Noto Serif Display"
+
+SYNTHETIC = {
+    "minimalist", "dialogue", "poet", "dark", "cozy", "fabulist",
+    "questioner", "repeater", "reporter", "firstperson", "rambler",
+    "simple_vocab",
+}
 
 
 def wrap_text(text, width=36):
-    import textwrap
     return textwrap.fill(text, width=width)
 
 
-def draw_head_strip(ax, x, y, w, h, highlight_head=None, highlight_color=C_POE):
-    """Draw a strip of 16 small head boxes."""
+def draw_head_strip(ax, x, y, w, h, highlight_head=None, highlight_color=C_DONOR):
     hw = w / 16
     gap = hw * 0.08
     actual_hw = hw - gap
@@ -50,114 +49,121 @@ def draw_head_strip(ax, x, y, w, h, highlight_head=None, highlight_color=C_POE):
                     color="white")
 
 
-def make_figure(host_key, host_label, donor, prompt, info, seed=42):
-    pure = info["pure_text"]
-    transplanted = info["transplant_text"]
-    pure_ppl = info["pure_ppl"]
-    transplant_ppl = info["transplant_ppl"]
+def make_figure(host, donor, head, pure, transplanted, pure_ppl, t_ppl):
+    host_label = host.capitalize()
+    donor_label = donor.capitalize()
+    if host in SYNTHETIC:
+        host_label += " (synthetic style)"
+    if donor in SYNTHETIC:
+        donor_label += " (synthetic style)"
+    donor_color = C_DONOR
 
     fig, ax = plt.subplots(figsize=(16, 9))
     ax.set_xlim(0, 16)
     ax.set_ylim(-0.3, 9)
     ax.axis("off")
 
-    # ── Title ──
+    # Title
     ax.text(8.0, 8.7,
             "What happens when you transplant one attention head?",
-            fontsize=20, fontweight="bold", ha="center", va="top",
-            color=C_TEXT)
+            fontsize=20, fontweight="bold", ha="center", va="top", color=C_TEXT)
 
-    # ── Head strip: host adapter ──
+    # Head strips
     strip_y = 7.5
     strip_w = 5.8
-    ax.text(1.2, strip_y + 0.65, f"{host_label}'s adapter — 16 heads:",
+
+    ax.text(1.2, strip_y + 0.65, f"{host_label} — 16 heads:",
             fontsize=12, fontweight="bold", color=C_TEXT)
     draw_head_strip(ax, 1.2, strip_y, strip_w, 0.42)
 
-    # Arrow showing H14 replacement
-    h14_x = 1.2 + 14/16 * strip_w + strip_w/32
-    ax.annotate("", xy=(h14_x, strip_y),
-                xytext=(h14_x, strip_y - 0.55),
-                arrowprops=dict(arrowstyle="-|>", color=C_POE, lw=2.5))
-    ax.text(h14_x + 0.35, strip_y - 0.4,
-            f"← replace with\n    {donor}'s H14",
-            fontsize=10, color=C_POE, fontweight="bold", va="center")
+    h_x = 1.2 + head / 16 * strip_w + strip_w / 32
+    ax.annotate("", xy=(h_x, strip_y),
+                xytext=(h_x, strip_y - 0.55),
+                arrowprops=dict(arrowstyle="-|>", color=donor_color, lw=2.5))
+    ax.text(h_x + 0.35, strip_y - 0.4,
+            f"← replace with\n    {donor_label}'s H{head}",
+            fontsize=10, color=donor_color, fontweight="bold", va="center")
 
-    # ── Head strip: after transplant ──
-    ax.text(9.0, strip_y + 0.65, f"{host_label}'s adapter + {donor}'s H14:",
-            fontsize=12, fontweight="bold", color=C_POE)
-    draw_head_strip(ax, 9.0, strip_y, strip_w, 0.42, highlight_head=14,
-                    highlight_color=C_POE)
+    ax.text(9.0, strip_y + 0.65,
+            f"{host_label} + {donor_label}'s H{head}:",
+            fontsize=12, fontweight="bold", color=donor_color)
+    draw_head_strip(ax, 9.0, strip_y, strip_w, 0.42,
+                    highlight_head=head, highlight_color=donor_color)
 
-    # ── Text boxes ──
+    # Text boxes
     box_h = 5.2
     box_bot = 0.9
 
-    # Pure host
+    # Pure
     ax.add_patch(FancyBboxPatch(
         (0.3, box_bot), 6.7, box_h, boxstyle="round,pad=0.18",
         facecolor="#f5f5f5", edgecolor="#cccccc", linewidth=1.5))
     ax.text(0.7, box_bot + box_h - 0.25, f"Pure {host_label}:",
             fontsize=16, fontweight="bold", va="top", color="#555555")
-    ax.text(0.7, box_bot + box_h - 0.8, wrap_text(pure, 30),
+    ax.text(0.7, box_bot + box_h - 0.8, wrap_text(pure[:250], 30),
             fontsize=15.5, va="top", fontfamily=FONT_PROSE, style="italic",
             color=C_TEXT, linespacing=1.5)
     ax.text(0.7, box_bot + 0.2, f"PPL: {pure_ppl:.0f}",
             fontsize=12, color="#999999")
 
-    # Arrow between boxes
+    # Arrow
     mid_y = box_bot + box_h / 2
     ax.annotate("", xy=(8.5, mid_y), xytext=(7.5, mid_y),
-                arrowprops=dict(arrowstyle="-|>", color=C_POE, lw=3))
+                arrowprops=dict(arrowstyle="-|>", color=donor_color, lw=3))
 
-    # Transplanted host
+    # Transplanted
+    bg = donor_color.lstrip("#")
+    r, g, b = int(bg[:2], 16), int(bg[2:4], 16), int(bg[4:], 16)
+    light_bg = f"#{min(255, r+200):02x}{min(255, g+200):02x}{min(255, b+200):02x}"
+
     ax.add_patch(FancyBboxPatch(
         (8.8, box_bot), 6.9, box_h, boxstyle="round,pad=0.18",
-        facecolor="#fff5f5", edgecolor=C_POE, linewidth=2))
-    ax.text(9.2, box_bot + box_h - 0.25, f"{host_label} + {donor}'s H14:",
-            fontsize=16, fontweight="bold", va="top", color=C_POE)
-    ax.text(9.2, box_bot + box_h - 0.8, wrap_text(transplanted, 30),
+        facecolor=light_bg, edgecolor=donor_color, linewidth=2))
+    ax.text(9.2, box_bot + box_h - 0.25,
+            f"{host_label} + {donor_label}'s H{head}:",
+            fontsize=16, fontweight="bold", va="top", color=donor_color)
+    ax.text(9.2, box_bot + box_h - 0.8, wrap_text(transplanted[:250], 30),
             fontsize=15.5, va="top", fontfamily=FONT_PROSE, style="italic",
             color=C_TEXT, linespacing=1.5)
-    ppl_delta = (transplant_ppl - pure_ppl) / pure_ppl * 100
+    ppl_delta = (t_ppl - pure_ppl) / pure_ppl * 100
+    sign = "+" if ppl_delta >= 0 else ""
     ax.text(9.2, box_bot + 0.2,
-            f"PPL: {transplant_ppl:.0f}  (+{ppl_delta:.0f}%)",
-            fontsize=12, color=C_POE)
+            f"PPL: {t_ppl:.0f}  ({sign}{ppl_delta:.0f}%)",
+            fontsize=12, color=donor_color)
 
-    # ── Footer ──
+    # Footer
     ax.text(8.0, 0.35,
-            f'Prompt: "{prompt}" · seed={seed} · TinyStories-1Layer-21M · LoRA rank 8',
+            'Prompt: "It was a dark and stormy" · seed=42 · '
+            'TinyStories-1Layer-21M · LoRA rank 8',
             fontsize=10, ha="center", va="bottom", color="#aaaaaa")
     ax.text(8.0, 0.0,
-            "Same model, same seed — only 64 of 1024 weight rows replaced",
+            "Same model, same seed — only 64 of 1024 weight rows replaced in one head",
             fontsize=10, ha="center", va="bottom", color="#aaaaaa", style="italic")
 
     plt.tight_layout()
-    out = FIGURES_DIR / f"transplant_linkedin_{host_key}.png"
+    out = FIG_DIR / f"transplant_linkedin_{host}.png"
     plt.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"Saved {out}")
     plt.close()
 
 
 def main():
-    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-
-    with open(TRANSPLANT_JSON) as f:
+    with open(DATA_PATH) as f:
         data = json.load(f)
 
-    prompt = data["prompt"]
-    donor = data["donor"].capitalize()
+    donor = data["donor"]
+    head = data["head"]
 
-    labels = {
-        "carroll": "Carroll",
-        "grimm": "Grimm",
-        "minimalist": "Minimalist*",
-    }
-
-    for host_key, info in data["pairs"].items():
-        host_label = labels.get(host_key, host_key.capitalize())
-        make_figure(host_key, host_label, donor, prompt, info,
-                    seed=data.get("seed", 42))
+    for host, info in data["pairs"].items():
+        make_figure(
+            host=host,
+            donor=donor,
+            head=head,
+            pure=info["pure_text"],
+            transplanted=info["transplant_text"],
+            pure_ppl=info["pure_ppl"],
+            t_ppl=info["transplant_ppl"],
+        )
 
 
 if __name__ == "__main__":
