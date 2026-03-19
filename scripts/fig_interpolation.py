@@ -147,10 +147,12 @@ def make_figure(results):
         show.append(closest)
 
     n_show = len(show)
-    fig_h = 3.2 + n_show * 2.2
+    # Last box is taller to show full text
+    box_ratios = [2.2] * (n_show - 1) + [5.5]
+    fig_h = 3.2 + (n_show - 1) * 2.6 + 6.5
     fig, axes = plt.subplots(n_show + 1, 1, figsize=(14, fig_h),
-                             gridspec_kw={"height_ratios": [2.5] + [1.8] * n_show,
-                                          "hspace": 0.25})
+                             gridspec_kw={"height_ratios": [2.5] + box_ratios,
+                                          "hspace": 0.2})
 
     # ── PPL curve ──
     ax = axes[0]
@@ -183,9 +185,10 @@ def make_figure(results):
         text = r["text"]
         ppl = r["ppl"]
         color = blend_color(alpha)
+        is_last = (i == n_show - 1)
 
         # Background box
-        bg_color = tuple(list(color) + [0.08])
+        bg_color = tuple(list(color) + [0.12])
         ax.add_patch(FancyBboxPatch(
             (0.01, 0.05), 0.98, 0.9, boxstyle="round,pad=0.02",
             facecolor=bg_color, edgecolor=color, linewidth=2,
@@ -205,7 +208,7 @@ def make_figure(results):
                 color="#999999", transform=ax.transAxes, va="top", ha="right")
 
         # Text — preserve original line breaks, only wrap long lines
-        truncated = text[:250]
+        truncated = text if is_last else text[:250]
         lines = truncated.split("\n")
         wrapped_lines = []
         for line in lines:
@@ -216,9 +219,10 @@ def make_figure(results):
                 wrapped_lines.extend(textwrap.wrap(line, width=110))
             elif line:
                 wrapped_lines.append(line)
-        display_text = "\n".join(wrapped_lines[:8])  # max 8 lines
+        max_lines = 12 if is_last else 5
+        display_text = "\n".join(wrapped_lines[:max_lines])
 
-        ax.text(0.03, 0.55, display_text, fontsize=10.5, color=C_TEXT,
+        ax.text(0.03, 0.62, display_text, fontsize=10.5, color=C_TEXT,
                 style="italic", fontfamily=FONT_PROSE,
                 transform=ax.transAxes, va="top", linespacing=1.4)
 
@@ -233,12 +237,12 @@ def make_figure(results):
     plt.close()
     print(f"Saved {fig_path}")
 
-    # LinkedIn version — same 5 points, same layout
+    # LinkedIn version — same 5 points, last box bigger for full text
     fig_path = FIG_DIR / "interpolation_linkedin.png"
-    fig_h = 3.2 + n_show * 2.2
+    fig_h = 3.2 + (n_show - 1) * 2.6 + 6.5
     fig, axes = plt.subplots(n_show + 1, 1, figsize=(14, fig_h),
-                             gridspec_kw={"height_ratios": [2.5] + [1.8] * n_show,
-                                          "hspace": 0.25})
+                             gridspec_kw={"height_ratios": [2.5] + box_ratios,
+                                          "hspace": 0.2})
     ax = axes[0]
     ax.plot(alphas_all, ppls_all, "o-", color="#888888", linewidth=2,
             markersize=5, zorder=3)
@@ -267,7 +271,8 @@ def make_figure(results):
         text = r["text"]
         ppl = r["ppl"]
         color = blend_color(alpha_val)
-        bg_color = tuple(list(color) + [0.08])
+        is_last = (i == n_show - 1)
+        bg_color = tuple(list(color) + [0.12])
         ax.add_patch(FancyBboxPatch(
             (0.01, 0.05), 0.98, 0.9, boxstyle="round,pad=0.02",
             facecolor=bg_color, edgecolor=color, linewidth=2,
@@ -282,7 +287,7 @@ def make_figure(results):
         ax.text(0.97, 0.85, f"PPL: {ppl:.1f}", fontsize=10,
                 color="#999999", transform=ax.transAxes, va="top", ha="right")
         # Preserve line breaks
-        truncated = text[:250]
+        truncated = text if is_last else text[:250]
         lines = truncated.split("\n")
         wrapped_lines = []
         for line in lines:
@@ -293,8 +298,9 @@ def make_figure(results):
                 wrapped_lines.extend(textwrap.wrap(line, width=110))
             elif line:
                 wrapped_lines.append(line)
-        display_text = "\n".join(wrapped_lines[:8])
-        ax.text(0.03, 0.55, display_text, fontsize=10.5, color=C_TEXT,
+        max_lines = 12 if is_last else 5
+        display_text = "\n".join(wrapped_lines[:max_lines])
+        ax.text(0.03, 0.62, display_text, fontsize=10.5, color=C_TEXT,
                 style="italic", fontfamily=FONT_PROSE,
                 transform=ax.transAxes, va="top", linespacing=1.4)
 

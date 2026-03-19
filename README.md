@@ -4,9 +4,9 @@
 
 77 LoRA adapters, 16 heads, 1,232 knockout experiments — all on CPU.
 
-![Per-head knockout recovery across 77 authors](figures/knockout_strip.png)
+![Per-head knockout recovery across 77 authors](figures/knockout_strip_clean.png)
 
-*Each dot is one author. H11 is the backbone; H14 has the widest spread — the most author-specific head.*
+*Each dot is one author. H11 (blue) leads, H3 (green) is a consistent second, H14 (red) has the widest spread — essential for some authors, actively harmful for others.*
 
 ---
 
@@ -31,16 +31,18 @@ independent. Our model has an MLP after attention, so the decomposition
 is approximate, not exact — but clean enough to trace the chain from
 weights to behavior.
 
-**Read the article:** [docs/ARTICLE_SHORT.md](docs/ARTICLE_SHORT.md)
+**Overview (LinkedIn):** [docs/ARTICLE_SIMPLE.md](docs/ARTICLE_SIMPLE.md)
+| **Detailed article:** [docs/ARTICLE_SHORT.md](docs/ARTICLE_SHORT.md)
 | **Technical report:** [docs/TECHNICAL.md](docs/TECHNICAL.md)
 
 ## Key findings
 
-1. **Two heads dominate.** H11 and H14 are the best head for 69/77
-   authors. The other 14 barely matter. This is learned, not random —
-   untrained adapters don't show it.
+1. **Three heads matter, the rest don't.** H11 leads for 66% of authors,
+   H14 for 23%, H3 is a consistent second. H11 and H14 are anticorrelated —
+   they do the same job (main style carrier) for different author groups.
+   This is learned, not random — untrained adapters don't show it.
 2. **LoRA changes what heads output, not where they look.** Attention
-   patterns are identical across all 77 adapters — style flows through
+   patterns are stable across all 77 adapters — style flows through
    value projections, not query/key routing.
 3. **V works in isolation, Q doesn't.** V-only beats Q-only for 68/77
    authors (88%). V changes are self-contained; Q changes depend on V.
@@ -124,8 +126,9 @@ src/sixteen_voices/       # Library: model loading, steering, knockout
 scripts/                  # Experiments + figure generation
 demos/                    # Streamlit interactive apps
 docs/
-  ARTICLE_SHORT.md        # Main article
-  TECHNICAL.md            # Detailed experiment descriptions
+  ARTICLE_SIMPLE.md       # Overview article (LinkedIn)
+  ARTICLE_SHORT.md        # Detailed article
+  TECHNICAL.md            # Full experiment descriptions
 figures/                  # Generated plots
 tests/                    # Unit tests (no model download needed)
 ```
