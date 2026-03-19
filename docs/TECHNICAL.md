@@ -363,17 +363,23 @@ tier (H6, H9, H12) stays at 1–2%.
 ### Key results
 
 - **H11:** Mean recovery 0.384, best head for 51/77 authors (66%).
-  The dominant head — carries most stylistic adaptation.
+  The dominant head for most authors.
+- **H3:** Mean recovery 0.284 — second by mean, consistently useful
+  across nearly all authors, but rarely the single best (1/77).
+  Correlated with H14 (r = 0.72) — they serve the same authors.
 - **H14:** Mean recovery 0.221, highest variance (std 0.291). Best
   head for 18/77 authors (23%) — a specific cluster: Homer (+0.73),
   Melville (+0.71), Egyptian (+0.71), Maya (+0.71), Milton (+0.68),
-  Browne (+0.69), Carlyle (+0.67), Lovecraft (+0.62). These are
-  unusual/archaic vocabulary authors with high base perplexity
-  (4k–32k). 10 authors have mildly negative H14: Shelley (−0.68),
-  Stoker (−0.35), Wells (−0.34), Wilde (−0.34) — all H11-dominant.
-- **H3:** Secondary generalist (mean 0.284).
+  Browne (+0.69), Carlyle (+0.67), Lovecraft (+0.62). Actively hurts
+  for 9 authors: Shelley (−0.68), Stoker (−0.35), Wells (−0.34),
+  Wilde (−0.34), Baum (−0.28), Korean (−0.28), Kipling (−0.28),
+  Pyle (−0.22), Twain (−0.10).
 - **H6, H12:** Near zero contribution.
-- Between them, H11 and H14 are the best head for 69/77 authors.
+- H11 and H14 are anticorrelated across authors (r = −0.39).
+  When H14 leads, it recovers more on average (0.62) than H11 does
+  when it leads (0.46). They do the same job — main style carrier —
+  for different author groups. See [ARTICLE_SHORT.md](ARTICLE_SHORT.md)
+  for the two-strategy analysis.
 
 ---
 
@@ -897,7 +903,7 @@ than V-sensitivity.
 | H12 | structural | 7.49 (#11) | 0.126 (#12) | 54.2 (#16) | 0.08 (#15) | 0.08 (#14) |
 
 H11 is #1 in logit impact → workhorse (highest mean, best for 51/77).
-H14 is #1 in amplification ratio → specialist (highest variance, best for 18/77).
+H14 is #1 in amplification ratio → wildcard (highest variance, best for 18/77, hurts for 9).
 H12 is near-bottom in both → irrelevant.
 
 **Caveat: partial tautology.**

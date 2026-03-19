@@ -19,7 +19,7 @@ Code + interactive demo: [link]
 
 ## Image
 
-figures/knockout_strip.png
+figures/knockout_strip_clean.png
 
 ## Comments
 

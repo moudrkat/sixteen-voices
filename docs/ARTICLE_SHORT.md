@@ -61,28 +61,58 @@ adaptation survives [3]. Do that for all 77 authors × 16 heads =
 of an author's full adaptation. H11 is dominant across nearly all
 authors; H14 is strong for a specific cluster.*
 
-![Knockout strip plot](../figures/knockout_strip.png)
+![Knockout strip plot](../figures/knockout_strip_clean.png)
 
-*__Per-head recovery distribution.__ Each dot is one author. H11 is
-the backbone; H14 has the widest spread.*
+*__Per-head recovery distribution.__ Each dot is one author. H11
+(blue) leads, H3 (green) is a consistent second, H14 (red) has the
+widest spread.*
 
-**Yes, they specialize.** And the pattern is sharper than I expected —
-it's essentially a two-head system.
+**Yes, they specialize.** Three heads stand out:
 
-**H11 is the dominant head** — best single head for 51 out of 77
-authors (66%), with mean recovery of 0.38. It carries most of the
-stylistic adaptation for the majority of authors.
+**H11 is the dominant head** — highest mean recovery (0.38) and the
+best single head for 51 out of 77 authors (66%).
 
-**H14 is the specialist** — best head for 18 authors (23%), but with
-the highest variance of any head (std 0.29, nearly double the next).
-The authors it dominates are a specific cluster: Homer, Melville,
-Milton, Browne, Carlyle, Lovecraft. For 10 authors it's mildly
-negative, but these are all H11-dominant authors where H14 simply
-isn't needed. The bottom tier (H6, H12) contributes almost nothing.
+**H3 is the quiet workhorse** — second-highest mean recovery (0.28),
+consistently useful across nearly all authors, but rarely anyone's
+single best (only 1 of 77).
 
-Between them, H11 and H14 account for the best head in 69 of 77
-authors. The remaining 8 split across H10, H8, H3, H15, and H1 —
-no other head dominates more than 3.
+**H14 is the wildcard** — best head for 18 authors (23%), but with
+the highest variance of any head (std 0.29, 75% higher than the next).
+It *actively hurts* for 9 authors (Shelley at −0.68, Stoker, Wilde,
+Twain...). The bottom tier (H6, H12) contributes almost nothing.
+
+### Two adaptation strategies
+
+The interesting part is how these heads relate to each other. H11 and
+H14 are anticorrelated across authors (r = −0.39): when one is
+important, the other tends not to be. H14 and H3 are strongly
+correlated (r = 0.72) — they travel together.
+
+![Knockout scatter](../figures/knockout_scatter.png)
+
+*Left: H11 vs H14 recovery per author — two clusters visible. Right:
+H14 and H3 travel together.*
+
+This looks like two adaptation strategies:
+
+- **H11-led (51 authors, 66%):** Carroll, Grimm, the synthetic styles,
+  most children's-story-adjacent authors. H11 leads (mean 0.46 when
+  dominant), H14 barely contributes (mean 0.09 in this group).
+- **H14-led (18 authors, 23%):** Homer, Poe, Milton, Browne, Lovecraft.
+  H14 leads (mean 0.62 when dominant — actually stronger than H11 in
+  its group), H3 is a strong second (mean 0.43), H11 is still useful
+  but not dominant (mean 0.24). For some (Homer, Egyptian myth), H11
+  is actually negative.
+
+H11 and H14 aren't doing different jobs — they're doing the same job
+for different authors. Both serve as the main style carrier for their
+respective group. H3 is the reliable second in both, but is never the
+main lever in steering (0 of 77 authors) — its contribution overlaps
+with the dominant head.
+
+What makes some authors land on H14 instead of H11 isn't obvious from
+this data. It's not simply vocabulary distance from the base model,
+since some equally "distant" authors (Korean, Kipling) get hurt by H14.
 
 This pattern is learned, not random — untrained adapters don't show
 it. See the [technical report](TECHNICAL.md) for exact numbers,
@@ -135,6 +165,27 @@ author. Y-axis = perplexity change vs normal (1×). H11 is a
 symmetric V — everyone needs it at roughly 1×. H14 fans out —
 the H14-cluster authors are sensitive to scaling, H11-dominant
 authors barely react.*
+
+The two-strategy pattern is clearly visible when you compare
+individual authors:
+
+![Steering contrast](../figures/steering_contrast.png)
+
+*__Carroll (H11-led) vs Poe (H14-led).__ Kill the dominant head
+and perplexity explodes. The non-dominant head barely registers.
+Same mechanism, mirror image.*
+
+![Steering text](../figures/steering_both.png)
+
+*__Text comparison.__ Carroll without H11 becomes a generic rabbit
+story. Poe without H14 generates nonsense ("materialisticistic...").
+In both cases, amplifying the dominant head past 1× degrades the
+output but keeps the character.*
+
+The dominant head is the style head — it just depends on the author
+which one that is. H3 is never the main steering lever for any
+author (0 of 77) — despite high knockout recovery, its contribution
+overlaps with the dominant head.
 
 ---
 
@@ -306,9 +357,10 @@ model, the MLP introduces cross-head interactions that make the
 decomposition approximate. In a 2-layer model, heads also compose
 across layers — the decomposition gets messier on two fronts.
 
-I'm also curious whether per-head style signals are **transferable**
-— can you graft one author's head weights into another's adapter?
-Early experiments suggest yes, but more on that in a future post.
+Per-head style signals are **transferable** — you can graft one
+author's head weights into another's adapter and get a visible
+vocabulary shift (see [transplant and interpolation experiments
+in the overview article](ARTICLE_SIMPLE.md)).
 
 Code and all 77 adapters are in the repo.
 
