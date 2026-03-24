@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Train a sparse autoencoder on the residual stream of TinyStories-1Layer-21M.
 
-Collects activations from the model, trains a simple SAE, and saves
-the encoder/decoder weights + feature activation stats.
+Collects activations from the model, trains an SAE with pre-encoder centering
+(Bricken et al. 2023), and saves the encoder/decoder weights + feature stats.
 
-The SAE decomposes the residual stream (after attention+MLP, before
-final layernorm) into sparse, hopefully-interpretable features.
+The SAE decomposes the residual stream (input to final layernorm, i.e. after
+attention+MLP) into sparse, hopefully-interpretable features.
 
 Usage:
     uv run python scripts/train_sae.py
@@ -14,8 +14,8 @@ Usage:
 
 What it does:
     1. Runs the base model on text chunks, collects activations
-    2. Trains: hidden = ReLU(W_enc @ x + b_enc)
-              x_hat  = W_dec @ hidden + b_dec
+    2. Trains: hidden = ReLU(W_enc @ (x - b_pre) + b_enc)
+              x_hat  = W_dec @ hidden + b_pre
               loss   = MSE(x, x_hat) + λ * L1(hidden)
     3. Saves weights, dead feature stats, top-activating tokens
 """
@@ -27,62 +27,40 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from sixteen_voices import load_base_model, load_tokenizer, TextChunkDataset
+from sixteen_voices.sae import SparseAutoencoder
 from sixteen_voices.constants import HIDDEN_DIM
-
-
-class SparseAutoencoder(nn.Module):
-    """Vanilla SAE: linear encoder with ReLU, linear decoder, L1 penalty."""
-
-    def __init__(self, input_dim: int, n_features: int):
-        super().__init__()
-        self.encoder = nn.Linear(input_dim, n_features)
-        self.decoder = nn.Linear(n_features, input_dim, bias=True)
-
-        # Initialize decoder columns to unit norm (Bricken et al. 2023)
-        with torch.no_grad():
-            self.decoder.weight.data = nn.functional.normalize(
-                self.decoder.weight.data, dim=0
-            )
-
-    def forward(self, x):
-        hidden = torch.relu(self.encoder(x))
-        x_hat = self.decoder(hidden)
-        return x_hat, hidden
-
-    @property
-    def n_features(self):
-        return self.encoder.out_features
 
 
 def collect_activations(
     model, tokenizer, texts: list[str], hook_point: str,
     max_chunks: int = 2000, seq_len: int = 128, batch_size: int = 16,
+    seed: int = 42,
 ):
-    """Run model on text, collect activations from a hook point.
+    """Run model on text, collect activations and input_ids from a hook point.
 
     hook_point:
-        "residual" — after attention+MLP block, before final LN
+        "residual" — input to final layernorm (after attention+MLP)
         "mlp"      — MLP output only (before residual add)
         "attn"     — attention output only (before residual add)
+
+    Returns (activations, input_ids_flat) with matching token positions.
     """
-    # TextChunkDataset takes a single string — concatenate all texts
     combined = "\n\n".join(texts)
     dataset = TextChunkDataset(combined, tokenizer, max_length=seq_len)
     if len(dataset) > max_chunks:
+        torch.manual_seed(seed)
         indices = torch.randperm(len(dataset))[:max_chunks].tolist()
-        from torch.utils.data import Subset
         dataset = Subset(dataset, indices)
 
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     activations = []
-    hook_handle = None
+    all_ids = []
 
     def hook_fn(module, input, output):
-        # output shape varies by module; we want the hidden states
         if isinstance(output, tuple):
             output = output[0]
         activations.append(output.detach())
@@ -90,7 +68,7 @@ def collect_activations(
     # Register hook at the right place
     block = model.transformer.h[0]
     if hook_point == "residual":
-        # After the full block — hook on final layernorm input
+        # Hook on final layernorm — captures its input (post-attn+MLP residual)
         target = model.transformer.ln_f
     elif hook_point == "mlp":
         target = block.mlp
@@ -105,6 +83,7 @@ def collect_activations(
     with torch.no_grad():
         for i, batch in enumerate(loader):
             model(input_ids=batch["input_ids"])
+            all_ids.append(batch["input_ids"])
             if (i + 1) % 20 == 0:
                 n_tokens = sum(a.shape[0] * a.shape[1] for a in activations)
                 print(f"  collected {n_tokens:,} token activations...")
@@ -112,9 +91,15 @@ def collect_activations(
     hook_handle.remove()
 
     # Flatten: (batch, seq, hidden) -> (n_tokens, hidden)
-    all_acts = torch.cat([a.reshape(-1, a.shape[-1]) for a in activations], dim=0)
-    print(f"  total: {all_acts.shape[0]:,} tokens × {all_acts.shape[1]} dims")
-    return all_acts
+    acts_flat = torch.cat([a.reshape(-1, a.shape[-1]) for a in activations], dim=0)
+    ids_flat = torch.cat([i.reshape(-1) for i in all_ids], dim=0)
+    # Ensure matching length (should already match, but be safe)
+    n = min(acts_flat.shape[0], ids_flat.shape[0])
+    acts_flat = acts_flat[:n]
+    ids_flat = ids_flat[:n]
+
+    print(f"  total: {acts_flat.shape[0]:,} tokens × {acts_flat.shape[1]} dims")
+    return acts_flat, ids_flat
 
 
 def train_sae(
@@ -153,11 +138,8 @@ def train_sae(
             loss.backward()
             optimizer.step()
 
-            # Normalize decoder columns to unit norm (keeps features comparable)
-            with torch.no_grad():
-                sae.decoder.weight.data = nn.functional.normalize(
-                    sae.decoder.weight.data, dim=0
-                )
+            # Normalize decoder columns to unit norm
+            sae.normalize_decoder_()
 
             total_recon += recon_loss.item()
             total_l1 += l1_loss.item()
@@ -192,9 +174,9 @@ def analyze_features(sae, activations, tokenizer, input_ids_flat, top_k=10):
     # Mean activations per feature
     mean_act = hidden.mean(dim=0)
     # Sparsity: fraction of tokens each feature fires on
-    sparsity = (hidden > 0.01).float().mean(dim=0)
+    firing_frac = (hidden > 0.01).float().mean(dim=0)
 
-    print(f"  mean sparsity: {sparsity[~dead_mask].mean():.4f} "
+    print(f"  mean firing rate: {firing_frac[~dead_mask].mean():.4f} "
           f"(fraction of tokens each alive feature fires on)")
 
     # Top features by mean activation
@@ -203,7 +185,7 @@ def analyze_features(sae, activations, tokenizer, input_ids_flat, top_k=10):
     for feat_idx in top_features:
         f = feat_idx.item()
         print(f"    feature {f:4d}: mean={mean_act[f]:.4f}  "
-              f"sparsity={sparsity[f]:.4f}  max={max_activation[f]:.4f}")
+              f"firing={firing_frac[f]:.4f}  max={max_activation[f]:.4f}")
 
     # For each of top 10 alive features, show top-activating tokens
     if input_ids_flat is not None:
@@ -228,7 +210,7 @@ def analyze_features(sae, activations, tokenizer, input_ids_flat, top_k=10):
         "n_features": sae.n_features,
         "n_alive": n_alive,
         "n_dead": n_dead,
-        "mean_sparsity": sparsity[~dead_mask].mean().item(),
+        "mean_firing_rate": firing_frac[~dead_mask].mean().item(),
     }
     return stats
 
@@ -265,25 +247,12 @@ def main():
         texts.append(f.read_text())
     print(f"  {len(texts)} text files")
 
-    # Collect activations
+    # Collect activations and input_ids together (same random subset)
     print(f"\nCollecting activations from '{args.hook_point}'...")
-    activations = collect_activations(
+    activations, input_ids_flat = collect_activations(
         model, tokenizer, texts, args.hook_point,
         max_chunks=args.max_chunks,
     )
-
-    # Also collect input_ids for token analysis
-    print("Collecting input_ids for token analysis...")
-    combined = "\n\n".join(texts)
-    dataset = TextChunkDataset(combined, tokenizer, max_length=128)
-    if len(dataset) > args.max_chunks:
-        indices = torch.randperm(len(dataset))[:args.max_chunks].tolist()
-        from torch.utils.data import Subset
-        dataset = Subset(dataset, indices)
-    all_ids = torch.cat([dataset[i]["input_ids"].unsqueeze(0) for i in range(len(dataset))], dim=0)
-    input_ids_flat = all_ids.reshape(-1)
-    # Truncate to match activations (in case of slight mismatch)
-    input_ids_flat = input_ids_flat[:activations.shape[0]]
 
     # Train
     sae = train_sae(

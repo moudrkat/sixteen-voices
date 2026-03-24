@@ -69,7 +69,8 @@ them, you can enumerate everything.
 ## Future directions
 
 - **Sparse autoencoder on the residual stream** — decompose head
-  outputs into interpretable features (`scripts/train_sae.py`, WIP)
+  outputs into interpretable features (256 features trained,
+  `scripts/train_sae.py` + `scripts/analyze_sae.py`)
 - **Hypernetwork** — predict LoRA weights from text, using PCA-compressed
   adapter space (`scripts/train_hypernetwork.py`, WIP)
 - **2-layer model** — does the V-Q mechanism survive cross-layer

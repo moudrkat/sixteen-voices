@@ -6,6 +6,7 @@ from .model import load_tokenizer, load_base_model, load_adapted_model, create_l
 from .adapter import load_adapter_deltas, knockout_all_except, delta_to_AB, inject_knockout
 from .steering import make_hook, generate, steered_perplexity
 from .dataset import TextChunkDataset
+from .sae import SparseAutoencoder
 
 __all__ = [
     # Constants
@@ -20,4 +21,6 @@ __all__ = [
     "make_hook", "generate", "steered_perplexity",
     # Dataset
     "TextChunkDataset",
+    # SAE
+    "SparseAutoencoder",
 ]
