@@ -1,39 +1,30 @@
-I trained 77 LoRA adapters on a tiny transformer and found that three attention heads matter for style. But which heads matter doesn't tell you what they compute. So I trained a sparse autoencoder.
+## Post
 
-The SAE decomposes the model's residual stream into 256 features. I labeled them using synthetic styles I designed as controls — minimalist (short sentences), dialogue (all conversation), cozy (warm domestic), unusual_vocab (rare words). When feature f68 fires at +2.4σ for "dialogue" and +2.0σ for "firstperson," that's a measurement against a known signal, not a guess.
+Last time I found which attention heads matter for style in a tiny transformer. This time I wanted to see what they actually compute.
 
-Style on this model lives in ~5 directions. Most features are variations of "formal vs simple." But a few are genuinely distinct: interactive voice (dialogue/firstperson), warm/domestic (cozy), stripped-down repetition (minimalist/repeater), and one that no attention head controls.
+I trained a sparse autoencoder on the residual stream — the model's internal state. It decomposes the 1024-dim vector into interpretable directions. TopK activation, 2048 features, only 16 fire per token. Trained on my laptop CPU, because that's how this project rolls.
 
-The SAE explains things the head experiments couldn't:
+To figure out what each feature means, I used the synthetic styles from the first experiment — minimalist, dialogue, cozy — as ground truth labels. Three-way check: which tokens fire a feature, which synthetics correlate with it, and do both tell the same story. My first attempt at labeling (from author profiles alone) produced labels that didn't survive quantitative testing. The synthetics are what made it work.
 
-| Head | Knockout said | SAE explains |
-|---|---|---|
-| **H11** | Dominant (66% of authors) | Zero decomposable features — does something concentrated the SAE can't read |
-| **H3** | Consistent second | 37 features — reads formal/simple, interactive, warm/domestic. The general-purpose style reader |
-| **H14** | Polarizing — helps some, hurts others | Formality enforcer. Helps Homer/Milton/Pater (already formal). Hurts Wilde/Shelley (pushes them away from their natural register) |
-| **MLP interaction** | Invisible to knockout | Structured narration axis (f33, f198). Emerges from multi-head combination, no single head drives it |
+Some things I found:
 
-H14's polarization was a mystery in the first article. Now it makes sense: H14 anti-correlates with dialogue(+2.4σ) and minimalist(+2.4σ) features. It boosts formality. If your author is formal, great. If not, it fights you.
+The H14 mystery from the first article — why does it help Homer but hurt Shelley? It anti-correlates with first-person "I" and conversational verbs. It's a formality enforcer. Now I know.
 
-Weight steering confirms this: modifying attention weights in one direction can't move these features (49% — coin flip). Activation steering can (87%). Since the MLP is identical across all authors, the variation originates in attention — but in a nonlinear multi-head combination that the MLP transforms, not in any single head.
+27 features don't belong to any attention head. The strongest — a simplicity direction — has max correlation of 0.13 with any single head. It emerges from how the MLP mixes multiple heads. Weight steering can't reach it (coin flip). Activation steering can — injecting the simplicity direction into Poe drops sentence length from 23.9 to 4.9 words, every seed.
 
-Steering works — not precisely, but reproducibly:
+The features that steer well are broad style directions. Simplicity and complexity: 100% win rate. Dialogue: 75%. Narrow token detectors work perfectly as detectors but don't steer — monosemantic detection doesn't imply monosemantic generation.
 
-> **Grimm + folk_voice (s=42):** *"a little girl who loved to ride on the horse, and the horse trots around the meadows"*
-> **Grimm + folk_voice (s=123):** *"an old wise grandmother who said, 'Go to my little sister, dear'"*
-> **Grimm + folk_voice (s=456):** *"a little old prince who had a big heart, and had been given his soul"*
+This is a 21M-parameter children's story model. The features are shallow — word-level patterns, not abstract style. But they track author identity, validate against controls, and steer reproducibly. On a toy model, that's the level of structure you get.
 
-Meadows, grandmothers, princes — every seed.
+Full article: [link]
+Technical deep dive: [link]
 
-> **Dark + event_narration:** *"they heard the loud noise, they looked around, trying to find an exit"*
-> **Dark baseline:** *"A cat was inside a house. The cat was not normal."*
+## Image
 
-Static atmosphere gains characters searching, hearing, moving.
+figures/sae_style_space_arrows.png
 
-The story across both articles: head knockout → which heads matter. SAE [Bricken et al., Cunningham et al.] → what they compute and why H14 polarizes. Activation steering [Turner et al.] → features can steer generation. Weight steering [Ilharco et al.'s task arithmetic] → fails for multi-head features, revealing how the MLP transforms attention signals. Each tool reveals something the previous one couldn't.
+## Comments
 
-Building on: Towards Monosemanticity (Anthropic), Sparse Autoencoders Find Interpretable Features (Cunningham et al.), Activation Addition (Turner et al.), Task Arithmetic (Ilharco et al.), Sparse Feature Circuits (Marks et al.).
-
-21M parameters, one layer, children's stories, laptop CPU. A mushy steering wheel on a go-kart. But it steers.
-
-Full writeup: [link]
+1. The SAE initially had 99% firing rate — basically not sparse at all. I switched to TopK activation (Gao et al. 2024) and the features became genuinely selective. The sparsity matters.
+2. Labeling from author profiles alone didn't work. The synthetic controls are what made the labels stick.
+3. I used Benjamini-Hochberg (FDR=0.05) for feature-head correlations. The foundational SAE papers rely on activation thresholds and qualitative inspection — I wanted something more testable.

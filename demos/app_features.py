@@ -2,8 +2,7 @@
 """Streamlit app: SAE Feature Steering Lab.
 
 Pull knobs to steer style features in the residual stream.
-Combines head-level steering with feature-level steering for
-fine-grained control over generation.
+Uses the overcomplete TopK SAE (2048 features, k=16).
 
 Usage:
     pip install -e ".[demo]"
@@ -24,9 +23,10 @@ from sixteen_voices.model import (
     get_attn_out,
 )
 from sixteen_voices.steering import make_hook
+from sixteen_voices.sae import SparseAutoencoder
 
 ADAPTERS_DIR = Path("outputs/authors")
-SAE_DIR = Path("outputs/sae")
+SAE_DIR = Path("outputs/sae_topk16_2048")
 
 PROMPTS = [
     "Once upon a time",
@@ -35,81 +35,84 @@ PROMPTS = [
     "The little girl walked into the forest",
     "The old man sat down and",
     "The wind whispered through",
+    "She looked around the room and",
+    "The warrior stood before the gates",
+    "Alice was beginning to get very",
+    "The cat sat on",
 ]
 
-# Authors that respond well to feature steering, with suggested presets
+# Authors that respond well to feature steering
 FEATURED_AUTHORS = {
-    "dark": {
-        "why": "Atmospheric and sparse — try adding events or folk voice",
-        "preset": {"Event Narration": 10.0},
+    "poe": {
+        "why": "Gothic prose — try Simplicity to strip it bare",
+        "preset": {"Simplicity": 15.0},
     },
     "grimm": {
-        "why": "Classic fairy tale — try amplifying folk voice",
-        "preset": {"Folk Voice": 10.0},
-    },
-    "poet": {
-        "why": "Line breaks and rhythm — try adding event narration",
-        "preset": {"Event Narration": 10.0},
+        "why": "Fairy tale narration — try Dialogue to add conversation",
+        "preset": {"Dialogue": 5.0},
     },
     "minimalist": {
-        "why": "Short choppy sentences — try adding folk voice",
-        "preset": {"Folk Voice": 10.0},
+        "why": "Short choppy sentences — try Complexity to push toward ornate",
+        "preset": {"Complexity": 12.0},
     },
     "carroll": {
-        "why": "Curious and wandering — try folk voice",
-        "preset": {"Folk Voice": 10.0},
+        "why": "Wonderland voice — try Simplicity to strip it down",
+        "preset": {"Simplicity": 12.0},
     },
-    "poe": {
-        "why": "Gothic first-person — try speech patterns (warning: may degenerate)",
-        "preset": {"Speech Patterns": 10.0},
+    "wilde": {
+        "why": "Ornate style — try Simplicity to compress",
+        "preset": {"Simplicity": 12.0},
+    },
+    "homer": {
+        "why": "Epic narration — try Dialogue to add speech",
+        "preset": {"Dialogue": 5.0},
+    },
+    "dark": {
+        "why": "Atmospheric — try Dialogue or Simplicity",
+        "preset": {"Dialogue": 8.0},
     },
 }
 
-# Feature groups — each knob controls a few correlated features
-# Positive scale = push toward the first description
+# Feature groups — each knob controls correlated features
+# from the overcomplete TopK SAE (2048 features, k=16)
 FEATURE_KNOBS = {
-    "Folk Voice": {
-        "description": "folksy dialect patterns ↔ modern/synthetic",
-        "features_pos": [198, 33, 140],
+    "Simplicity": {
+        "description": "simple/minimalist ↔ elaborate/complex",
+        "features_pos": [665],
         "features_neg": [],
-        "authors_high": "harris, russian, grimm, lang, burgess",
-        "authors_low": "minimalist, questioner, unusual_vocab, maeterlinck",
-        "note": "head-independent — no attention head controls this axis",
+        "authors_high": "minimalist, poet, simple_vocab",
+        "authors_low": "gibbon, carlyle, unusual_vocab",
+        "note": "head-independent (max |r| = 0.13) — emerges from MLP",
     },
-    "Event Narration": {
-        "description": "sequential events ('so', 'then', 'must') ↔ static/abstract",
-        "features_pos": [160, 144, 205],
+    "Dialogue": {
+        "description": "quoted speech & conversation ↔ narration",
+        "features_pos": [1777, 689],
         "features_neg": [],
-        "authors_high": "japanese, russian, lang, grimm, indian",
-        "authors_low": "minimalist, unusual_vocab, lovecraft, dialogue",
+        "authors_high": "dialogue, fabulist, collodi",
+        "authors_low": "unusual_vocab, reporter",
     },
-    "Speech Patterns": {
-        "description": "direct address & dialogue markers ↔ formal prose",
-        "features_pos": [68, 113, 122],
+    "Complexity": {
+        "description": "ornate/formal prose ↔ simple language",
+        "features_pos": [883, 993, 60],
         "features_neg": [],
-        "authors_high": "dialogue, firstperson, questioner, norse",
-        "authors_low": "unusual_vocab, lovecraft, gibbon, carlyle",
+        "authors_high": "lear, baker, poe",
+        "authors_low": "minimalist, questioner, repeater",
     },
-    "Learned Vocab": {
-        "description": "rare/formal words ↔ simple words (exploration only)",
-        "features_pos": [2],
+    "First Person": {
+        "description": "first-person 'I' narration ↔ third-person",
+        "features_pos": [1779, 627],
         "features_neg": [],
-        "authors_high": "unusual_vocab, carlyle, browne, homer",
-        "authors_low": "minimalist, cozy, simple_vocab, dialogue",
-        "note": "verified at token level but steering effect is unreliable",
+        "authors_high": "firstperson, dialogue, shelley",
+        "authors_low": "unusual_vocab, reporter",
     },
-    "Physical": {
-        "description": "concrete actions ('burned', 'flew', 'quiet') ↔ abstract",
-        "features_pos": [190],
+    "Questions": {
+        "description": "rhetorical questions ↔ statements",
+        "features_pos": [1385],
         "features_neg": [],
-        "authors_high": "minimalist, poet, cozy, simple_vocab",
-        "authors_low": "poe, gibbon, pater, lovecraft",
-        "note": "verified at token level but steering effect is unreliable",
+        "authors_high": "questioner, dialogue, maeterlinck",
+        "authors_low": "unusual_vocab, minimalist",
     },
 }
-
-
-from sixteen_voices.sae import SparseAutoencoder
 
 
 @st.cache_resource
@@ -141,7 +144,7 @@ def load_sae():
 
 def build_steering_vector(sae, knob_values):
     """Build a single steering vector from all knob values."""
-    w = sae.decoder.weight.detach()  # (1024, 256)
+    w = sae.decoder.weight.detach()
     vec = torch.zeros(w.shape[0])
 
     for knob_name, scale in knob_values.items():
@@ -166,16 +169,11 @@ def make_feature_hook(steering_vec):
 
 
 def generate(model, tokenizer, prompt, max_new=120, temp=0.7, seed=42,
-             head_scales=None, feature_vec=None):
+             feature_vec=None):
     if seed > 0:
         torch.manual_seed(seed)
 
     hooks = []
-
-    # Head steering
-    if head_scales and any(s != 1.0 for s in head_scales.values()):
-        h = get_attn_out(model).register_forward_pre_hook(make_hook(head_scales))
-        hooks.append(h)
 
     # Feature steering
     if feature_vec is not None and feature_vec.abs().max() > 0.01:
@@ -205,21 +203,23 @@ def main():
     sae = load_sae()
 
     st.title("SAE Feature Steering Lab")
-    st.caption("Pull the knobs to steer style features in the residual stream")
+    st.caption(
+        "Pull the knobs to steer style features in the residual stream. "
+        "Overcomplete TopK SAE (2048 features, k=16, 314 alive)."
+    )
 
     # Sidebar — model selection
     with st.sidebar:
         st.header("Model")
 
-        # Featured authors first, then all others
         featured = list(FEATURED_AUTHORS.keys())
         all_authors = list_authors()
         other_authors = [a for a in all_authors if a not in featured]
-        author_options = featured + ["---"] + other_authors
+        author_options = ["(base model)"] + featured + ["---"] + other_authors
         author = st.selectbox(
             "Author adapter",
             author_options,
-            index=0,
+            index=1,
             format_func=lambda a: f"{a} *" if a in FEATURED_AUTHORS else a,
         )
         if author == "---":
@@ -246,9 +246,9 @@ def main():
         st.markdown("---")
         st.markdown(
             "**How it works:** The SAE decomposes the residual stream into "
-            "256 features. Each knob adds/subtracts a combination of feature "
-            "directions. The 'Conventional' knob is special — it steers "
-            "along an axis that no attention head controls."
+            "2048 features (314 alive). Each knob adds/subtracts feature "
+            "directions during generation. Simplicity is head-independent "
+            "— it emerges from multi-head MLP interactions."
         )
 
     # Load model
@@ -277,25 +277,24 @@ def main():
     st.markdown("#### Quick presets")
     preset_cols = st.columns(5)
     with preset_cols[0]:
-        if st.button("Folk tale", use_container_width=True):
+        if st.button("Poe → minimal", use_container_width=True):
             for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Folk Voice"] = 10.0
-            st.session_state["knob_Event Narration"] = 8.0
+            st.session_state["knob_Simplicity"] = 15.0
             st.rerun()
     with preset_cols[1]:
-        if st.button("Strip action", use_container_width=True):
+        if st.button("Add dialogue", use_container_width=True):
             for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Event Narration"] = -10.0
+            st.session_state["knob_Dialogue"] = 5.0
             st.rerun()
     with preset_cols[2]:
-        if st.button("Add speech", use_container_width=True):
+        if st.button("Max complexity", use_container_width=True):
             for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Speech Patterns"] = 10.0
+            st.session_state["knob_Complexity"] = 12.0
             st.rerun()
     with preset_cols[3]:
-        if st.button("Anti-folk", use_container_width=True):
+        if st.button("First person", use_container_width=True):
             for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Folk Voice"] = -10.0
+            st.session_state["knob_First Person"] = 10.0
             st.rerun()
     with preset_cols[4]:
         if st.button("Reset all", use_container_width=True):
@@ -337,9 +336,11 @@ def main():
     # Feature details expander
     with st.expander("What are these features?"):
         st.markdown(
-            "A **sparse autoencoder** (SAE) was trained on the model's residual "
-            "stream to find 256 interpretable features. Each knob controls a "
-            "group of related features:\n"
+            "A **sparse autoencoder** (SAE) with TopK activation was trained on "
+            "the model's residual stream. It decomposes activations into 2048 "
+            "features, of which 314 are alive (fire on at least some tokens). "
+            "At each token, only 16 features are active — giving 0.8% density.\n\n"
+            "Each knob controls a group of related features:\n"
         )
         for knob_name, knob_info in FEATURE_KNOBS.items():
             feats = knob_info["features_pos"] + knob_info["features_neg"]
@@ -351,17 +352,13 @@ def main():
             )
 
         st.markdown(
-            "\n**What do these features detect?** Token-level patterns: "
-            "folk-dialect words, causal connectors, speech attributions. "
-            "They're shallow (word-level, not abstract style) but they "
-            "track author identity and respond to steering.\n\n"
-            "**Which knobs actually work?** Folk Voice, Event Narration, "
-            "and Speech Patterns pass closed-loop validation (steering "
-            "increases their own activations 83-87% of the time). "
-            "Learned Vocab and Physical are for exploration — steering "
-            "with them changes text but not in the labeled direction.\n\n"
-            "**The Folk Voice axis is special:** it's orthogonal to all "
-            "16 attention heads, meaning head-level steering can't reach it."
+            "\n**Steering tips:**\n"
+            "- Best effect comes from contrast — push authors *away* from "
+            "their natural register (Poe + Simplicity, Grimm + Dialogue)\n"
+            "- Scale 5-10 is usually safe. Above 12 may degenerate\n"
+            "- Simplicity is special: no attention head controls it "
+            "(emerges from MLP multi-head interactions)\n"
+            "- Negative scales work too — try -10 Simplicity on minimalist"
         )
 
 

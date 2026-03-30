@@ -10,12 +10,20 @@ import torch.nn as nn
 
 
 class SparseAutoencoder(nn.Module):
-    """Vanilla SAE: linear encoder with ReLU, linear decoder, L1 penalty."""
+    """SAE: linear encoder with ReLU or TopK activation, linear decoder.
 
-    def __init__(self, input_dim: int, n_features: int):
+    activation="relu"  — standard ReLU, sparsity via L1 penalty in loss
+    activation="topk"  — keep only top-k activations per token (Gao et al. 2024),
+                         no L1 needed
+    """
+
+    def __init__(self, input_dim: int, n_features: int,
+                 activation: str = "relu", k: int = 16):
         super().__init__()
         self.encoder = nn.Linear(input_dim, n_features)
         self.decoder = nn.Linear(n_features, input_dim, bias=True)
+        self.activation = activation
+        self.k = k
 
         # Initialize decoder columns to unit norm (Bricken et al. 2023)
         with torch.no_grad():
@@ -24,7 +32,13 @@ class SparseAutoencoder(nn.Module):
             )
 
     def forward(self, x):
-        hidden = torch.relu(self.encoder(x))
+        pre_act = self.encoder(x)
+        if self.activation == "topk":
+            topk = torch.topk(pre_act, k=self.k, dim=-1)
+            hidden = torch.zeros_like(pre_act)
+            hidden.scatter_(-1, topk.indices, torch.relu(topk.values))
+        else:
+            hidden = torch.relu(pre_act)
         x_hat = self.decoder(hidden)
         return x_hat, hidden
 
@@ -46,7 +60,11 @@ class SparseAutoencoder(nn.Module):
     @classmethod
     def load(cls, weights_path, config):
         """Load a trained SAE from weights file and config dict."""
-        sae = cls(config["input_dim"], config["n_features"])
+        sae = cls(
+            config["input_dim"], config["n_features"],
+            activation=config.get("activation", "relu"),
+            k=config.get("k", 16),
+        )
         sae.load_state_dict(torch.load(weights_path, weights_only=True))
         sae.eval()
         return sae

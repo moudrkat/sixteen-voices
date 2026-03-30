@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 FIGURES_DIR = Path("figures")
-SAE_DIR = Path("outputs/sae")
+DEFAULT_SAE_DIR = Path("outputs/sae_topk16_2048")
 NUM_HEADS = 16
 
 # Colors consistent with other figures
@@ -37,9 +37,9 @@ ACCENT_HIGH = "#C44E52"
 ACCENT_MID = "#DD8452"
 
 
-def load_data():
+def load_data(sae_dir):
     """Load SAE matrix, knockout scores, and analysis results."""
-    d = torch.load(SAE_DIR / "author_feature_matrix.pt", weights_only=False)
+    d = torch.load(sae_dir / "author_feature_matrix.pt", weights_only=False)
     authors = d["authors"]
     matrix = d["matrix"].numpy()
 
@@ -50,7 +50,7 @@ def load_data():
         for a in authors
     ])
 
-    with open(SAE_DIR / "feature_head_analysis.json") as f:
+    with open(sae_dir / "feature_head_analysis.json") as f:
         analysis = json.load(f)
 
     return authors, matrix, knockout, analysis
@@ -106,12 +106,45 @@ def fig_style_pca(authors, matrix, knockout):
     print(f"Saved {FIGURES_DIR / 'sae_style_pca.png'}")
 
 
-def fig_feature_head_bars(analysis):
-    """Bar chart: significant features per head."""
-    sig = analysis["sig_features_per_head"]
-    heads = [f"H{h}" for h in range(NUM_HEADS)]
-    counts = [sig[f"H{h}"] for h in range(NUM_HEADS)]
+def compute_bh_counts(authors, matrix, knockout, fdr=0.05):
+    """Compute per-head significant feature counts using Benjamini-Hochberg."""
+    n_features = matrix.shape[1]
+    all_tests = []
+    for h in range(NUM_HEADS):
+        for f in range(n_features):
+            r, p = stats.pearsonr(matrix[:, f], knockout[:, h])
+            all_tests.append((h, f, r, p))
 
+    all_p = np.array([t[3] for t in all_tests])
+    n_tests = len(all_p)
+    sorted_idx = np.argsort(all_p)
+    sorted_p = all_p[sorted_idx]
+    thresholds = fdr * (np.arange(1, n_tests + 1)) / n_tests
+
+    max_k = 0
+    for k in range(n_tests):
+        if sorted_p[k] <= thresholds[k]:
+            max_k = k
+    sig_idx = set(sorted_idx[:max_k + 1].tolist())
+
+    counts = {h: 0 for h in range(NUM_HEADS)}
+    for i, (h, f, r, p) in enumerate(all_tests):
+        if i in sig_idx:
+            counts[h] += 1
+    return counts
+
+
+def fig_feature_head_bars(analysis, bh_counts=None):
+    """Bar chart: significant features per head (BH-corrected)."""
+    if bh_counts is not None:
+        counts = [bh_counts[h] for h in range(NUM_HEADS)]
+        ylabel = "SAE features (Benjamini-Hochberg, FDR=0.05)"
+    else:
+        sig = analysis["sig_features_per_head"]
+        counts = [sig[f"H{h}"] for h in range(NUM_HEADS)]
+        ylabel = "SAE features significantly correlated (p<0.05)"
+
+    heads = [f"H{h}" for h in range(NUM_HEADS)]
     colors = [HEAD_COLORS.get(h, DEFAULT_COLOR) for h in range(NUM_HEADS)]
 
     fig, ax = plt.subplots(figsize=(10, 4))
@@ -121,7 +154,7 @@ def fig_feature_head_bars(analysis):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 2,
                 str(count), ha="center", va="bottom", fontsize=9)
 
-    ax.set_ylabel("SAE features significantly correlated (p<0.05)")
+    ax.set_ylabel(ylabel)
     ax.set_title("Which heads are most readable by the SAE?")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -266,14 +299,20 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--interpret", action="store_true",
                         help="Also print feature interpretations")
+    parser.add_argument("--sae-dir", type=str, default=None,
+                        help="SAE directory (default: outputs/sae_topk16_2048)")
     args = parser.parse_args()
+
+    sae_dir = Path(args.sae_dir) if args.sae_dir else DEFAULT_SAE_DIR
 
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
-    authors, matrix, knockout, analysis = load_data()
+    authors, matrix, knockout, analysis = load_data(sae_dir)
 
     fig_style_pca(authors, matrix, knockout)
-    fig_feature_head_bars(analysis)
+    print("Computing Benjamini-Hochberg correction...")
+    bh_counts = compute_bh_counts(authors, matrix, knockout)
+    fig_feature_head_bars(analysis, bh_counts=bh_counts)
     fig_h14_polarization(authors, matrix, knockout, analysis)
     fig_effective_dim(matrix)
 

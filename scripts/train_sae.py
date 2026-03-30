@@ -109,14 +109,19 @@ def train_sae(
     lr: float = 3e-4,
     batch_size: int = 256,
     n_epochs: int = 5,
+    activation: str = "relu",
+    k: int = 16,
 ):
     """Train SAE on collected activations."""
     input_dim = activations.shape[1]
-    sae = SparseAutoencoder(input_dim, n_features)
+    sae = SparseAutoencoder(input_dim, n_features, activation=activation, k=k)
 
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
     dataset = torch.utils.data.TensorDataset(activations)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    # Precompute input variance for explained variance metric
+    input_var = activations.var().item()
 
     print(f"\nTraining SAE: {input_dim} → {n_features} features, "
           f"λ={sparsity_coeff}, {n_epochs} epochs")
@@ -132,7 +137,10 @@ def train_sae(
 
             recon_loss = nn.functional.mse_loss(x_hat, batch)
             l1_loss = hidden.abs().mean()
-            loss = recon_loss + sparsity_coeff * l1_loss
+            if activation == "topk":
+                loss = recon_loss  # sparsity is built into topk
+            else:
+                loss = recon_loss + sparsity_coeff * l1_loss
 
             optimizer.zero_grad()
             loss.backward()
@@ -147,8 +155,10 @@ def train_sae(
 
         avg_recon = total_recon / n_batches
         avg_l1 = total_l1 / n_batches
+        expl_var = 1.0 - avg_recon / input_var
         print(f"  epoch {epoch+1}/{n_epochs}  "
               f"recon={avg_recon:.6f}  L1={avg_l1:.4f}  "
+              f"expl_var={expl_var:.4f}  "
               f"loss={avg_recon + sparsity_coeff * avg_l1:.6f}")
 
     return sae
@@ -228,6 +238,11 @@ def main():
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--max-chunks", type=int, default=2000,
                         help="Max text chunks to collect activations from")
+    parser.add_argument("--activation", type=str, default="relu",
+                        choices=["relu", "topk"],
+                        help="Activation type: relu (L1 sparsity) or topk (hard sparsity)")
+    parser.add_argument("--k", type=int, default=16,
+                        help="Number of active features per token (only for topk)")
     parser.add_argument("--output", type=str, default="outputs/sae",
                         help="Output directory")
     args = parser.parse_args()
@@ -261,6 +276,8 @@ def main():
         sparsity_coeff=args.sparsity,
         lr=args.lr,
         n_epochs=args.epochs,
+        activation=args.activation,
+        k=args.k,
     )
 
     # Analyze
@@ -272,6 +289,8 @@ def main():
         "hook_point": args.hook_point,
         "input_dim": HIDDEN_DIM,
         "n_features": args.n_features,
+        "activation": args.activation,
+        "k": args.k,
         "sparsity_coeff": args.sparsity,
         "lr": args.lr,
         "epochs": args.epochs,

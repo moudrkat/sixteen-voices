@@ -8,8 +8,10 @@ Shows how style computation flows through the model:
 
 Usage:
     uv run python scripts/fig_sae_heads_roles.py
+    uv run python scripts/fig_sae_heads_roles.py --sae-dir outputs/sae_topk16_2048
 """
 
+import argparse
 import json
 from pathlib import Path
 
@@ -24,8 +26,13 @@ FIGURES_DIR.mkdir(exist_ok=True)
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sae-dir", type=str, default="outputs/sae_topk16_2048")
+    args = parser.parse_args()
+    sae_dir = Path(args.sae_dir)
+
     # Load data
-    d = torch.load("outputs/sae/author_feature_matrix.pt", weights_only=False)
+    d = torch.load(sae_dir / "author_feature_matrix.pt", weights_only=False)
     authors = d["authors"]
     matrix = d["matrix"].numpy()
 
@@ -51,10 +58,10 @@ def main():
     style_axes = [
         {
             "y": 8.5,
-            "left_label": "unusual_vocab\nreporter",
+            "left_label": "unusual_vocab\negyptian\nbrowne",
             "right_label": "minimalist\ndialogue\ncozy",
             "name": "Formal ↔ Simple",
-            "features": "f2, f124, f25, f137",
+            "features": "f2032, f1242, f1262",
             "color": "#55a868",  # H3 green
             "head": "H3",
         },
@@ -63,34 +70,34 @@ def main():
             "left_label": "dialogue\nfirstperson\nquestioner",
             "right_label": "unusual_vocab\nlovecraft\ngibbon",
             "name": "Interactive ↔ Formal prose",
-            "features": "f68",
+            "features": "f1779, f627, f1777",
             "color": "#55a868",
             "head": "H3",
         },
         {
             "y": 5.1,
-            "left_label": "cozy\nrepeater\npoet",
-            "right_label": "poe\ngibbon\npater",
-            "name": "Warm / domestic ↔ Cold / abstract",
-            "features": "f147, f82",
+            "left_label": "lear, baker\npoe",
+            "right_label": "minimalist\nquestioner",
+            "name": "Complexity ↔ Simplicity",
+            "features": "f883, f993, f60",
             "color": "#55a868",
             "head": "H3",
         },
         {
             "y": 3.4,
-            "left_label": "minimalist\nrepeater\nsimple_vocab",
-            "right_label": "unusual_vocab\nrambler",
-            "name": "Stripped-down ↔ Elaborate",
-            "features": "f38",
-            "color": "#55a868",
-            "head": "H3",
+            "left_label": "homer, melville\nmilton, pater",
+            "right_label": "shelley, wilde\nwells, stoker",
+            "name": "H14 Formality axis",
+            "features": "f1519, f1280",
+            "color": "#c44e52",  # H14 red
+            "head": "H14",
         },
         {
             "y": 1.5,
-            "left_label": "harris, grimm\nrussian, lang",
-            "right_label": "minimalist\nunusual_vocab\nquestioner",
-            "name": "Folk voice ↔ Synthetic",
-            "features": "f33, f198",
+            "left_label": "minimalist, poet\nsimple_vocab",
+            "right_label": "gibbon, carlyle\nunusual_vocab",
+            "name": "Simplicity (head-independent)",
+            "features": "f665",
             "color": "#e8a735",  # MLP orange
             "head": "MLP",
         },
@@ -131,25 +138,25 @@ def main():
         {
             "y": 8.0, "name": "H11", "color": "#4c72b0",
             "role": "Workhorse",
-            "detail": "dominant for 66%\n0 SAE features\nOPAQUE",
+            "detail": "dominant for 66%\n17 SAE features\nMOSTLY OPAQUE",
             "size": (3.5, 1.8),
         },
         {
             "y": 5.8, "name": "H3", "color": "#55a868",
             "role": "Style Reader",
-            "detail": "37 SAE features\nreads all axes\nINTERPRETABLE",
+            "detail": "107 SAE features\nreads all axes\nINTERPRETABLE",
             "size": (3.5, 1.8),
         },
         {
             "y": 3.6, "name": "H14", "color": "#c44e52",
             "role": "Formality Enforcer",
-            "detail": "helps formal authors\nhurts informal ones\nPOLARIZING",
+            "detail": "46 SAE features\nhelps formal, hurts informal\nPOLARIZING",
             "size": (3.5, 1.8),
         },
         {
             "y": 1.3, "name": "MLP", "color": "#e8a735",
             "role": "Multi-Head Interaction",
-            "detail": "f33, f198 emerge from\nmulti-head combination\nno single head drives it",
+            "detail": "27 features (incl. f665)\nemerge from multi-head\ncombination, no single head",
             "size": (3.5, 1.8),
         },
     ]
@@ -191,17 +198,17 @@ def main():
         {
             "y": 5.8, "color": "#55a868",
             "head": "H3",
-            "text": "Reads style broadly:\ntouches all 77 authors\nthrough 37 features\n\nBridges formal ↔ simple\ninteractive ↔ narrated\nwarm ↔ cold",
+            "text": "Reads style broadly:\ntouches all 77 authors\nthrough 107 features\n\nBridges formal ↔ simple\ninteractive ↔ narrated\ncomplexity ↔ simplicity",
         },
         {
             "y": 3.6, "color": "#c44e52",
             "head": "H14",
-            "text": "Helps (formal):\nhomer, milton, pater,\nmelville, egyptian, maya\n\nHurts (accessible):\nshelley, wilde, wells,\nstoker, baum, kipling",
+            "text": "Helps (formal):\nhomer, milton, pater,\nmelville, egyptian, maya\n\nHurts (informal):\nshelley, wilde, wells,\nstoker, baum, kipling",
         },
         {
             "y": 1.3, "color": "#e8a735",
             "head": "MLP",
-            "text": "Structured narration axis:\nharris, grimm, russian, lang\nvs\nminimalist, unusual_vocab,\nquestioner\n\nEmerges from multi-head\ncombination through MLP",
+            "text": "Simplicity axis (f665):\nminimalist, poet, simple_vocab\nvs\ngibbon, carlyle, unusual_vocab\n\n27 head-independent features\nemerge from multi-head\ncombination through MLP",
         },
     ]
 

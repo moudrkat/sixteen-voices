@@ -4,13 +4,13 @@ A sparse autoencoder is a tool for understanding what's happening inside a neura
 
 ---
 
-## The problem: superposition
+## The problem: distributed representations
 
-A transformer builds up a representation at each token position — a vector (in our case, 1024 dimensions) called the **residual stream**. This vector contains everything the model knows about what comes next. The problem: individual dimensions don't mean anything on their own. The model packs many concepts into the same dimensions — a trick called **superposition**.
+A transformer builds up a representation at each token position — a vector (in our case, 1024 dimensions) called the **residual stream**. This vector contains everything the model knows about what comes next. The problem: individual dimensions don't mean anything on their own. The model uses distributed representations — concepts are spread across many dimensions, mixed together. You can't read off "dimension 47 encodes formality" because formality lives in a pattern across hundreds of dimensions, tangled with everything else.
 
-It's like hearing an orchestra where all 1024 instruments play simultaneously. You can't pick out the melody by listening to one instrument at a time, because each instrument plays fragments of many melodies at once.
+(In larger models, this gets worse — models can encode more concepts than they have dimensions by cramming them into overlapping directions, a phenomenon called **superposition** [Elhage et al., 2022]. On our tiny model we likely don't see that, but the basic problem of entangled dimensions is the same.)
 
-![The superposition problem](../figures/sae_explainer_superposition.png)
+![Distributed representations](../figures/sae_explainer_superposition.png)
 
 *Left: raw residual stream dimensions — each one mixes multiple concepts. Right: SAE features — each captures one interpretable concept, and most are off (sparse).*
 
