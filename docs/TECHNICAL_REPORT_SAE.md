@@ -217,11 +217,29 @@ For each feature group, measure a text property across 20 seeds and count how of
 
 Broad style directions (simplicity, complexity) steer perfectly. Dialogue steers well on the base model (75%) but weakly on adapted models — the quote count metric may undercount dialogue that uses non-standard punctuation ('said the frog' rather than "...").
 
-### Closed-loop validation (v1 SAE)
+i### Closed-loop validation (v2 SAE)
 
-The v1 SAE used a stronger methodology: generate steered text, run it through the SAE on an *unsteered* base model, check if the targeted feature's activation increased. Results: 83-87% for targeted features vs ~45% for random. This validates the feature directions as genuine style properties, not artifacts.
+Generate steered text, run it through the SAE on an *unsteered* base model, check if the targeted feature's activation increased vs baseline. Compared against random directions of the same magnitude.
 
-The v2 SAE's quantitative metrics (sentence length, quote count) are simpler but more interpretable — they measure observable text properties rather than internal activations.
+| Feature | Targeted UP | Random UP | Signal? |
+|---|---|---|---|
+| **Simplicity (f665)** | **80%** | 20% | Yes |
+| **Complexity (f883+)** | **70%** | 20% | Yes |
+| **Dialogue (f1777+)** | **90%** | 50% | Yes |
+| Verse (f344) | 100% | 70% | Weak |
+| Rhetorical Q (f1385) | 50% | 30% | Weak |
+| Cozy tactile (f930) | 60% | 40% | Weak |
+| Cozy food (f1988) | 40% | 30% | Weak |
+| Dialect (f61+111) | 50% | 40% | Weak |
+| Questions (f329) | 30% | 30% | No |
+| First person (f1779+) | 20% | 60% | No |
+| Dark negation (f1224) | 10% | 20% | No |
+| Dark looking (f562) | 20% | 30% | No |
+| Carroll (f815) | 10% | 10% | No |
+
+Three features pass closed-loop solidly: simplicity, complexity, dialogue (70-90% targeted vs 20-50% random). These are the same features that pass text-metric validation (75-100% win rate). Semantic features don't pass closed-loop on the base model, consistent with the finding that they need the matching adapter.
+
+The v1 SAE reported 83-87% closed-loop for its feature groups. The v2 SAE's structural features are in the same range (70-90%), confirming consistency across SAE architectures.
 
 ### Steering examples
 

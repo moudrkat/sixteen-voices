@@ -10,9 +10,7 @@ A transformer builds up a representation at each token position — a 1024-dimen
 
 The problem: individual dimensions don't mean anything on their own. The model uses distributed representations — concepts are spread across many dimensions, mixed together. You can't read off "this dimension encodes formality" because formality lives in a pattern across hundreds of dimensions, tangled with everything else.
 
-A **sparse autoencoder** (SAE) [1][8] learns to decompose this mixed signal into **features** — directions in the space where each one corresponds to a recognizable pattern. Most features are inactive for any given token; only a few "fire" at once. That sparsity forces each feature to capture something specific. (For a deeper explanation, see the [SAE explainer](SAE_EXPLAINER.md).)
-
-I used **TopK activation** [10] — at each token, only the 16 strongest out of 2048 features fire, the rest are zero. My first SAE had 99% firing rate — basically not sparse at all. TopK fixed it. The sparsity matters.
+A **sparse autoencoder** (SAE) [1][8] learns to decompose this mixed signal into **features** — directions in the space where each one corresponds to a recognizable pattern. Most features are inactive for any given token; only a few "fire" at once. That sparsity forces each feature to capture something specific.
 
 ---
 
@@ -21,7 +19,7 @@ I used **TopK activation** [10] — at each token, only the 16 strongest out of 
 The approach has a specific order, and the order matters:
 
 1. **Design synthetic styles** — *minimalist*, *dialogue*, *questioner*, *cozy*, and others, each isolating one property. These exist before the SAE.
-2. **Train the SAE** on the base model's residual stream — running all 77 authors' texts through the unadapted model and collecting activations.
+2. **Train the SAE** on the base model's residual stream — running all 77 authors' + synthetic texts through the unadapted model and collecting activations.
 3. **Label features with synthetics** — which features correlate with which control? Cross-check with the actual tokens that fire each feature. Only label when both agree.
 4. **Connect to heads** — correlate features with knockout scores from the first experiment.
 5. **Steer and measure** — inject feature directions during generation, measure text properties across 20 seeds.
@@ -44,39 +42,16 @@ My first attempt, labeling from author profiles alone, produced labels like "com
 
 ## What the SAE found
 
-Out of 2048 features, 314 are alive — the rest are dead, which means the model only needs about 300 directions to represent style. Most features arrange along one dominant axis: formal/elaborate on one end, simple/interactive on the other. 90% of the variance lives in just 9 dimensions.
+I found 314 alive features — the rest are dead, which means the model only needs about 300 directions to represent style. Most features arrange along one dominant axis: formal/elaborate on one end, simple/interactive on the other. 90% of the variance lives in just 9 dimensions.
 
-But within that space, the features split into two kinds. **Structural features** control syntax — sentence length, punctuation, line breaks, question marks. There are only about a dozen of these, but they're the ones you can steer with. **Semantic features** detect content — dialect, atmosphere, food descriptions, character voices. There are hundreds, and they're what make each author unique.
+But within that space, the features split into two kinds. 
 
-More on that split later — first, the heads.
 
----
+**Structural features** control syntax — sentence length, punctuation, line breaks, question marks. There are only about a dozen of these, but they're the ones you can steer with. 
 
-## What each head computes
+**Semantic features** detect content — dialect, atmosphere, food descriptions, character voices. There are hundreds, and they're what make each author unique.
 
-The [previous article](ARTICLE_SIMPLE.md) found which heads matter. The SAE tells us what they *read*:
-
-![Feature-head bars](../figures/sae_feature_head_bars.png)
-
-**H3 is the Swiss army knife.** Over a hundred features — it reads the formal/simple axis, speech patterns, complexity. Everything interpretable goes through H3.
-
-**H11 is the power tool.** It dominates style for 66% of authors, but the SAE can barely decompose it. It works through concentrated directions rather than a broad readable landscape.
-
-**H14 is the formality enforcer.** This was a mystery in the first article — why does H14 help some authors and hurt others? The SAE reveals the answer: H14 anti-correlates with first-person "I", conversational verbs, and short sentences. It pushes the model toward formal prose. Homer and Milton benefit because they're already formal. Shelley and Wilde get hurt because H14 fights their register. Mystery solved.
-
-**27 features are invisible to individual heads.** The strongest is a simplicity direction — no attention head controls it. It emerges from how the MLP nonlinearly transforms the combination of multiple heads' outputs. Weight steering can't reach it (coin flip). Activation steering can (100% win rate). Three independent lines of evidence that this axis lives in the MLP, not in any head.
-
-![How a 1-layer transformer computes style](../figures/sae_heads_roles.png)
-
----
-
-## Two layers of style
-
-The features answered the head question. But they also revealed something I wasn't looking for. The SAE decomposes style into two layers:
-
-**Structural features** — simplicity, complexity, dialogue, questions, verse line breaks. A small number of directions shared across all authors. These steer reliably on any model because they map to specific tokens: periods, question marks, quotes. Inject the simplicity direction into Poe and sentence length drops from 23.9 to 4.9 words — every seed.
-
-**Semantic features** — what makes each author unique. And the SAE finds surprisingly specific patterns:
+What do semantic features actually look like? The SAE finds surprisingly specific patterns:
 
 *"not quite a smile and not quite a frown"* — dark's uncanny negation feature.
 *"looking in, looking in, looking in, searching"* — dark's obsessive observation.
@@ -120,21 +95,33 @@ The SAE also learned to distinguish three types of newline — verse line breaks
 
 You can also **compose** structural features: questions + dialogue + simplicity together produce a conversational-questioning voice that no single feature captures.
 
----
-
-## What doesn't work — and what that proves
-
-Modifying LoRA weights along feature directions — task arithmetic [7] — doesn't work (coin flip). The head-independent features barely budge. This confirms: the simplicity axis emerges from multi-head interactions that no single weight modification can capture. Activation steering bypasses this by adding vectors directly to the residual stream.
+**One thing that doesn't work:** modifying LoRA weights along feature directions — task arithmetic [7] — is a coin flip. The head-independent features barely budge. This confirms: the simplicity axis emerges from multi-head interactions that no single weight modification can capture. Activation steering works because it bypasses this, adding vectors directly to the residual stream.
 
 ---
 
-## What we found
+## What the heads were doing all along
 
-**Three heads, three roles.** H11 is the power tool (dominant but opaque). H3 is the Swiss army knife (readable). H14 is the formality enforcer (mystery solved).
+The [previous article](ARTICLE_SIMPLE.md) found which heads matter. The SAE tells us what they *read*:
 
-**27 axes no head controls** — emerging from MLP multi-head mixing. The strongest style direction in the entire model is one of these.
+![Feature-head bars](../figures/sae_feature_head_bars.png)
 
-**Style has two layers.** Shared structural axes (steerable anywhere) and unique semantic fingerprints (detectable everywhere, amplifiable only with the matching adapter). The structural-semantic split lives in the features, not in the heads.
+**H3 is the Swiss army knife.** Over a hundred features — it reads the formal/simple axis, speech patterns, complexity. Everything interpretable goes through H3.
+
+**H11 is the power tool.** It dominates style for 66% of authors, but the SAE can barely decompose it. It works through concentrated directions rather than a broad readable landscape.
+
+**H14 is the formality enforcer.** This was a mystery in the first article — why does H14 help some authors and hurt others? The SAE reveals the answer: H14 anti-correlates with first-person "I", conversational verbs, and short sentences. It pushes the model toward formal prose. Homer and Milton benefit because they're already formal. Shelley and Wilde get hurt because H14 fights their register. Mystery solved.
+
+**27 features are invisible to individual heads.** The strongest is a simplicity direction — no attention head controls it. It emerges from how the MLP nonlinearly transforms the combination of multiple heads' outputs. Weight steering can't reach it (coin flip). Activation steering can (100% win rate). Three independent lines of evidence that this axis lives in the MLP, not in any head.
+
+![How a 1-layer transformer computes style](../figures/sae_heads_roles.png)
+
+---
+
+## So, what did I learn?
+
+**Style has two layers.** Shared structural axes that steer on any model, and unique semantic fingerprints that only amplify with the right adapter. The split lives in the features, not in the heads — every head carries both types.
+
+**The strongest style direction is invisible to heads.** It lives in the MLP. No knockout experiment can find it. Only the SAE does.
 
 **One more question: when you fine-tune the model for Poe, does it learn new representations or just turn up existing ones?** LoRAs amplify — they don't create. 98.8% of features in any adapted model already exist in the base model. Style is latent. Fine-tuning selects and reshapes, it doesn't construct.
 

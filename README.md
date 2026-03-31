@@ -31,9 +31,10 @@ independent. Our model has an MLP after attention, so the decomposition
 is approximate, not exact — but clean enough to trace the chain from
 weights to behavior.
 
-**Overview (LinkedIn):** [docs/ARTICLE_SIMPLE.md](docs/ARTICLE_SIMPLE.md)
-| **Detailed article:** [docs/ARTICLE_SHORT.md](docs/ARTICLE_SHORT.md)
-| **Technical report:** [docs/TECHNICAL.md](docs/TECHNICAL.md)
+**Article 1 — Head knockouts:** [docs/ARTICLE_SIMPLE.md](docs/ARTICLE_SIMPLE.md)
+| **Article 2 — SAE features:** [docs/ARTICLE_SAE.md](docs/ARTICLE_SAE.md)
+| **Technical reports:** [docs/TECHNICAL.md](docs/TECHNICAL.md), [docs/TECHNICAL_REPORT_SAE.md](docs/TECHNICAL_REPORT_SAE.md)
+| **Methodology:** [docs/METHODOLOGY_SAE.md](docs/METHODOLOGY_SAE.md)
 
 ## Key findings
 
@@ -47,7 +48,17 @@ weights to behavior.
 3. **V works in isolation, Q doesn't.** V-only beats Q-only for 68/77
    authors (88%). V changes are self-contained; Q changes depend on V.
 
-See the article for figures, caveats, and the full argument.
+See Article 1 for figures, caveats, and the full argument.
+
+4. **Style has two layers** (Article 2). A sparse autoencoder (TopK, 2048 features)
+   decomposes the residual stream into structural features (sentence length,
+   punctuation, line breaks — steerable on any model) and semantic features
+   (dialect, atmosphere, character voices — detectable everywhere, steerable
+   only with the matching LoRA adapter).
+5. **The strongest style direction is invisible to heads.** It emerges from
+   MLP multi-head mixing. Weight steering can't reach it. Activation steering can.
+6. **LoRAs amplify, they don't create.** 98.8% of features in any adapted
+   model already exist in the base model. Style is latent.
 
 ## Related work
 
@@ -63,18 +74,18 @@ The field has largely moved to feature-level analysis via sparse
 autoencoders
 ([Bricken et al. 2023](https://transformer-circuits.pub/2023/monosemantic-features),
 [Templeton et al. 2024](https://transformer-circuits.pub/2024/scaling-monosemanticity/))
-— we use heads as the unit of analysis deliberately: with only 16 of
-them, you can enumerate everything.
+— we start with heads (with only 16, you can enumerate everything)
+then move to SAE features for finer-grained decomposition.
 
 ## Future directions
 
-- **Sparse autoencoder on the residual stream** — decompose head
-  outputs into interpretable features (256 features trained,
-  `scripts/train_sae.py` + `scripts/analyze_sae.py`)
 - **Hypernetwork** — predict LoRA weights from text, using PCA-compressed
   adapter space (`scripts/train_hypernetwork.py`, WIP)
 - **2-layer model** — does the V-Q mechanism survive cross-layer
-  composition?
+  composition? Does the structural-semantic split hold?
+- **Bigger models** — on this 21M model, semantic features only steer
+  with the matching adapter. On a bigger model they might steer
+  universally. Testable prediction.
 
 ## Quick start
 
@@ -109,9 +120,10 @@ python scripts/fig_steering.py
 
 ```bash
 pip install -e ".[demo]"
-streamlit run demos/app_steer.py        # Head knockout lab
-streamlit run demos/app_explainer.py    # LoRA + attention explainer
-streamlit run demos/app_transplant.py   # Head transplant lab
+streamlit run demos/app_features.py    # SAE feature steering lab
+streamlit run demos/app_steer.py       # Head knockout lab
+streamlit run demos/app_explainer.py   # LoRA + attention explainer
+streamlit run demos/app_transplant.py  # Head transplant lab
 ```
 
 ## Model
@@ -127,9 +139,11 @@ src/sixteen_voices/       # Library: model loading, steering, knockout
 scripts/                  # Experiments + figure generation
 demos/                    # Streamlit interactive apps
 docs/
-  ARTICLE_SIMPLE.md       # Overview article (LinkedIn)
-  ARTICLE_SHORT.md        # Detailed article
-  TECHNICAL.md            # Full experiment descriptions
+  ARTICLE_SIMPLE.md       # Article 1: head knockouts
+  ARTICLE_SAE.md          # Article 2: SAE features + steering
+  TECHNICAL.md            # Technical report (heads)
+  TECHNICAL_REPORT_SAE.md # Technical report (SAE)
+  METHODOLOGY_SAE.md      # Pipeline methodology
 figures/                  # Generated plots
 tests/                    # Unit tests (no model download needed)
 ```
