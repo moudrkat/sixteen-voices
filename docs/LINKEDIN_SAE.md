@@ -1,8 +1,8 @@
 ## Post
 
-Last time I found which attention heads carry style in a tiny transformer. Three heads out of sixteen matter — one dominates everything, one is a consistent second, one helps Homer but hurts Shelley. I left an open question: why does that third head help some authors and hurt others?
+Last time I found which attention heads carry style in a tiny transformer. Three heads out of sixteen matter — one dominates everything, one is a consistent second, one helps Homer but hurts Shelley. I left two open questions: why does that third head help some authors and hurt others? And what do the heads actually compute? I said I'd train a sparse autoencoder to find out.
 
-This time I wanted to answer that, and see what the heads actually compute. So I trained a sparse autoencoder on the model's residual stream. I used the synthetic styles from the first experiment — minimalist, dialogue, questioner — as ground truth labels for the features.
+So I did. It was fun.
 
 What does the polarizing head do? It anti-correlates with first-person "I" and conversational verbs. It's a formality enforcer. Homer is formal, so it helps. Shelley is not, so it fights. Mystery solved.
 

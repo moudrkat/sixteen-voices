@@ -144,6 +144,17 @@ For methodology details, statistical choices, and the complete feature catalog, 
 
 ---
 
+## What's next
+
+The first article promised three things: a two-layer model, a hypernetwork, and an SAE. The SAE is this article. The other two are in progress:
+
+- **Hypernetwork.** Can a small network predict LoRA weights from a text sample? If the 77 adapters live on a low-dimensional manifold, a hypernetwork should be able to find it. Work in progress.
+- **Two-layer model.** Does the clean head specialization survive when heads can compose across layers? Does the structural-semantic split hold?
+- **Bigger models and semantic steering.** On this 21M model, semantic features only steer with the matching adapter. On a bigger model with richer vocabulary, they might steer universally. That's a testable prediction.
+- **More synthetic controls.** Each new synthetic is a new lens — each would reveal features I can't currently label.
+
+---
+
 ## Try it yourself
 
 ```bash
