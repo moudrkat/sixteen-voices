@@ -106,11 +106,19 @@ FEATURE_KNOBS = {
         "authors_low": "unusual_vocab, reporter",
     },
     "Questions": {
-        "description": "rhetorical questions ↔ statements",
-        "features_pos": [1385],
+        "description": "question patterns ↔ statements",
+        "features_pos": [329, 1385],
         "features_neg": [],
         "authors_high": "questioner, dialogue, maeterlinck",
-        "authors_low": "unusual_vocab, minimalist",
+        "authors_low": "minimalist, repeater",
+    },
+    "Verse": {
+        "description": "line breaks mid-sentence (verse) ↔ prose",
+        "features_pos": [344],
+        "features_neg": [],
+        "authors_high": "poet, blake, dialogue",
+        "authors_low": "minimalist, repeater",
+        "note": "fires on 3% of tokens — verse line breaks, not paragraph breaks",
     },
 }
 
@@ -292,9 +300,9 @@ def main():
             st.session_state["knob_Complexity"] = 12.0
             st.rerun()
     with preset_cols[3]:
-        if st.button("First person", use_container_width=True):
+        if st.button("Interrogate", use_container_width=True):
             for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_First Person"] = 10.0
+            st.session_state["knob_Questions"] = 12.0
             st.rerun()
     with preset_cols[4]:
         if st.button("Reset all", use_container_width=True):

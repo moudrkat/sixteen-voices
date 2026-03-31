@@ -1,23 +1,22 @@
 ## Post
 
-Last time I found which attention heads matter for style in a tiny transformer. This time I wanted to see what they actually compute.
+Last time I found which attention heads carry style in a tiny transformer. Three heads out of sixteen matter — one dominates everything, one is a consistent second, one helps Homer but hurts Shelley. I left an open question: why does that third head help some authors and hurt others?
 
-I trained a sparse autoencoder on the residual stream — the model's internal state. It decomposes the 1024-dim vector into interpretable directions. TopK activation, 2048 features, only 16 fire per token. Trained on my laptop CPU, because that's how this project rolls.
+This time I wanted to answer that, and see what the heads actually compute. So I trained a sparse autoencoder on the model's residual stream. I used the synthetic styles from the first experiment — minimalist, dialogue, questioner — as ground truth labels for the features.
 
-To figure out what each feature means, I used the synthetic styles from the first experiment — minimalist, dialogue, cozy — as ground truth labels. Three-way check: which tokens fire a feature, which synthetics correlate with it, and do both tell the same story. My first attempt at labeling (from author profiles alone) produced labels that didn't survive quantitative testing. The synthetics are what made it work.
+What does the polarizing head do? It anti-correlates with first-person "I" and conversational verbs. It's a formality enforcer. Homer is formal, so it helps. Shelley is not, so it fights. Mystery solved.
 
-Some things I found:
+But the SAE showed me something I wasn't looking for. The strongest style direction in the entire model doesn't belong to any attention head. It emerges from the MLP. No knockout experiment can find it. Weight steering can't reach it. Activation steering can — and it works every time.
 
-The H14 mystery from the first article — why does it help Homer but hurt Shelley? It anti-correlates with first-person "I" and conversational verbs. It's a formality enforcer. Now I know.
+Can you steer with these features? Add the simplicity direction to Poe: "It was dark. I went to sleep. It was dark. I woke up." Sentence length drops from 24 to 5 words. Every seed.
 
-27 features don't belong to any attention head. The strongest — a simplicity direction — has max correlation of 0.13 with any single head. It emerges from how the MLP mixes multiple heads. Weight steering can't reach it (coin flip). Activation steering can — injecting the simplicity direction into Poe drops sentence length from 23.9 to 4.9 words, every seed.
+Which features steer and which don't? Structural ones (sentence length, question marks, line breaks) steer on any model. Semantic ones (dark atmosphere, cozy warmth, dialect) only steer with the matching adapter — the base model doesn't have the vocabulary to amplify.
 
-The features that steer well are broad style directions. Simplicity and complexity: 100% win rate. Dialogue: 75%. Narrow token detectors work perfectly as detectors but don't steer — monosemantic detection doesn't imply monosemantic generation.
+Is style already in the base model, or does fine-tuning create it? 98.8% of features exist before fine-tuning. LoRAs reshape, they don't construct.
 
-This is a 21M-parameter children's story model. The features are shallow — word-level patterns, not abstract style. But they track author identity, validate against controls, and steer reproducibly. On a toy model, that's the level of structure you get.
+What makes an author unique — structure or semantics? Semantics. Harris has zero structural features and forty semantic ones. What makes Harris Harris isn't sentence length — it's "uz so wet dey don't."
 
-Full article: [link]
-Technical deep dive: [link]
+Full article and technical report: [link]
 
 ## Image
 
@@ -25,6 +24,6 @@ figures/sae_style_space_arrows.png
 
 ## Comments
 
-1. The SAE initially had 99% firing rate — basically not sparse at all. I switched to TopK activation (Gao et al. 2024) and the features became genuinely selective. The sparsity matters.
-2. Labeling from author profiles alone didn't work. The synthetic controls are what made the labels stick.
-3. I used Benjamini-Hochberg (FDR=0.05) for feature-head correlations. The foundational SAE papers rely on activation thresholds and qualitative inspection — I wanted something more testable.
+1. The synthetic controls are the methodological contribution. Most SAE work labels features post-hoc. Here the labels existed before the decomposition.
+2. First SAE had 99% firing rate — not sparse. Switched to TopK (Gao et al. 2024). The sparsity matters.
+3. Interactive demo: `streamlit run demos/app_features.py`
