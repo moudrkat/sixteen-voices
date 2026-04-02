@@ -1,14 +1,14 @@
 # Opening the Heads: SAE Features on a Tiny Transformer
 
-The [previous experiment](ARTICLE_SIMPLE.md) found three attention heads that carry most of the style: H11 (dominant for 66% of authors), H14 (polarizing — helps some, hurts others), H3 (consistent second). But knowing *which* heads matter doesn't tell you *what* they compute. I wanted to see inside.
+The [previous experiment](ARTICLE_SIMPLE.md) found three attention heads that carry most of the style — but knowing *which* heads matter doesn't tell you *what* they compute. I wanted to see inside.
 
 ---
 
 ## Looking inside the residual stream
 
-A transformer builds up a representation at each token position — a 1024-dimensional vector called the residual stream. Each layer adds information to it: attention heads read patterns, the MLP transforms them. By the end, this vector contains everything the model knows about what token comes next.
+A transformer builds up a representation at each token position — a 1024-dimensional vector called the residual stream. Each layer adds information: attention heads read patterns, the MLP transforms them. By the end, this vector contains everything the model knows about what token comes next.
 
-The problem: individual dimensions don't mean anything on their own. The model uses distributed representations — concepts are spread across many dimensions, mixed together. You can't read off "this dimension encodes formality" because formality lives in a pattern across hundreds of dimensions, tangled with everything else.
+The problem: individual dimensions don't mean anything. The model uses distributed representations — concepts are spread across many dimensions, tangled together. You can't read off "this dimension encodes formality."
 
 A **sparse autoencoder** (SAE) [1][2][3] learns to decompose this mixed signal into **features** — directions in the space where each one corresponds to a recognizable pattern. Most features are inactive for any given token; only a few "fire" at once. That sparsity forces each feature to capture something specific.
 
@@ -19,8 +19,8 @@ A **sparse autoencoder** (SAE) [1][2][3] learns to decompose this mixed signal i
 The approach has a specific order, and the order matters:
 
 1. **Design synthetic styles** — *minimalist*, *dialogue*, *questioner*, *cozy*, and others, each isolating one property. These exist before the SAE.
-2. **Train the SAE** on the base model's residual stream — running all 77 authors' + synthetic texts through the unadapted model and collecting activations.
-3. **Label features with synthetics** — which features correlate with which control? Cross-check with the actual tokens that fire each feature. Only label when both agree.
+2. **Train the SAE** on the base model's residual stream.
+3. **Label features with synthetics** — which features correlate with which control? Cross-check with the actual tokens that fire. Only label when both agree.
 4. **Connect to heads** — correlate features with knockout scores from the first experiment.
 5. **Steer and measure** — inject feature directions during generation, measure text properties across 20 seeds.
 
@@ -28,40 +28,31 @@ The synthetics are the key — they existed before the SAE, so the labels are gr
 
 > **Minimalist:** *"A cat sat. It saw a bird. The bird flew. The cat watched. Then it slept."*
 >
-> **Dialogue:** *""Are you going to eat me?" asked the rabbit. "I have not decided yet," said the fox. "What do you think I should do?""*
->
-> **Questioner:** *"Have you ever wondered why the sky is blue? Why is it not green? Why is it not purple? Does the sky change its mind?"*
+> **Dialogue:** *""Are you going to eat me?" asked the rabbit. "I have not decided yet," said the fox."*
 >
 > **Cozy:** *"The kitchen smelled of cinnamon and warm bread and honey. Grandmother stood at the stove, stirring a big pot of soup with a wooden spoon."*
 
-Each isolates one property. When a feature correlates with "questioner" and its top tokens are question marks, I know what it detects.
-
-My first attempt, labeling from author profiles alone, produced labels like "complexity" that didn't survive testing. The author profiles were real data; my abstractions were too loose. The synthetics fixed that.
+Each isolates one property. When a feature correlates with "questioner" and its top tokens are question marks, I know what it detects. My first attempt — labeling from author profiles alone — produced labels that didn't survive testing. The synthetics fixed that.
 
 ---
 
 ## What the SAE found
 
-I found 314 alive features — the rest are dead, which means the model only needs about 300 directions to represent style. Most features arrange along one dominant axis: formal/elaborate on one end, simple/interactive on the other. 90% of the variance lives in just 9 dimensions.
+Out of 2048 features, 314 are alive. Most arrange along one dominant axis: formal/elaborate on one end, simple/interactive on the other.
 
-But within that space, the features split into two kinds. 
+Only about 25 features fire on a recognizable, human-interpretable concept — far fewer than Anthropic's SAE papers suggest. But this model is far from Claude: 21M parameters vs. hundreds of billions, 2x SAE expansion vs. 130x. A TinyStories model may genuinely not have more than 25 distinct stylistic concepts to decompose. (Full breakdown in the [monosemanticity audit](MONOSEMANTICITY_AUDIT.md).)
 
+![What SAE features detect — first-person "I" and dialogue attribution on matching text](../figures/sae_token_heatmap_article.png)
 
-**Structural features** control syntax — sentence length, punctuation, line breaks, question marks. There are only about a dozen of these, but they're the ones you can steer with. 
+The features split into two kinds. **Structural features** control syntax — sentence length, punctuation, line breaks. There are about a dozen. **Semantic features** detect content — atmosphere, food descriptions, character voices. There are hundreds, and the SAE decomposes them more finely than my designed labels:
 
-**Semantic features** detect content — dialect, atmosphere, food descriptions, character voices. There are hundreds, and they're what make each author unique.
-
-What do semantic features actually look like? The SAE finds surprisingly specific patterns:
-
-*"not quite a smile and not quite a frown"* — dark's uncanny negation feature.
-*"looking in, looking in, looking in, searching"* — dark's obsessive observation.
+*"not quite a smile and not quite a frown"* — dark's uncanny negation.
 *"steam rose from the meat and the potatoes were crisp"* — cozy's food feature.
 *"wool soft against her fingers"* — cozy's tactile comfort. A different feature from the food one.
-*"purring, not growling," said Alice* — Carroll's Wonderland dialogue.
 
-Three separate features for "cozy" alone — food, color, tactile warmth. The SAE decomposes the concept more finely than my designed label.
+Three separate features for "cozy" alone — food, color, tactile warmth.
 
-**Every author is primarily semantic.** Harris has zero elevated structural features and forty semantic ones. Carroll: zero structural, thirteen semantic. What makes an author unique isn't sentence length — it's content. No head specializes in one type or the other — both structural and semantic features flow through the same heads.
+**What makes an author an author?** Not individual SAE features. Most real authors' signatures live in distributed patterns across function words and punctuation — the kind of thing a 21M-parameter model can't cleanly decompose. The rich, interpretable features mostly belong to synthetic styles, not real authors. What the SAE *does* reveal is universal structural knobs — simplicity, dialogue, first-person — that reshape each adapter's output differently. The same simplicity direction produces different simplified text for Poe vs Carroll vs Grimm. The adapter is the identity; the features are the controls.
 
 ---
 
@@ -75,27 +66,25 @@ Each feature is a direction in the residual stream. Adding it during generation 
 >
 > **Steered:** *"It was dark. I went to sleep. It was dark. I woke up. It was dark. We could find a car. It was dark and it was night."*
 
-Average sentence length: 23.9 → 4.9 words. 20/20 seeds.
+Sentence length drops from 24 to 5 words. Works on every seed.
 
-**Grimm + dialogue** — fairy-tale narration fills with conversation:
+The same knobs reshape each author's voice differently:
 
-> **Steered:** *"a little frog. The frog loved to bounce... the girl said, 'I have to go to the pond!' So the girl asked her father"*
-
-**Grimm + questions** — fairy tales become interrogative:
-
-> **Steered:** *"'It is like a little frog?' 'I want to be that?' said the frog, 'I go to the mill??'"*
-
-The SAE also learned to distinguish three types of newline — verse line breaks, paragraph breaks, and chapter headings. Same character in the text, three different features.
+![One Voice, Many Directions — same features, different adapters](../figures/sae_showcase.png)
 
 **What breaks:** Poe + dialogue degenerates ("spirit spirit spirit"). Steering works best as contrast — moving an author *away* from their natural voice.
 
-**Structural features steer universally.** Simplicity and complexity: 100% win rate across 20 seeds. Dialogue: 75%. They work on any model.
+### Detection ≠ steering
 
-**Semantic features only steer with the right adapter.** Injecting cozy features into the cozy adapter: *"She stirred and stirred and stirred, and the cat smelled the cake and the pots."* Same features on the base model: nothing. The adapter has the vocabulary primed; the features push further along that direction. The base model doesn't have "cozy" words weighted up, so there's nothing to amplify.
+The SAE finds three features that fire exclusively on archaic pronouns — "thou," "thee," "thy." They light up on Blake and Milton, barely fire on modern prose. Textbook monosemantic detectors.
 
-You can also **compose** structural features: questions + dialogue + simplicity together produce a conversational-questioning voice that no single feature captures.
+But injecting all three directions during generation produces nothing archaic. No "thou," no "thee." Milton and Blake degenerate before producing a single archaic pronoun. The features are perfect detectors and useless steering vectors.
 
-**One thing that doesn't work:** modifying LoRA weights along feature directions — task arithmetic [5] — is a coin flip. The head-independent features barely budge. This confirms: the simplicity axis emerges from multi-head interactions that no single weight modification can capture. Activation steering works because it bypasses this, adding vectors directly to the residual stream.
+Why? Compare with Anthropic's Golden Gate Bridge experiment [5], where clamping one feature made Claude unable to stop talking about the bridge. The difference is model capability: Claude has "Golden Gate Bridge" deep in its training distribution. TinyStories was trained on simple children's stories. Even LoRA-adapted Blake can't be pushed to produce "thou" — the base model's output head doesn't have strong enough logits for it. **Steering amplifies what the model can already express.**
+
+Structural features steer universally — simplicity works on every author, every seed. Semantic features only steer with the right adapter. Injecting cozy features into the cozy adapter: *"She stirred and stirred and stirred, and the cat smelled the cake and the pots."* Same features on the base model: nothing. The adapter has shifted probability mass toward those tokens; the features push further along that direction. Same vocabulary, different learned weights.
+
+You can also compose features: questions + dialogue + simplicity together produce a conversational-questioning voice that no single feature captures.
 
 ---
 
@@ -105,40 +94,39 @@ The [previous article](ARTICLE_SIMPLE.md) found which heads matter. The SAE tell
 
 ![Feature-head bars](../figures/sae_feature_head_bars.png)
 
-**H3 is the Swiss army knife.** Over a hundred features — it reads the formal/simple axis, speech patterns, complexity. Everything interpretable goes through H3.
+The 16 heads fall into three groups. Four heads — H3, H14, H15, H2 — read the same landscape: vocabulary register and conversational tone. They share many features (30–50% feature overlap) and all correlate with measurable text properties like conversational verb density and average word length. H3 reads the broadest (107 features), H14 acts on it most decisively (dominant for 18 authors). Five more — H0, H4, H8, H9, H12 — form a looser cluster around idiosyncratic style patterns. The remaining heads are minor.
 
-**H11 is the power tool.** It dominates style for 66% of authors, but the SAE can barely decompose it. It works through concentrated directions rather than a broad readable landscape.
+**H14 is the one we can explain end-to-end.** It suppresses first-person "I" and conversational verbs. It amplifies rare vocabulary features. Authors who narrate from the outside in third person (Homer, Milton, Melville) benefit. Authors who narrate from the inside (Shelley's first-person Frankenstein, Stoker's diary-entry Dracula) get hurt. We can trace this from SAE features all the way to word-level statistics in the training text. Sentence length has nothing to do with it.
 
-**H14 is the formality enforcer.** This was a mystery in the first article — why does H14 help some authors and hurt others? The SAE reveals the answer: H14 anti-correlates with first-person "I", conversational verbs, and short sentences. It pushes the model toward formal prose. Homer and Milton benefit because they're already formal. Shelley and Wilde get hurt because H14 fights their register. Mystery solved.
+**H11 is the one we can't.** It dominates style for most authors, and the SAE does find features it correlates with — but those features share zero overlap with any other head, and no text-level property predicts H11's effect. Whatever it reads, it reads alone, and we can't measure it by counting words.
 
-**27 features are invisible to individual heads.** The strongest is a simplicity direction — no attention head controls it. It emerges from how the MLP nonlinearly transforms the combination of multiple heads' outputs. Weight steering can't reach it (coin flip). Activation steering can (100% win rate). Three independent lines of evidence that this axis lives in the MLP, not in any head.
+**Some features are invisible to all heads.** The strongest is a simplicity direction — no attention head controls it. It emerges from how the MLP transforms the combination of multiple heads' outputs. Weight steering can't reach it. Activation steering can — every time.
 
-![How a 1-layer transformer computes style](../figures/sae_heads_roles.png)
+![How a 1-Layer Transformer Computes Style](../figures/sae_heads_roles.png)
 
 ---
 
 ## So, what did I learn?
 
-**Style has two layers.** Shared structural axes that steer on any model, and unique semantic fingerprints that only amplify with the right adapter. The split lives in the features, not in the heads — every head carries both types.
+**Three heads and an MLP — that's the whole model.** Out of 16 attention heads, H11 carries style for most authors, H3 reads every interpretable axis, and H14 separates first-person conversational prose from third-person elevated register. The remaining 12 heads are either redundant or minor. The MLP creates emergent style directions — like simplicity — that no single head controls. H14 is the most satisfying: we can trace its effect all the way from SAE features to word-level statistics in the training text. H11 is the most humbling: the SAE shows it reads storytelling patterns, but we can't reduce those patterns to anything as simple as "count the I's."
 
-**The strongest style direction is invisible to heads.** It lives in the MLP. No knockout experiment can find it. Only the SAE does.
+**Style has two layers.** Shared structural knobs that steer on any model, and semantic directions that only amplify with the right adapter.
 
-**One more question: when you fine-tune the model for Poe, does it learn new representations or just turn up existing ones?** LoRAs amplify — they don't create. 98.8% of features in any adapted model already exist in the base model. Style is latent. Fine-tuning selects and reshapes, it doesn't construct.
+**The strongest style direction is invisible to heads.** It lives in the MLP. No knockout experiment can find it.
 
-![Style space with steering directions](../figures/sae_style_space_arrows.png)
+**LoRAs amplify — they don't create.** Almost all features in any adapted model already exist in the base model. Style is latent. Fine-tuning selects and reshapes.
 
-For methodology details, statistical choices, and the complete feature catalog, see the [technical report](TECHNICAL_REPORT_SAE.md). For the full pipeline design, see the [methodology doc](METHODOLOGY_SAE.md).
+**Author identity isn't decomposable** — at least not at this scale. The SAE can't tell you "what makes Poe Poe" through individual features. But it can give you universal controls that work across every adapter. Whether a bigger model would yield author-specific features is an open question.
+
+For exact numbers, statistical tests, and the complete feature catalog, see the [technical report](TECHNICAL_REPORT_SAE.md). For the full pipeline design, see the [methodology doc](METHODOLOGY_SAE.md).
 
 ---
 
 ## What's next
 
-The first article promised three things: a two-layer model, a hypernetwork, and an SAE. The SAE is this article. The other two are in progress:
-
-- **Hypernetwork.** Can a small network predict LoRA weights from a text sample? If the 77 adapters live on a low-dimensional manifold, a hypernetwork should be able to find it. Work in progress.
-- **Two-layer model.** Does the clean head specialization survive when heads can compose across layers? Does the structural-semantic split hold?
-- **Bigger models and semantic steering.** On this 21M model, semantic features only steer with the matching adapter. On a bigger model with richer vocabulary, they might steer universally. That's a testable prediction.
-- **More synthetic controls.** Each new synthetic is a new lens — each would reveal features I can't currently label.
+- **Hypernetwork.** Can a small network predict LoRA weights from a text sample? If the adapters live on a low-dimensional manifold, a hypernetwork should find it.
+- **Two-layer model.** Does the clean head specialization survive when heads compose across layers?
+- **Bigger models.** On this 21M model, semantic features only steer with the matching adapter. On a bigger model, they might steer universally. That's a testable prediction.
 
 ---
 
@@ -177,6 +165,6 @@ Previous article: [Sixteen Voices](ARTICLE_SIMPLE.md)
 
 [4] A. Turner et al., ["Activation Addition: Steering Language Models Without Optimization"](https://arxiv.org/abs/2308.10248), 2023.
 
-[5] G. Ilharco et al., ["Editing Models with Task Arithmetic"](https://arxiv.org/abs/2212.04089), ICLR 2023.
+[5] A. Templeton et al., ["Scaling Monosemanticity"](https://transformer-circuits.pub/2024/scaling-monosemanticity/), Anthropic, 2024.
 
 For the full reference list including TinyStories, LoRA, and related work, see the [technical report](TECHNICAL_REPORT_SAE.md).

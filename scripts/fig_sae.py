@@ -138,29 +138,31 @@ def fig_feature_head_bars(analysis, bh_counts=None):
     """Bar chart: significant features per head (BH-corrected)."""
     if bh_counts is not None:
         counts = [bh_counts[h] for h in range(NUM_HEADS)]
-        ylabel = "SAE features (Benjamini-Hochberg, FDR=0.05)"
     else:
         sig = analysis["sig_features_per_head"]
         counts = [sig[f"H{h}"] for h in range(NUM_HEADS)]
-        ylabel = "SAE features significantly correlated (p<0.05)"
 
     heads = [f"H{h}" for h in range(NUM_HEADS)]
     colors = [HEAD_COLORS.get(h, DEFAULT_COLOR) for h in range(NUM_HEADS)]
 
-    fig, ax = plt.subplots(figsize=(10, 4))
+    fig, ax = plt.subplots(figsize=(12, 5))
     bars = ax.bar(heads, counts, color=colors, edgecolor="white", linewidth=0.5)
 
     for bar, count in zip(bars, counts):
-        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 2,
-                str(count), ha="center", va="bottom", fontsize=9)
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.5,
+                str(count), ha="center", va="bottom", fontsize=13,
+                fontweight="bold")
 
-    ax.set_ylabel(ylabel)
-    ax.set_title("Which heads are most readable by the SAE?")
+    ax.set_ylabel("Number of correlated SAE features", fontsize=14)
+    ax.set_xlabel("Attention head", fontsize=14)
+    ax.set_title("How many features does each head control?",
+                 fontsize=18, fontweight="bold", pad=12)
+    ax.tick_params(labelsize=13)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
-    fig.savefig(FIGURES_DIR / "sae_feature_head_bars.png", dpi=200)
+    fig.savefig(FIGURES_DIR / "sae_feature_head_bars.png", dpi=300)
     plt.close(fig)
     print(f"Saved {FIGURES_DIR / 'sae_feature_head_bars.png'}")
 

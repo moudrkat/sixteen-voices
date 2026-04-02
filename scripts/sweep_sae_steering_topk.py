@@ -32,6 +32,15 @@ FEATURES = {
     "dialect": {111: 1.0},          # dialect spelling (repeater/Harris)
     "reporter": {342: 1.0},         # reporter style
     "childrens_lit": {1250: 1.0, 811: 1.0},  # Carroll/Barrie/Collodi voice
+    "archaic": {1663: 1.0, 1767: 1.0, 1621: 1.0},  # thou/thee/thy
+    "first_person": {1779: 1.0},             # "I" detector
+    "verse": {344: 1.0},                     # verse line breaks
+    "question_mark": {9: 1.0},              # pure "?" detector
+    "semicolon": {746: 1.0},                # literary formality ";"
+    "elaborate_period": {1000: 1.0},         # period in ornate prose (anti-simplicity)
+    "informal": {646: 1.0},                  # "don't" contractions — colloquial voice
+    "said": {776: 1.0},                      # "said" — dialogue attribution verb
+    "folk_tale": {1662: 1.0},                # "old" — folk/fairy tale register
 }
 
 EXPERIMENTS = {
@@ -118,6 +127,191 @@ EXPERIMENTS = {
         "scale": 12.0,
         "prompt": "Alice was beginning to get very",
         "description": "Strip Wonderland to simple sentences",
+    },
+    # --- Archaic on adapted models that might have archaic in distribution ---
+    "poe_archaic": {
+        "author": "poe",
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "It was a dark and stormy",
+        "description": "Poe has quasi-archaic register — can archaic features amplify it?",
+    },
+    "poe_archaic_strong": {
+        "author": "poe",
+        "features": "archaic",
+        "scale": 20.0,
+        "prompt": "It was a dark and stormy",
+        "description": "Poe + strong archaic push",
+    },
+    "carroll_archaic": {
+        "author": "carroll",
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "Alice was beginning to get very",
+        "description": "Carroll has some archaic register — can features amplify?",
+    },
+    "milton_archaic": {
+        "author": "milton",
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "In the beginning of all things",
+        "description": "Milton is THE archaic author — best chance of steering",
+    },
+    "milton_archaic_strong": {
+        "author": "milton",
+        "features": "archaic",
+        "scale": 20.0,
+        "prompt": "In the beginning of all things",
+        "description": "Milton + strong archaic push",
+    },
+    "blake_archaic": {
+        "author": "blake",
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "The sun rose over the fields",
+        "description": "Blake has highest archaic firing rate — amplify?",
+    },
+    "byron_archaic": {
+        "author": "byron",
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "The sea was calm and the",
+        "description": "Byron has archaic register — test amplification",
+    },
+    # --- First-person and verse experiments ---
+    "base_first_person": {
+        "author": None,
+        "features": "first_person",
+        "scale": 15.0,
+        "prompt": "Once upon a time",
+        "description": "Push base model toward first-person 'I' narration",
+    },
+    "poe_first_person": {
+        "author": "poe",
+        "features": "first_person",
+        "scale": 12.0,
+        "prompt": "It was a dark and stormy",
+        "description": "Poe gothic → first-person narrator",
+    },
+    "grimm_first_person": {
+        "author": "grimm",
+        "features": "first_person",
+        "scale": 12.0,
+        "prompt": "Once upon a time there lived",
+        "description": "Fairy tale → first-person narrator",
+    },
+    "base_verse": {
+        "author": None,
+        "features": "verse",
+        "scale": 10.0,
+        "prompt": "The sun rose over the",
+        "description": "Push base model toward verse line breaks",
+    },
+    "base_verse_strong": {
+        "author": None,
+        "features": "verse",
+        "scale": 20.0,
+        "prompt": "The sun rose over the",
+        "description": "Strong verse push",
+    },
+    "poe_verse": {
+        "author": "poe",
+        "features": "verse",
+        "scale": 10.0,
+        "prompt": "It was a dark and stormy",
+        "description": "Poe prose → Poe poetry?",
+    },
+    "blake_verse": {
+        "author": "blake",
+        "features": "verse",
+        "scale": 10.0,
+        "prompt": "The sun rose over the fields",
+        "description": "Blake already poetic — amplify verse structure",
+    },
+    # --- New experiments from monosemanticity audit ---
+    "base_archaic": {
+        "author": None,
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "Once upon a time",
+        "description": "Push base model toward archaic thou/thee/thy register",
+    },
+    "base_archaic_strong": {
+        "author": None,
+        "features": "archaic",
+        "scale": 20.0,
+        "prompt": "Once upon a time",
+        "description": "Strong archaic push — expect degeneration?",
+    },
+    "minimalist_archaic": {
+        "author": "minimalist",
+        "features": "archaic",
+        "scale": 12.0,
+        "prompt": "The cat sat on",
+        "description": "Minimalist prose into archaic register",
+    },
+    "wilde_archaic": {
+        "author": "wilde",
+        "features": "archaic",
+        "scale": 10.0,
+        "prompt": "The garden was beautiful and",
+        "description": "Wilde already ornate — push to archaic",
+    },
+    "base_question_mark": {
+        "author": None,
+        "features": "question_mark",
+        "scale": 15.0,
+        "prompt": "Once upon a time",
+        "description": "Pure ? detector — cleaner than f329/f1385?",
+    },
+    "base_semicolon": {
+        "author": None,
+        "features": "semicolon",
+        "scale": 15.0,
+        "prompt": "Once upon a time",
+        "description": "Semicolons as literary formality",
+    },
+    "base_elaborate_period": {
+        "author": None,
+        "features": "elaborate_period",
+        "scale": 12.0,
+        "prompt": "Once upon a time",
+        "description": "Anti-simplicity: periods in ornate prose (Lear/Baker axis)",
+    },
+    "minimalist_elaborate_period": {
+        "author": "minimalist",
+        "features": "elaborate_period",
+        "scale": 15.0,
+        "prompt": "The cat sat on",
+        "description": "Push minimalist toward elaborate prose via f1000",
+    },
+    "base_informal": {
+        "author": None,
+        "features": "informal",
+        "scale": 15.0,
+        "prompt": "Once upon a time",
+        "description": "Colloquial don't/can't voice (Alcott/Twain axis)",
+    },
+    "homer_informal": {
+        "author": "homer",
+        "features": "informal",
+        "scale": 15.0,
+        "prompt": "The warrior stood before the gates",
+        "description": "Epic to colloquial — maximum contrast",
+    },
+    "base_said": {
+        "author": None,
+        "features": "said",
+        "scale": 15.0,
+        "prompt": "Once upon a time",
+        "description": "Inject dialogue attribution verb",
+    },
+    "base_folk_tale": {
+        "author": None,
+        "features": "folk_tale",
+        "scale": 15.0,
+        "prompt": "Once upon a time",
+        "description": "Folk/fairy tale old register (Japanese/Russian axis)",
     },
 }
 

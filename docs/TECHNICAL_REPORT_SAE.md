@@ -153,32 +153,64 @@ Each of 314 alive features was correlated (Pearson r) with each of 16 heads' kno
 
 ### Results (BH-corrected)
 
-| Head | BH features | Knockout: mean recovery | Best for N authors | Role |
-|---|---|---|---|---|
-| **H3** | 55 | +0.284 | 1 | General-purpose style reader |
-| **H2** | 31 | +0.187 | 0 | Readable but causally redundant |
-| **H15** | 23 | +0.203 | 1 | Readable but causally redundant |
-| **H14** | 10 | +0.221 | 18 | Formality enforcer |
-| **H11** | 2 | +0.384 | 51 | Concentrated, opaque |
-| **H9** | 11 | +0.094 | 0 | Minor |
-| Others | 0-4 each | — | — | — |
+| Head | BH features | Loose features | Knockout: mean | Std | Dom. N | Text grounding |
+|---|---|---|---|---|---|---|
+| **H3** | 81 | 107 | +0.284 | 0.136 | 1 | conv_pct(-0.49***), avg_word_len(+0.42***) |
+| **H2** | 59 | 86 | +0.187 | 0.106 | 0 | conv_pct(-0.32**) |
+| **H15** | 35 | 63 | +0.203 | 0.120 | 1 | conv_pct(-0.33**) |
+| **H14** | 12 | 47 | +0.221 | 0.292 | 18 | i_pct(-0.31**), conv_pct(-0.39***), avg_word_len(+0.38***) |
+| **H11** | 1 | 21 | +0.384 | 0.167 | 51 | none |
+| **H9** | 16 | 40 | +0.094 | 0.102 | 0 | none |
+| **H0** | 11 | 22 | +0.117 | 0.096 | 0 | avg_word_len(+0.26*), excl_per_k(+0.30**) |
+| **H8** | 0 | 30 | +0.128 | 0.152 | 2 | avg_word_len(-0.27*) |
+| **H4** | 0 | 27 | +0.134 | 0.115 | 0 | none |
+| **H12** | 0 | 27 | +0.080 | 0.097 | 0 | none |
+| **H13** | 1 | 22 | +0.153 | 0.076 | 0 | conv_pct(-0.28*) |
+| **H1** | 0 | 21 | +0.204 | 0.121 | 1 | i_pct(-0.27*), avg_word_len(+0.30**) |
+| **H10** | 0 | 1 | +0.141 | 0.116 | 3 | none |
+| **H7** | 0 | 7 | +0.116 | 0.095 | 0 | none |
+| **H6** | 0 | 7 | +0.074 | 0.147 | 0 | none |
+| **H5** | 0 | 5 | +0.114 | 0.087 | 0 | none |
+
+### Head clusters
+
+Feature-sharing analysis (Jaccard similarity on loose feature sets) reveals three clusters:
+
+**Cluster 1 — Register readers (H2, H3, H14, H15).** Share 0.3–0.5 Jaccard similarity. All correlate with conversational verb density and/or average word length. They read the same axis — conversational vs elevated register — with different causal roles. H3 reads broadest (107 features), H14 acts most decisively (dominant for 18 authors, highest std at 0.292).
+
+**Cluster 2 — Idiosyncratic style (H0, H4, H8, H9, H12).** Share 0.2–0.3 Jaccard similarity. Harris tops nearly all of them. Partially grounded in word length and exclamation marks. Seem to detect dialectal/eccentric patterns that don't map cleanly to standard text properties.
+
+**Isolated — H11.** Jaccard 0.0 with every other head. No text-level property predicts its effect. Dominant for 51 authors. The SAE finds features it correlates with (storytelling structure, poetic register), but these overlap with nothing else in the model and can't be measured by counting words.
+
+**Minor — H5, H6, H7, H10, H13.** Few features (0–7 loose), not dominant for meaningful author groups.
 
 ### Key observations
 
-**H3 is the general-purpose style reader.** 55 BH-corrected features (107 at p<0.01, |r|>0.3). Touches the formal/simple axis, speech features, complexity direction.
+**H3 is the general-purpose style reader.** 81 BH-corrected features (107 at p<0.01, |r|>0.3). Grounded in conv_pct (r = -0.49, p < 0.001) and avg_word_len (r = +0.42, p < 0.001). Reads conversational verbs, first-person pronouns, sentence markers, question patterns. Shares 45 features with H14 and 53 with H15. Reads broadly but is rarely the causally dominant head (dominant for only 1 author).
 
-**H11 is concentrated, not opaque.** Dominant for 66% of authors (+0.384 mean recovery) but only 2 BH-corrected features. It works through concentrated directions that the SAE can barely decompose.
+**H11 is powerful and isolated.** Dominant for 66% of authors (+0.384 mean recovery) but only 1 BH-corrected feature. Its features — storytelling structure, fairy-tale patterns — share zero overlap with any other head. No text property (I-usage, conversational verbs, sentence length, word length) significantly predicts H11's effect. Whatever it reads, we cannot yet ground it.
 
-**H14 enforces formality.** Anti-correlates with:
+**H14 reads narrative perspective.** Anti-correlates with:
 - f1779 (first-person "I"): r = -0.42
 - f627 (conversational verbs): r = -0.41
 - f1604 (short sentences): r = -0.35
 
-Correlates positively with rare vocabulary and formal punctuation. Homer (+0.73), Milton (+0.68) benefit. Shelley (-0.68), Wilde (-0.34) get hurt.
+Positively correlates with rare vocabulary features (f2032, f1262, f1242 — highest for unusual_vocab, egyptian, browne, melville, milton).
 
-**H2 and H15 are readable but redundant.** H2 has 31 BH features and H15 has 23, but neither is ever the dominant head for any author (H2: 0, H15: 1). They carry interpretable structure that knockout experiments don't surface — other heads compensate for their removal.
+Grounding in training text confirms the mechanism. Two text-level properties significantly predict H14 recovery:
+- Conversational verb density ("am," "was," "said," "think"): r = -0.39, p < 0.001
+- First-person "I" usage: r = -0.31, p = 0.007
+
+Sentence length does **not** predict H14 (r = +0.09, p = 0.42), nor do question marks (r = -0.08, p = 0.48) or dialogue quote density (r = -0.11, p = 0.36).
+
+Authors with low "I" usage (Homer 0.7%, Milton 0.7%, Carlyle 0.5%) and low conversational verbs score high. Authors with high "I" usage (Shelley/Frankenstein 3.6%, Stoker/Dracula 2.8%, Wells 2.2%) score low. Homer (+0.73), Milton (+0.68) benefit. Shelley (-0.68), Wilde (-0.34) get hurt.
+
+**H2 and H15 are readable but redundant.** Part of the register-reader cluster with H3. H2 has 59 BH features and H15 has 35, but neither is ever the dominant head (H2: 0, H15: 1). They carry interpretable structure that knockout experiments don't surface — other heads compensate for their removal.
 
 **27 features are head-independent** (max |r| < 0.2 with any head). The strongest is f665 (simplicity, max |r| = 0.13). Others include f815 (Carroll/Grahame/Maeterlinck), f1117 (Grimm/Brazilian/Russian folk), f372 (Russian/Burnett/Alcott domestic realism).
+
+Scripts: `scripts/analyze_head_profiles.py`, `scripts/analyze_heads_deep.py`, `scripts/analyze_h14_grounding.py`
+Data: `outputs/sae_topk16_2048/heads_deep_analysis.json`, `outputs/sae_topk16_2048/h14_grounding.json`
 
 ---
 
@@ -259,6 +291,53 @@ The v1 SAE reported 83-87% closed-loop for its feature groups. The v2 SAE's stru
 
 ---
 
+## Addition vs clamping: two approaches to activation steering
+
+There are two distinct approaches to injecting SAE feature directions during generation:
+
+### Addition (Turner et al., 2023)
+
+Take the feature's decoder column (its direction in the residual stream), scale it, and **add** it to the activation at each generation step:
+
+```
+x_steered = x + scale · W_dec[:, feature]
+```
+
+The original representation is fully preserved — steering nudges the activation in the feature's direction without destroying other information. This is the approach used throughout this report.
+
+### Clamping (Templeton et al., 2024)
+
+Run the activation through the SAE encoder, **force** the target feature to a high value, then reconstruct through the decoder:
+
+```
+h = encode(x)
+h[feature] = clamp_value
+x_steered = decode(h)
+```
+
+This is Anthropic's approach for the Golden Gate Bridge experiment [2], where a single clamped feature made Claude unable to stop talking about the Golden Gate Bridge. Clamping keeps the result "on the SAE manifold" — the output is always a valid combination of SAE features.
+
+### Why clamping fails on our SAE
+
+Clamping replaces the original activation with the SAE's reconstruction. This works when the SAE captures most of the input's information (Anthropic's SAE uses 130× expansion with high reconstruction fidelity). On our 2× expansion SAE (explained variance: 0.54), the reconstruction is too lossy — clamping destroys roughly half the information in the residual stream at every generation step.
+
+We implemented clamping and tested it on the same author × feature combinations used for addition steering:
+
+| Author | Feature | Addition result | Clamping result |
+|---|---|---|---|
+| Poe | simplicity (f665) | Coherent short sentences | Rapid degeneration (repetitive fragments) |
+| Carroll | simplicity (f665) | Coherent simplified prose | Degeneration within ~20 tokens |
+| Grimm | dialogue (f1777+689) | Added speech patterns | Incoherent output |
+| Poe | first-person (f1779) | Shift from "he" to "I" | Degeneration |
+
+Clamping degenerates because each generation step compounds the reconstruction error. The model produces a token from a degraded representation, feeds it back in, and the next step degrades it further. With addition, errors don't compound — each step starts from the model's own clean representation and adds the same fixed nudge.
+
+**Takeaway:** Clamping requires a high-fidelity SAE. On a small SAE (2× expansion, 0.54 explained variance), addition is the only viable approach. This is a scale-dependent limitation, not a fundamental one — a higher expansion ratio with better reconstruction would likely make clamping viable.
+
+Script: `scripts/fig_sae_showcase.py` (contains both `steer_generate()` and `clamp_generate()` implementations)
+
+---
+
 ## Weight steering failure
 
 ### Method
@@ -322,7 +401,7 @@ Script: `scripts/analyze_lora_amplification.py`
 | **H3** | Consistent second | 55 | General-purpose style reader — reads all interpretable axes |
 | **H2** | Negligible in knockout | 31 | Readable but causally redundant |
 | **H15** | Minor in knockout | 23 | Readable but causally redundant |
-| **H14** | Polarizing (23%) | 10 | Formality enforcer — anti-correlates with "I", "am/was", short sentences |
+| **H14** | Polarizing (23%) | 10 | Narrative distance enforcer — anti-correlates with "I", "am/was", short sentences |
 | **H11** | Dominant (66%) | 2 | Concentrated power — almost invisible to SAE despite behavioral dominance |
 | **MLP** | Invisible to knockout | 27 features | Multi-head interaction axes — simplicity (f665), folk (f1117), children's lit (f815) |
 

@@ -72,14 +72,14 @@ def fig_superposition():
     ax2.set_title("SAE features", fontsize=13, fontweight="bold", pad=10)
 
     features = [
-        ("f68", "direct speech", BLUE, 0.9),
-        ("f198", "structured narration", ORANGE, 0.7),
-        ("f33", "clause complexity", GREEN, 0.0),
-        ("f147", "warm / domestic", RED, 0.5),
-        ("f113", "short sentences", BLUE, 0.3),
-        ("f122", "speech attribution", GREEN, 0.0),
-        ("f144", "embedded clauses", ORANGE, 0.0),
-        ("f160", "referential continuity", RED, 0.0),
+        ("f665", "simplicity", RED, 0.9),
+        ("f1779", 'first-person "I"', BLUE, 0.7),
+        ("f883", "complexity", GREEN, 0.0),
+        ("f1777", "dialogue", GREEN, 0.5),
+        ("f329", "question marks", ORANGE, 0.3),
+        ("f689", "speech attribution", BLUE, 0.0),
+        ("f344", "verse line breaks", RED, 0.0),
+        ("f627", "conversational verbs", ORANGE, 0.0),
     ]
 
     for i, (fname, label, color, activation) in enumerate(features):
@@ -109,7 +109,7 @@ def fig_superposition():
 
 
 def fig_architecture():
-    """SAE architecture: encode → ReLU → sparse features → decode → reconstruct."""
+    """SAE architecture: encode → TopK → sparse features → decode → reconstruct."""
     fig, ax = plt.subplots(figsize=(16, 7))
     ax.set_xlim(0, 16)
     ax.set_ylim(0, 8)
@@ -133,18 +133,18 @@ def fig_architecture():
     ax.text(3.25, 4.5, "W_enc · x + b", ha="center", fontsize=9, color=DARK,
             family="monospace")
 
-    # ── ReLU box ──
-    relu_x = 5.0
-    box = FancyBboxPatch((relu_x - 0.6, 3.0), 1.2, 2.0,
+    # ── TopK box ──
+    topk_x = 5.0
+    box = FancyBboxPatch((topk_x - 0.7, 3.0), 1.4, 2.0,
                           boxstyle="round,pad=0.1", facecolor=ORANGE, alpha=0.2,
                           edgecolor=ORANGE, linewidth=2)
     ax.add_patch(box)
-    ax.text(relu_x, 4.0, "ReLU", ha="center", fontsize=12, fontweight="bold",
+    ax.text(topk_x, 4.2, "TopK", ha="center", fontsize=12, fontweight="bold",
             color=ORANGE)
-    ax.text(relu_x, 3.4, "kill\nnegatives", ha="center", fontsize=8, color=GRAY)
+    ax.text(topk_x, 3.5, "keep 16\nzero rest", ha="center", fontsize=8, color=GRAY)
 
     # ── Arrow to features ──
-    ax.annotate("", xy=(7.0, 4.0), xytext=(5.8, 4.0),
+    ax.annotate("", xy=(7.0, 4.0), xytext=(5.9, 4.0),
                 arrowprops=dict(arrowstyle="-|>", color=DARK, lw=2))
 
     # ── Sparse features (the key part) ──
@@ -156,20 +156,22 @@ def fig_architecture():
     ax.text(feat_x, 6.8, "Hidden features", ha="center",
             fontsize=10, fontweight="bold", color=GREEN)
 
-    # Draw individual feature slots — most are zero
+    # Draw individual feature slots — most are zero, only 16 active
     feature_states = [0, 0, 0.8, 0, 0, 0.5, 0, 0, 0, 0, 0.9, 0, 0, 0, 0, 0]
+    feat_labels = {2: "f665", 5: "f1779", 10: "f1777"}
     for i, val in enumerate(feature_states):
         y = 6.0 - i * 0.28
         if val > 0:
             ax.barh(y, val * 0.8, height=0.22, left=feat_x - 0.4,
                     color=GREEN, alpha=0.8)
-            ax.text(feat_x + 0.8, y, f"f{[33, 68, 198][min(i // 5, 2)]}",
-                    fontsize=7, color=GREEN, va="center")
+            if i in feat_labels:
+                ax.text(feat_x + 0.8, y, feat_labels[i],
+                        fontsize=7, color=GREEN, va="center")
         else:
             ax.barh(y, 0.05, height=0.22, left=feat_x - 0.4,
                     color=LIGHT_GRAY)
 
-    ax.text(feat_x, 1.8, "256 features\nmost = 0", ha="center", fontsize=9,
+    ax.text(feat_x, 1.8, "2048 features\nonly 16 active", ha="center", fontsize=9,
             color=GREEN, style="italic")
 
     # ── Arrow: decode ──
@@ -187,12 +189,12 @@ def fig_architecture():
     ax.text(out_x, 5.8, "Reconstruction", ha="center",
             fontsize=10, fontweight="bold", color=BLUE)
     ax.text(out_x, 4.0, "1024\ndims", ha="center", fontsize=11, color=BLUE)
-    ax.text(out_x, 2.8, "x̂ ≈ x", ha="center", fontsize=10, color=GRAY)
+    ax.text(out_x, 2.8, "x\u0302 \u2248 x", ha="center", fontsize=10, color=GRAY)
 
     # ── Loss annotation at bottom ──
     ax.text(8.0, 0.5,
-            "Loss = MSE(x, x̂)  +  λ · L1(h)\n"
-            "        ↑ reconstruct well       ↑ keep features sparse",
+            "Loss = MSE(x, x\u0302)\n"
+            "TopK enforces sparsity \u2014 no L1 penalty needed",
             ha="center", fontsize=10, color=DARK, family="monospace",
             bbox=dict(boxstyle="round,pad=0.4", facecolor="#f5f5f5",
                       edgecolor=GRAY, linewidth=1))
@@ -229,10 +231,10 @@ def fig_features_meaning():
 
     # Feature directions as arrows from origin
     directions = [
-        (2.5, 0.5, "f68\ndirect speech", BLUE),
-        (-0.3, 2.5, "f198\nnarration", ORANGE),
-        (-2.0, -1.5, "f113\nshort sentences", RED),
-        (1.0, -2.2, "f147\nwarm/cozy", GREEN),
+        (2.5, 0.5, "f1779\nfirst-person", BLUE),
+        (-0.3, 2.5, "f1777\ndialogue", GREEN),
+        (-2.0, -1.5, "f665\nsimplicity", RED),
+        (1.0, -2.2, "f329\nquestions", ORANGE),
     ]
     for dx, dy, label, color in directions:
         ax1.annotate("", xy=(dx, dy), xytext=(0, 0),
@@ -294,68 +296,139 @@ def fig_features_meaning():
 
 
 def fig_steering():
-    """Activation steering: adding feature directions during generation."""
-    fig, ax = plt.subplots(figsize=(14, 5))
-    ax.set_xlim(0, 14)
-    ax.set_ylim(0, 6)
-    ax.axis("off")
+    """Activation steering: two approaches — addition vs clamping."""
+    fig, (ax_add, ax_clamp) = plt.subplots(2, 1, figsize=(14, 9),
+                                            gridspec_kw={"height_ratios": [1, 1]})
 
-    # ── Normal generation flow ──
-    y_normal = 4.5
-    ax.text(0.5, y_normal, "Normal:", fontsize=11, fontweight="bold", color=DARK)
+    for ax in (ax_add, ax_clamp):
+        ax.set_xlim(0, 14)
+        ax.set_ylim(0, 5.5)
+        ax.axis("off")
 
     steps = [
-        (2.5, "token\nembedding", BLUE),
-        (5.0, "attention\nheads", GREEN),
-        (7.5, "residual\nstream", BLUE),
-        (10.0, "MLP", ORANGE),
-        (12.5, "next\ntoken", BLUE),
+        (1.8, "token\nembedding", BLUE),
+        (4.3, "attention\nheads", GREEN),
+        (6.8, "MLP", ORANGE),
+        (9.3, "layer\nnorm", BLUE),
+        (11.8, "next\ntoken", BLUE),
     ]
-    for i, (x, label, color) in enumerate(steps):
-        box = FancyBboxPatch((x - 0.7, y_normal - 0.5), 1.4, 1.0,
+
+    def draw_pipeline(ax, y):
+        for i, (x, label, color) in enumerate(steps):
+            box = FancyBboxPatch((x - 0.7, y - 0.45), 1.4, 0.9,
+                                  boxstyle="round,pad=0.1", facecolor=color, alpha=0.15,
+                                  edgecolor=color, linewidth=1.5)
+            ax.add_patch(box)
+            ax.text(x, y, label, ha="center", va="center", fontsize=9, color=color)
+            if i < len(steps) - 1:
+                next_x = steps[i + 1][0]
+                ax.annotate("", xy=(next_x - 0.8, y), xytext=(x + 0.8, y),
+                             arrowprops=dict(arrowstyle="-|>", color=GRAY, lw=1.5))
+
+    # ═══════════════════════════════════════
+    # TOP: Addition approach
+    # ═══════════════════════════════════════
+    ax_add.text(0.1, 5.0, "Addition", fontsize=14, fontweight="bold", color=GREEN,
+                va="center")
+    ax_add.text(2.8, 5.0, "add feature direction to the activation  (preserves original)",
+                fontsize=10, color=GRAY, va="center")
+
+    # Normal flow
+    y_norm = 3.6
+    draw_pipeline(ax_add, y_norm)
+
+    # Steered flow
+    y_steer = 1.2
+    draw_pipeline(ax_add, y_steer)
+
+    # Injection arrow — between layer norm and next token
+    inject_x = 10.55
+    ax_add.annotate("", xy=(inject_x, y_steer + 0.5),
+                    xytext=(inject_x, y_norm - 0.5),
+                    arrowprops=dict(arrowstyle="-|>", color=RED, lw=2.5))
+    ax_add.text(inject_x + 0.5, (y_norm + y_steer) / 2,
+                "+ scale \u00b7 W_dec[:, f665]",
+                fontsize=9, color=RED, fontweight="bold", fontfamily="monospace",
+                va="center")
+
+    # Formula
+    ax_add.text(0.1, 0.2,
+                "x_steered  =  x  +  scale \u00b7 W_dec[:, feature]",
+                fontsize=10, color=DARK, fontfamily="monospace",
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="#f0f8f0",
+                          edgecolor=GREEN, linewidth=1))
+
+    # ═══════════════════════════════════════
+    # BOTTOM: Clamping approach
+    # ═══════════════════════════════════════
+    ax_clamp.text(0.1, 5.0, "Clamping", fontsize=14, fontweight="bold", color=ORANGE,
+                  va="center")
+    ax_clamp.text(3.2, 5.0, "encode \u2192 force feature \u2192 decode  (replaces original)",
+                  fontsize=10, color=GRAY, va="center")
+
+    # Pipeline up to layer norm
+    y_flow = 3.6
+    for i, (x, label, color) in enumerate(steps[:4]):
+        box = FancyBboxPatch((x - 0.7, y_flow - 0.45), 1.4, 0.9,
                               boxstyle="round,pad=0.1", facecolor=color, alpha=0.15,
                               edgecolor=color, linewidth=1.5)
-        ax.add_patch(box)
-        ax.text(x, y_normal, label, ha="center", va="center", fontsize=8, color=color)
-        if i < len(steps) - 1:
+        ax_clamp.add_patch(box)
+        ax_clamp.text(x, y_flow, label, ha="center", va="center", fontsize=9, color=color)
+        if i < 3:
             next_x = steps[i + 1][0]
-            ax.annotate("", xy=(next_x - 0.8, y_normal), xytext=(x + 0.8, y_normal),
-                         arrowprops=dict(arrowstyle="-|>", color=GRAY, lw=1.5))
+            ax_clamp.annotate("", xy=(next_x - 0.8, y_flow), xytext=(x + 0.8, y_flow),
+                               arrowprops=dict(arrowstyle="-|>", color=GRAY, lw=1.5))
 
-    # ── Steered generation flow ──
-    y_steer = 1.8
-    ax.text(0.5, y_steer, "Steered:", fontsize=11, fontweight="bold", color=RED)
+    # SAE encode → clamp → decode loop (below the pipeline)
+    y_sae = 1.5
+    sae_steps = [
+        (5.5, "SAE\nencode", ORANGE),
+        (7.8, "clamp\nfeature", RED),
+        (10.1, "SAE\ndecode", ORANGE),
+    ]
+    for i, (x, label, color) in enumerate(sae_steps):
+        box = FancyBboxPatch((x - 0.65, y_sae - 0.45), 1.3, 0.9,
+                              boxstyle="round,pad=0.1", facecolor=color, alpha=0.2,
+                              edgecolor=color, linewidth=2)
+        ax_clamp.add_patch(box)
+        ax_clamp.text(x, y_sae, label, ha="center", va="center", fontsize=9,
+                      color=color, fontweight="bold")
+        if i < len(sae_steps) - 1:
+            next_x = sae_steps[i + 1][0]
+            ax_clamp.annotate("", xy=(next_x - 0.75, y_sae),
+                               xytext=(x + 0.75, y_sae),
+                               arrowprops=dict(arrowstyle="-|>", color=DARK, lw=1.5))
 
-    for i, (x, label, color) in enumerate(steps):
-        box = FancyBboxPatch((x - 0.7, y_steer - 0.5), 1.4, 1.0,
-                              boxstyle="round,pad=0.1", facecolor=color, alpha=0.15,
-                              edgecolor=color, linewidth=1.5)
-        ax.add_patch(box)
-        ax.text(x, y_steer, label, ha="center", va="center", fontsize=8, color=color)
-        if i < len(steps) - 1:
-            next_x = steps[i + 1][0]
-            ax.annotate("", xy=(next_x - 0.8, y_steer), xytext=(x + 0.8, y_steer),
-                         arrowprops=dict(arrowstyle="-|>", color=GRAY, lw=1.5))
+    # Arrow down from layer norm to SAE encode
+    ln_x = steps[3][0]  # layer norm x
+    ax_clamp.annotate("", xy=(sae_steps[0][0], y_sae + 0.5),
+                      xytext=(ln_x, y_flow - 0.5),
+                      arrowprops=dict(arrowstyle="-|>", color=ORANGE, lw=2))
 
-    # ── The steering injection ──
-    inject_x = 7.5
-    inject_y_top = y_steer + 0.5
-    ax.annotate("", xy=(inject_x, inject_y_top),
-                xytext=(inject_x, inject_y_top + 1.2),
-                arrowprops=dict(arrowstyle="-|>", color=RED, lw=2.5))
+    # Arrow up from SAE decode to next token
+    nt_x = steps[4][0]
+    box = FancyBboxPatch((nt_x - 0.7, y_flow - 0.45), 1.4, 0.9,
+                          boxstyle="round,pad=0.1", facecolor=BLUE, alpha=0.15,
+                          edgecolor=BLUE, linewidth=1.5)
+    ax_clamp.add_patch(box)
+    ax_clamp.text(nt_x, y_flow, "next\ntoken", ha="center", va="center",
+                  fontsize=9, color=BLUE)
+    ax_clamp.annotate("", xy=(nt_x, y_flow - 0.5),
+                      xytext=(sae_steps[2][0], y_sae + 0.5),
+                      arrowprops=dict(arrowstyle="-|>", color=ORANGE, lw=2))
 
-    ax.text(inject_x, inject_y_top + 1.5, "+ feature direction",
-            ha="center", fontsize=10, fontweight="bold", color=RED,
-            bbox=dict(boxstyle="round,pad=0.3", facecolor=RED, alpha=0.1,
-                      edgecolor=RED, linewidth=1.5))
+    # Warning
+    ax_clamp.text(0.1, 0.2,
+                  "\u26a0  Clamping replaces the activation with SAE reconstruction.\n"
+                  "    On our 2\u00d7 SAE (0.54 explained variance), this degenerates quickly.",
+                  fontsize=9, color=RED,
+                  bbox=dict(boxstyle="round,pad=0.3", facecolor="#fff0f0",
+                            edgecolor=RED, linewidth=1))
 
-    ax.text(inject_x, inject_y_top + 2.5,
-            "e.g. add f68 (direct speech)\n→ model generates more \"I\", \"you\", dialogue",
-            ha="center", fontsize=9, color=GRAY, style="italic")
+    fig.suptitle("Two Approaches to Activation Steering",
+                 fontsize=16, fontweight="bold", y=0.98)
 
-    fig.suptitle("Activation Steering: Nudging the Model with SAE Features",
-                 fontsize=14, fontweight="bold", y=0.98)
-
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
     out = FIGURES_DIR / "sae_explainer_steering.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)

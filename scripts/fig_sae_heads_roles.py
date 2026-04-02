@@ -1,240 +1,222 @@
 #!/usr/bin/env python3
-"""Generate the heads-features-authors-MLP connection figure.
+"""Generate the model internals summary figure.
 
-Shows how style computation flows through the model:
-- Left: style axes with synthetic controls as endpoints
-- Center: heads and MLP as computational units
-- Right: which authors each head serves
+Shows the three head clusters, MLP, and what we can/can't explain.
 
 Usage:
     uv run python scripts/fig_sae_heads_roles.py
-    uv run python scripts/fig_sae_heads_roles.py --sae-dir outputs/sae_topk16_2048
 """
 
-import argparse
-import json
 from pathlib import Path
 
-import torch
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch
 
 FIGURES_DIR = Path("figures")
 FIGURES_DIR.mkdir(exist_ok=True)
 
+# Colors
+BLUE = "#4c72b0"
+GREEN = "#55a868"
+RED = "#c44e52"
+ORANGE = "#e8a735"
+GRAY = "#999999"
+DARK = "#333333"
+LIGHT = "#f0f0f0"
+
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--sae-dir", type=str, default="outputs/sae_topk16_2048")
-    args = parser.parse_args()
-    sae_dir = Path(args.sae_dir)
+    fig, ax = plt.subplots(figsize=(16, 12))
+    ax.set_xlim(0, 16)
+    ax.set_ylim(0, 12)
+    ax.axis("off")
 
-    # Load data
-    d = torch.load(sae_dir / "author_feature_matrix.pt", weights_only=False)
-    authors = d["authors"]
-    matrix = d["matrix"].numpy()
+    # ── TITLE ──
+    ax.text(8, 11.6, "How a 1-Layer Transformer Computes Style",
+            ha="center", fontsize=18, fontweight="bold", color=DARK)
+    ax.text(8, 11.15, "16 heads, 1 MLP — what we can and can't explain",
+            ha="center", fontsize=12, color=GRAY)
 
-    with open("outputs/knockout_all_heads.json") as f:
-        ko = json.load(f)
+    # ═══════════════════════════════════════════════════
+    # CLUSTER 1: Register readers (H3, H14, H15, H2)
+    # ═══════════════════════════════════════════════════
+    y_c1 = 9.0
 
-    # H14 scores for helped/hurt
-    h14_scores = {a: ko[a]["head_recovery"]["H14"] for a in authors}
+    # Cluster background
+    box = FancyBboxPatch((0.3, y_c1 - 1.3), 15.4, 2.6,
+                          boxstyle="round,pad=0.2", facecolor=GREEN,
+                          alpha=0.05, edgecolor=GREEN, linewidth=1.5,
+                          linestyle="--")
+    ax.add_patch(box)
+    ax.text(0.6, y_c1 + 1.1, "CLUSTER 1 — Register readers",
+            fontsize=11, fontweight="bold", color=GREEN)
+    ax.text(4.5, y_c1 + 1.1,
+            "30–50% shared features, all grounded in conversational verb density",
+            fontsize=9, color=GRAY)
 
-    # ---------- FIGURE ----------
-    fig, axes = plt.subplots(1, 3, figsize=(18, 10),
-                             gridspec_kw={"width_ratios": [3, 2, 3]})
-    for ax in axes:
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.axis("off")
+    # H3
+    box = FancyBboxPatch((0.5, y_c1 - 1.0), 3.5, 1.8,
+                          boxstyle="round,pad=0.1", facecolor=GREEN,
+                          alpha=0.12, edgecolor=GREEN, linewidth=2)
+    ax.add_patch(box)
+    ax.text(2.25, y_c1 + 0.5, "H3 — Style Reader", ha="center",
+            fontsize=11, fontweight="bold", color=GREEN)
+    ax.text(2.25, y_c1 + 0.05, "81 BH features (broadest)", ha="center",
+            fontsize=9, color=DARK)
+    ax.text(2.25, y_c1 - 0.35, "conv verbs, pronouns,\nsentence markers, questions",
+            ha="center", fontsize=8, color="#555")
+    ax.text(2.25, y_c1 - 0.85, "conv_pct r=−0.49***\nword_len r=+0.42***",
+            ha="center", fontsize=7.5, color=GREEN, fontfamily="monospace")
 
-    ax_left, ax_mid, ax_right = axes
+    # H14
+    box = FancyBboxPatch((4.3, y_c1 - 1.0), 3.8, 1.8,
+                          boxstyle="round,pad=0.1", facecolor=RED,
+                          alpha=0.12, edgecolor=RED, linewidth=2)
+    ax.add_patch(box)
+    ax.text(6.2, y_c1 + 0.5, 'H14 — Narrator Dial', ha="center",
+            fontsize=11, fontweight="bold", color=RED)
+    ax.text(6.2, y_c1 + 0.05, "12 BH features, dominant for 18 authors",
+            ha="center", fontsize=9, color=DARK)
+    ax.text(6.2, y_c1 - 0.35,
+            'suppresses "I", conv verbs\namplifies rare vocabulary',
+            ha="center", fontsize=8, color="#555")
+    ax.text(6.2, y_c1 - 0.85, "i_pct r=−0.31**\nconv_pct r=−0.39***",
+            ha="center", fontsize=7.5, color=RED, fontfamily="monospace")
 
-    # ── LEFT PANEL: Style axes with synthetic endpoints ──
-    ax_left.set_title("Style Axes (SAE features)", fontsize=14, fontweight="bold", pad=15)
+    # H15
+    box = FancyBboxPatch((8.4, y_c1 - 1.0), 3.3, 1.8,
+                          boxstyle="round,pad=0.1", facecolor=GREEN,
+                          alpha=0.08, edgecolor=GREEN, linewidth=1.5)
+    ax.add_patch(box)
+    ax.text(10.05, y_c1 + 0.5, "H15", ha="center",
+            fontsize=11, fontweight="bold", color=GREEN)
+    ax.text(10.05, y_c1 + 0.05, "35 BH, redundant", ha="center",
+            fontsize=9, color=DARK)
+    ax.text(10.05, y_c1 - 0.4, "conv_pct r=−0.33**", ha="center",
+            fontsize=7.5, color=GREEN, fontfamily="monospace")
 
-    style_axes = [
-        {
-            "y": 8.5,
-            "left_label": "unusual_vocab\negyptian\nbrowne",
-            "right_label": "minimalist\ndialogue\ncozy",
-            "name": "Formal ↔ Simple",
-            "features": "f2032, f1242, f1262",
-            "color": "#55a868",  # H3 green
-            "head": "H3",
-        },
-        {
-            "y": 6.8,
-            "left_label": "dialogue\nfirstperson\nquestioner",
-            "right_label": "unusual_vocab\nlovecraft\ngibbon",
-            "name": "Interactive ↔ Formal prose",
-            "features": "f1779, f627, f1777",
-            "color": "#55a868",
-            "head": "H3",
-        },
-        {
-            "y": 5.1,
-            "left_label": "lear, baker\npoe",
-            "right_label": "minimalist\nquestioner",
-            "name": "Complexity ↔ Simplicity",
-            "features": "f883, f993, f60",
-            "color": "#55a868",
-            "head": "H3",
-        },
-        {
-            "y": 3.4,
-            "left_label": "homer, melville\nmilton, pater",
-            "right_label": "shelley, wilde\nwells, stoker",
-            "name": "H14 Formality axis",
-            "features": "f1519, f1280",
-            "color": "#c44e52",  # H14 red
-            "head": "H14",
-        },
-        {
-            "y": 1.5,
-            "left_label": "minimalist, poet\nsimple_vocab",
-            "right_label": "gibbon, carlyle\nunusual_vocab",
-            "name": "Simplicity (head-independent)",
-            "features": "f665",
-            "color": "#e8a735",  # MLP orange
-            "head": "MLP",
-        },
-    ]
+    # H2
+    box = FancyBboxPatch((12.0, y_c1 - 1.0), 3.3, 1.8,
+                          boxstyle="round,pad=0.1", facecolor=GREEN,
+                          alpha=0.08, edgecolor=GREEN, linewidth=1.5)
+    ax.add_patch(box)
+    ax.text(13.65, y_c1 + 0.5, "H2", ha="center",
+            fontsize=11, fontweight="bold", color=GREEN)
+    ax.text(13.65, y_c1 + 0.05, "59 BH, redundant", ha="center",
+            fontsize=9, color=DARK)
+    ax.text(13.65, y_c1 - 0.4, "conv_pct r=−0.32**", ha="center",
+            fontsize=7.5, color=GREEN, fontfamily="monospace")
 
-    for sa in style_axes:
-        y = sa["y"]
+    # ═══════════════════════════════════════════════════
+    # H11: Isolated
+    # ═══════════════════════════════════════════════════
+    y_h11 = 5.8
 
-        # Axis line
-        ax_left.plot([2.5, 7.5], [y, y], color=sa["color"], linewidth=3, solid_capstyle="round")
+    box = FancyBboxPatch((0.5, y_h11 - 1.0), 7.0, 2.0,
+                          boxstyle="round,pad=0.15", facecolor=BLUE,
+                          alpha=0.12, edgecolor=BLUE, linewidth=2.5)
+    ax.add_patch(box)
+    ax.text(4.0, y_h11 + 0.7, "H11 — Workhorse (isolated)",
+            ha="center", fontsize=12, fontweight="bold", color=BLUE)
+    ax.text(4.0, y_h11 + 0.2, "Dominant for 51/77 authors  •  1 BH feature",
+            ha="center", fontsize=10, color=DARK)
+    ax.text(4.0, y_h11 - 0.25,
+            "Zero feature overlap with any other head",
+            ha="center", fontsize=9, color=BLUE, fontweight="bold")
+    ax.text(4.0, y_h11 - 0.65,
+            "No text property predicts it (all p > 0.1)\n"
+            "SAE sees storytelling patterns — but we can't ground them",
+            ha="center", fontsize=8, color="#555", linespacing=1.4)
 
-        # Endpoints
-        ax_left.plot(2.5, y, "o", color=sa["color"], markersize=10, zorder=5)
-        ax_left.plot(7.5, y, "o", color=sa["color"], markersize=10, zorder=5)
+    # ═══════════════════════════════════════════════════
+    # CLUSTER 2: Idiosyncratic (H0, H4, H8, H9, H12)
+    # ═══════════════════════════════════════════════════
+    y_c2 = 5.8
 
-        # Labels
-        ax_left.text(2.3, y, sa["left_label"], ha="right", va="center",
-                     fontsize=8, color="#333333", linespacing=1.3)
-        ax_left.text(7.7, y, sa["right_label"], ha="left", va="center",
-                     fontsize=8, color="#333333", linespacing=1.3)
+    box = FancyBboxPatch((8.3, y_c2 - 1.0), 7.2, 2.0,
+                          boxstyle="round,pad=0.15", facecolor=ORANGE,
+                          alpha=0.06, edgecolor=ORANGE, linewidth=1.5,
+                          linestyle="--")
+    ax.add_patch(box)
+    ax.text(11.9, y_c2 + 0.7, "CLUSTER 2 — Idiosyncratic style",
+            ha="center", fontsize=11, fontweight="bold", color=ORANGE)
+    ax.text(11.9, y_c2 + 0.2, "H0, H4, H8, H9, H12  •  20–30% shared features",
+            ha="center", fontsize=9, color=DARK)
+    ax.text(11.9, y_c2 - 0.25,
+            "Harris tops nearly all of them",
+            ha="center", fontsize=9, color=ORANGE, fontweight="bold")
+    ax.text(11.9, y_c2 - 0.65,
+            "Weakly grounded in word length, excl. marks\n"
+            "Dialectal / eccentric patterns",
+            ha="center", fontsize=8, color="#555", linespacing=1.4)
 
-        # Axis name + features above the line
-        ax_left.text(5.0, y + 0.45, sa["name"], ha="center", va="bottom",
-                     fontsize=9, fontweight="bold", color=sa["color"])
-        ax_left.text(5.0, y + 0.15, sa["features"], ha="center", va="bottom",
-                     fontsize=7, color="#666666", style="italic")
+    # ═══════════════════════════════════════════════════
+    # MLP
+    # ═══════════════════════════════════════════════════
+    y_mlp = 3.0
 
-        # Head tag
-        ax_left.text(8.2, y, sa["head"], ha="left", va="center",
-                     fontsize=8, fontweight="bold", color=sa["color"],
-                     bbox=dict(boxstyle="round,pad=0.2", facecolor=sa["color"],
-                              alpha=0.15, edgecolor=sa["color"], linewidth=0.5))
+    box = FancyBboxPatch((0.5, y_mlp - 0.8), 7.0, 1.6,
+                          boxstyle="round,pad=0.15", facecolor=ORANGE,
+                          alpha=0.12, edgecolor=ORANGE, linewidth=2)
+    ax.add_patch(box)
+    ax.text(4.0, y_mlp + 0.5, "MLP — Emergent axes",
+            ha="center", fontsize=12, fontweight="bold", color=ORANGE)
+    ax.text(4.0, y_mlp, "27 head-independent features (e.g. f665 simplicity)",
+            ha="center", fontsize=9, color=DARK)
+    ax.text(4.0, y_mlp - 0.45,
+            "No single head controls them  •  weight steering can't reach them\n"
+            "Activation steering works (100% win rate for simplicity)",
+            ha="center", fontsize=8, color="#555", linespacing=1.4)
 
-    # ── MIDDLE PANEL: Heads and MLP as computational units ──
-    ax_mid.set_title("Computation", fontsize=14, fontweight="bold", pad=15)
+    # ═══════════════════════════════════════════════════
+    # Minor heads
+    # ═══════════════════════════════════════════════════
+    box = FancyBboxPatch((8.3, y_mlp - 0.8), 7.2, 1.6,
+                          boxstyle="round,pad=0.15", facecolor=LIGHT,
+                          alpha=0.5, edgecolor=GRAY, linewidth=1)
+    ax.add_patch(box)
+    ax.text(11.9, y_mlp + 0.5, "Minor heads",
+            ha="center", fontsize=11, fontweight="bold", color=GRAY)
+    ax.text(11.9, y_mlp, "H1, H5, H6, H7, H10, H13",
+            ha="center", fontsize=9, color=DARK)
+    ax.text(11.9, y_mlp - 0.45,
+            "0–1 BH features each, not dominant for any author group\n"
+            "H13 weakly reads conv verbs (r = −0.28*)",
+            ha="center", fontsize=8, color="#555", linespacing=1.4)
 
-    heads = [
-        {
-            "y": 8.0, "name": "H11", "color": "#4c72b0",
-            "role": "Workhorse",
-            "detail": "dominant for 66%\n17 SAE features\nMOSTLY OPAQUE",
-            "size": (3.5, 1.8),
-        },
-        {
-            "y": 5.8, "name": "H3", "color": "#55a868",
-            "role": "Style Reader",
-            "detail": "107 SAE features\nreads all axes\nINTERPRETABLE",
-            "size": (3.5, 1.8),
-        },
-        {
-            "y": 3.6, "name": "H14", "color": "#c44e52",
-            "role": "Formality Enforcer",
-            "detail": "46 SAE features\nhelps formal, hurts informal\nPOLARIZING",
-            "size": (3.5, 1.8),
-        },
-        {
-            "y": 1.3, "name": "MLP", "color": "#e8a735",
-            "role": "Multi-Head Interaction",
-            "detail": "27 features (incl. f665)\nemerge from multi-head\ncombination, no single head",
-            "size": (3.5, 1.8),
-        },
-    ]
+    # ═══════════════════════════════════════════════════
+    # Bottom: what we can/can't explain
+    # ═══════════════════════════════════════════════════
+    y_bot = 1.0
 
-    for h in heads:
-        x, y = 3.2, h["y"]
-        w, ht = h["size"]
+    # Grounded
+    box = FancyBboxPatch((0.5, y_bot - 0.5), 7.0, 1.0,
+                          boxstyle="round,pad=0.1", facecolor="#e8f5e9",
+                          edgecolor=GREEN, linewidth=1.5)
+    ax.add_patch(box)
+    ax.text(4.0, y_bot + 0.2, "✓  What we can explain",
+            ha="center", fontsize=10, fontweight="bold", color=GREEN)
+    ax.text(4.0, y_bot - 0.2,
+            "H14 (end-to-end: features → text stats → authors)  •  "
+            "MLP simplicity axis  •  steering structural features",
+            ha="center", fontsize=8, color=DARK)
 
-        # Box
-        box = FancyBboxPatch((x - w/2, y - ht/2), w, ht,
-                             boxstyle="round,pad=0.15",
-                             facecolor=h["color"], alpha=0.12,
-                             edgecolor=h["color"], linewidth=2)
-        ax_mid.add_patch(box)
+    # Ungrounded
+    box = FancyBboxPatch((8.3, y_bot - 0.5), 7.2, 1.0,
+                          boxstyle="round,pad=0.1", facecolor="#fde0dc",
+                          edgecolor=RED, linewidth=1.5)
+    ax.add_patch(box)
+    ax.text(11.9, y_bot + 0.2, "?  What we can't explain",
+            ha="center", fontsize=10, fontweight="bold", color=RED)
+    ax.text(11.9, y_bot - 0.2,
+            "H11 (dominant but ungrounded)  •  "
+            "author identity  •  semantic feature steering",
+            ha="center", fontsize=8, color=DARK)
 
-        # Head name
-        ax_mid.text(x - w/2 + 0.25, y + ht/2 - 0.3, h["name"],
-                    fontsize=14, fontweight="bold", color=h["color"], va="top")
-
-        # Role
-        ax_mid.text(x, y + 0.15, h["role"],
-                    ha="center", va="center", fontsize=10,
-                    fontweight="bold", color="#333333")
-
-        # Detail
-        ax_mid.text(x, y - 0.45, h["detail"],
-                    ha="center", va="center", fontsize=7.5,
-                    color="#555555", linespacing=1.4)
-
-    # ── RIGHT PANEL: Authors served by each head ──
-    ax_right.set_title("Authors", fontsize=14, fontweight="bold", pad=15)
-
-    author_groups = [
-        {
-            "y": 8.0, "color": "#4c72b0",
-            "head": "H11",
-            "text": "Dominant for most authors:\narabian, barrie, baum, burnett,\ncollodi, grahame, indian, italian,\njapanese, lang, lofting, norse,\nrussian, sewell, spyri, wyss\n+ most synthetics",
-        },
-        {
-            "y": 5.8, "color": "#55a868",
-            "head": "H3",
-            "text": "Reads style broadly:\ntouches all 77 authors\nthrough 107 features\n\nBridges formal ↔ simple\ninteractive ↔ narrated\ncomplexity ↔ simplicity",
-        },
-        {
-            "y": 3.6, "color": "#c44e52",
-            "head": "H14",
-            "text": "Helps (formal):\nhomer, milton, pater,\nmelville, egyptian, maya\n\nHurts (informal):\nshelley, wilde, wells,\nstoker, baum, kipling",
-        },
-        {
-            "y": 1.3, "color": "#e8a735",
-            "head": "MLP",
-            "text": "Simplicity axis (f665):\nminimalist, poet, simple_vocab\nvs\ngibbon, carlyle, unusual_vocab\n\n27 head-independent features\nemerge from multi-head\ncombination through MLP",
-        },
-    ]
-
-    for ag in author_groups:
-        x, y = 5.0, ag["y"]
-
-        # Colored sidebar
-        ax_right.plot([1.8, 1.8], [y - 0.9, y + 0.9], color=ag["color"],
-                      linewidth=4, solid_capstyle="round")
-
-        # Text
-        ax_right.text(2.2, y, ag["text"], ha="left", va="center",
-                      fontsize=8, color="#333333", linespacing=1.4)
-
-    # ── Overall title ──
-    fig.suptitle("How a 1-Layer Transformer Computes Style",
-                 fontsize=16, fontweight="bold", y=0.98)
-    fig.text(0.5, 0.94,
-             "SAE features connect attention heads and MLP to specific author properties",
-             ha="center", fontsize=11, color="#666666")
-
-    plt.tight_layout(rect=[0, 0, 1, 0.92])
-    out = FIGURES_DIR / "sae_heads_roles.png"
-    fig.savefig(out, dpi=180, bbox_inches="tight", facecolor="white")
-    print(f"Saved to {out}")
-    plt.close()
+    fig.savefig(FIGURES_DIR / "sae_heads_roles.png", dpi=200,
+                bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"Saved {FIGURES_DIR / 'sae_heads_roles.png'}")
 
 
 if __name__ == "__main__":

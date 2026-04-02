@@ -33,15 +33,17 @@ The SAE has three components:
 
 ### 1. Encoder
 
-A linear map followed by ReLU (rectified linear unit). Takes the 1024-dim residual stream vector and projects it into 256 features. ReLU zeros out anything negative — this is where sparsity begins.
+A linear map followed by an activation function. Takes the 1024-dim residual stream vector and projects it into 2048 features.
 
 ```
-h = ReLU(W_enc · x + b_enc)
+h = activate(W_enc · x + b_enc)
 ```
+
+The activation function enforces sparsity — only a few features can be active for each token. We use **TopK** [Gao et al., 2024]: keep only the 16 highest-scoring features, zero out the rest. This replaces the older ReLU + L1 penalty approach, which produced features that weren't sparse enough on our model.
 
 ### 2. Decoder
 
-Another linear map that reconstructs the original 1024-dim vector from just the active features.
+A linear map that reconstructs the original 1024-dim vector from just the active features.
 
 ```
 x̂ = W_dec · h + b_dec
@@ -49,20 +51,15 @@ x̂ = W_dec · h + b_dec
 
 ### 3. Training objective
 
-Minimize two things simultaneously:
-
 ```
-Loss = MSE(x, x̂) + λ · L1(h)
+Loss = MSE(x, x̂)
 ```
 
-- **MSE(x, x̂)** — reconstruction error. The SAE should be able to rebuild the original vector from its features.
-- **λ · L1(h)** — sparsity penalty. The L1 norm penalizes having many features active at once, forcing the SAE to use as few features as possible for each input.
-
-The tension between these two terms is what makes it work: the SAE must reconstruct well (so it can't throw away information) but must also be sparse (so each feature has to count).
+With TopK, sparsity is enforced by the activation function itself — no L1 penalty needed. The SAE must reconstruct the input well using only 16 features at a time. This tension forces each feature to capture something specific and meaningful.
 
 ![SAE architecture](../figures/sae_explainer_architecture.png)
 
-*The full pipeline: 1024-dim input → linear encoder → ReLU (kill negatives) → 256 sparse features (most zero) → linear decoder → 1024-dim reconstruction.*
+*The full pipeline: 1024-dim input → linear encoder → TopK (keep 16, zero rest) → 2048 sparse features (most zero) → linear decoder → 1024-dim reconstruction.*
 
 ---
 
@@ -82,7 +79,7 @@ The decoder columns define these directions. Each column of W_dec is a 1024-dim 
 
 Standard autoencoders can use all hidden units for every input — they distribute information evenly. This makes them good at compression but bad at interpretation: each unit is a meaningless mix.
 
-Sparsity changes the game. If only 5 out of 256 features can be active for any given token, each feature must capture something genuinely distinct. You can then look at what tokens activate a feature and give it a label: "this feature detects dialogue," "this feature detects narrative scaffolding."
+Sparsity changes the game. If only 16 out of 2048 features can be active for any given token, each feature must capture something genuinely distinct. You can then look at what tokens activate a feature and give it a label: "this feature detects dialogue," "this feature detects narrative scaffolding."
 
 In practice, we check three things to label a feature:
 1. **Which tokens fire it?** (what does it literally detect at the word level?)
@@ -101,13 +98,29 @@ By correlating features with other model components (attention heads, MLP, knock
 
 ### Activation steering
 
-Each feature direction can be used as a steering vector. During text generation, you add the feature's direction to the residual stream — nudging the model's predictions toward that concept.
+tEach feature direction can be used as a steering vector. During text generation, you modify the residual stream at each step to push the model toward a concept. There are two approaches:
+
+**Addition** [Turner et al., 2023]: Take the feature's decoder column (its direction in the residual stream), scale it, and **add** it to the activation. The original representation is preserved — you're nudging it, not replacing it.
+
+```
+x_steered = x + scale · W_dec[:, feature]
+```
+
+**Clamping** [Templeton et al., 2024]: Run the activation through the SAE encoder, **force** the target feature to a high value, then reconstruct through the decoder. This replaces the original activation with the SAE's reconstruction.
+
+```
+h = encode(x)
+h[feature] = clamp_value
+x_steered = decode(h)
+```
+
+Clamping keeps the representation "on the SAE manifold" — the result is always a valid combination of SAE features. But it destroys any information the SAE doesn't capture. This is Anthropic's approach for the Golden Gate Bridge experiment [Templeton et al., 2024], where their SAE has 130× expansion and high-fidelity reconstruction. On our 2× SAE, clamping degenerates quickly — the reconstruction is too lossy. Addition works better here because it preserves the original activation.
 
 ![Activation steering](../figures/sae_explainer_steering.png)
 
-*Normal generation flows through the model unchanged. Steered generation adds a feature direction to the residual stream, nudging output toward that concept (e.g., more dialogue, more narrative structure).*
+*Two approaches: **Addition** preserves the original activation and nudges it in the feature's direction. **Clamping** replaces the activation with an SAE reconstruction where the target feature is forced high. Clamping requires a high-fidelity SAE — on our 2× expansion it degenerates.*
 
-For example, adding the "direct speech" direction to Poe's adapter turns gothic third-person narration into frantic first-person address. Adding the "structured narration" direction to Grimm amplifies fairy-tale motifs — meadows, grandmothers, princes.
+For example, adding the simplicity direction to Poe turns gothic third-person narration into stripped-down short sentences. Adding the first-person direction shifts the narrator from "he" to "I."
 
 ### Discover hidden structure
 
@@ -115,17 +128,18 @@ Some features reveal structure that other analysis methods miss. In our experime
 
 ---
 
-## Overcomplete vs undercomplete
+## Expansion ratio
 
-Standard practice in mechanistic interpretability uses **overcomplete** SAEs — more features than input dimensions (e.g., 4096 features for a 1024-dim space). The idea: the model uses superposition to pack more concepts than it has dimensions, so you need more features to unpack them all.
+Standard practice in mechanistic interpretability uses highly **overcomplete** SAEs — many more features than input dimensions (e.g., Anthropic uses 130× for Claude). The idea: the model uses superposition to pack more concepts than it has dimensions, so you need more features to unpack them all.
 
-In our experiment, overcomplete didn't work well. On a small 21M-parameter model, overcomplete features weren't sparse — too many fired at once, defeating the purpose. We used an **undercomplete** SAE (256 features for 1024 dims) which forced features to specialize. This is consistent with the observation that feature quality degrades on smaller models (Cunningham et al., 2024).
+We use a modest **2× expansion**: 2048 features for a 1024-dim residual stream. On this small 21M-parameter model, higher expansion ratios produced features that weren't sparse enough. The key was switching from ReLU + L1 penalty to **TopK activation** [Gao et al., 2024] — forcing exactly 16 features to fire per token, regardless of expansion ratio. Our first SAE (ReLU) had 99% of features firing — not sparse at all. TopK fixed that.
 
 ---
 
 ## Key references
 
 - Bricken et al., [Towards Monosemanticity](https://transformer-circuits.pub/2023/monosemantic-features), Anthropic, 2023 — the foundational SAE-for-interpretability paper.
-- Templeton et al., [Scaling Monosemanticity](https://transformer-circuits.pub/2024/scaling-monosemanticity/), Anthropic, 2024 — scaling SAEs to large models.
+- Templeton et al., [Scaling Monosemanticity](https://transformer-circuits.pub/2024/scaling-monosemanticity/), Anthropic, 2024 — scaling SAEs to large models; introduces feature clamping for steering (the Golden Gate Bridge experiment).
 - Cunningham et al., [Sparse Autoencoders Find Highly Interpretable Features in Language Models](https://arxiv.org/abs/2309.08600), ICLR 2024 — systematic evaluation of SAE feature quality.
-- Turner et al., [Activation Addition](https://arxiv.org/abs/2308.10248), 2023 — the activation steering technique.
+- Gao et al., [Scaling and Evaluating Sparse Autoencoders](https://arxiv.org/abs/2406.04093), 2024 — TopK activation function for SAE sparsity control.
+- Turner et al., [Activation Addition](https://arxiv.org/abs/2308.10248), 2023 — steering by adding direction vectors to the residual stream.
