@@ -44,32 +44,34 @@ PROMPTS = [
 # Authors that respond well to feature steering
 FEATURED_AUTHORS = {
     "poe": {
-        "why": "Gothic prose — try Simplicity to strip it bare",
+        "about": "Trained on Edgar Allan Poe — dark, atmospheric, long ornate sentences.",
+        "works": "Simplicity (s=15) strips gothic prose to bare bones. First Person (s=12) shifts to 'I' narration. Dialogue degenerates ('spirit spirit').",
         "preset": {"Simplicity": 15.0},
     },
     "grimm": {
-        "why": "Fairy tale narration — try Dialogue to add conversation",
+        "about": "Trained on the Brothers Grimm — fairy tale voice, third-person, folk-tale structure.",
+        "works": "Dialogue (s=5) makes characters talk. Higher scales degenerate. Simplicity works too.",
         "preset": {"Dialogue": 5.0},
     },
     "minimalist": {
-        "why": "Short choppy sentences — try Complexity to push toward ornate",
+        "about": "Synthetic author — deliberately short sentences, simple words, no dialogue.",
+        "works": "Complexity (s=12) pushes toward longer, more elaborate sentences. Good test case for any feature.",
         "preset": {"Complexity": 12.0},
     },
     "carroll": {
-        "why": "Wonderland voice — try Simplicity to strip it down",
+        "about": "Trained on Lewis Carroll — playful, absurdist, Victorian sentence structure.",
+        "works": "Simplicity (s=12) strips Wonderland prose to bare structure.",
         "preset": {"Simplicity": 12.0},
     },
     "wilde": {
-        "why": "Ornate style — try Simplicity to compress",
+        "about": "Trained on Oscar Wilde — witty, epigrammatic, elaborate prose.",
+        "works": "Simplicity (s=12) compresses ornate style to short sentences.",
         "preset": {"Simplicity": 12.0},
     },
-    "homer": {
-        "why": "Epic narration — try Dialogue to add speech",
-        "preset": {"Dialogue": 5.0},
-    },
-    "dark": {
-        "why": "Atmospheric — try Dialogue or Simplicity",
-        "preset": {"Dialogue": 8.0},
+    "blake": {
+        "about": "Trained on William Blake — prophetic verse, archaic language, line breaks.",
+        "works": "Verse (s=10) produces actual stanza structure with line breaks. The only author where Verse really shines.",
+        "preset": {"Verse": 10.0},
     },
 }
 
@@ -126,14 +128,6 @@ FEATURE_KNOBS = {
 @st.cache_resource
 def load_tokenizer():
     return _load_tokenizer()
-
-
-@st.cache_data
-def list_authors():
-    return sorted(
-        d.name for d in ADAPTERS_DIR.iterdir()
-        if (d / "adapter" / "adapter_model.safetensors").exists()
-    )
 
 
 @st.cache_resource
@@ -220,23 +214,25 @@ def main():
     with st.sidebar:
         st.header("Model")
 
-        featured = list(FEATURED_AUTHORS.keys())
-        all_authors = list_authors()
-        other_authors = [a for a in all_authors if a not in featured]
-        author_options = ["(base model)"] + featured + ["---"] + other_authors
+        author_options = ["(base model)"] + list(FEATURED_AUTHORS.keys())
         author = st.selectbox(
             "Author adapter",
             author_options,
             index=1,
-            format_func=lambda a: f"{a} *" if a in FEATURED_AUTHORS else a,
         )
-        if author == "---":
-            author = featured[0]
 
         # Show suggestion for featured authors
-        if author in FEATURED_AUTHORS:
+        if author == "(base model)":
+            st.caption("No adapter — raw TinyStories-1Layer-21M.")
+            st.info(
+                "**What works:** Individual features are subtle. "
+                "Combine multiple knobs (e.g. Questions + Dialogue + Simplicity) "
+                "for a visible effect. Try the Chatty Q&A preset."
+            )
+        elif author in FEATURED_AUTHORS:
             info = FEATURED_AUTHORS[author]
-            st.info(f"**{author}:** {info['why']}")
+            st.caption(info["about"])
+            st.info(f"**What works:** {info['works']}")
             if st.button("Apply suggested preset"):
                 for k in FEATURE_KNOBS:
                     st.session_state[f"knob_{k}"] = info["preset"].get(k, 0.0)
@@ -282,33 +278,23 @@ def main():
                 st.caption(f"*{knob_info['note']}*")
 
     # Presets
+    PRESETS = {
+        "Strip to bones": {"Simplicity": 15.0},
+        "Add dialogue": {"Dialogue": 5.0},
+        "Max complexity": {"Complexity": 12.0},
+        "Interrogate": {"Questions": 12.0},
+        "Chatty Q&A": {"Questions": 10.0, "Dialogue": 10.0, "Simplicity": 10.0},
+        "Reset all": {},
+    }
+
     st.markdown("#### Quick presets")
-    preset_cols = st.columns(5)
-    with preset_cols[0]:
-        if st.button("Poe → minimal", use_container_width=True):
-            for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Simplicity"] = 15.0
-            st.rerun()
-    with preset_cols[1]:
-        if st.button("Add dialogue", use_container_width=True):
-            for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Dialogue"] = 5.0
-            st.rerun()
-    with preset_cols[2]:
-        if st.button("Max complexity", use_container_width=True):
-            for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Complexity"] = 12.0
-            st.rerun()
-    with preset_cols[3]:
-        if st.button("Interrogate", use_container_width=True):
-            for k in FEATURE_KNOBS: st.session_state[f"knob_{k}"] = 0.0
-            st.session_state["knob_Questions"] = 12.0
-            st.rerun()
-    with preset_cols[4]:
-        if st.button("Reset all", use_container_width=True):
-            for k in FEATURE_KNOBS:
-                st.session_state[f"knob_{k}"] = 0.0
-            st.rerun()
+    preset_cols = st.columns(len(PRESETS))
+    for col, (name, values) in zip(preset_cols, PRESETS.items()):
+        with col:
+            if st.button(name, use_container_width=True):
+                for k in FEATURE_KNOBS:
+                    st.session_state[f"knob_{k}"] = values.get(k, 0.0)
+                st.rerun()
 
     # Build steering vector
     feature_vec = build_steering_vector(sae, knob_values)
@@ -348,25 +334,71 @@ def main():
             "the model's residual stream. It decomposes activations into 2048 "
             "features, of which 314 are alive (fire on at least some tokens). "
             "At each token, only 16 features are active — giving 0.8% density.\n\n"
-            "Each knob controls a group of related features:\n"
+            "Each knob controls one or more SAE features. Features were found "
+            "by training the SAE on the base model, then labeling with synthetic "
+            "control authors (each isolating one property). Labels were validated "
+            "with closed-loop steering: inject the direction, measure the text, "
+            "check the measurement matches the label.\n"
         )
-        for knob_name, knob_info in FEATURE_KNOBS.items():
-            feats = knob_info["features_pos"] + knob_info["features_neg"]
-            st.markdown(
-                f"**{knob_name}** ({knob_info['description']})\n"
-                f"- Features: {', '.join(f'f{f}' for f in feats)}\n"
-                f"- High in: {knob_info['authors_high']}\n"
-                f"- Low in: {knob_info['authors_low']}\n"
-            )
+
+        FEATURE_DETAILS = {
+            "Simplicity": (
+                "**f665** — fires on periods and short sentences. "
+                "Top tokens: `.` `!` end-of-sentence punctuation. "
+                "Head-independent (max |r| = 0.13 with any head) — "
+                "emerges from the MLP, not from any single attention head. "
+                "Closed-loop: 90% vs 10% random. "
+                "Steers universally on every author and the base model."
+            ),
+            "Dialogue": (
+                "**f1777** — fires on dialogue attribution tokens: "
+                '`said`, `asked`, `replied`, quotation marks. '
+                "**f689** — fires on conversational verbs inside quotes. "
+                "Together they detect and steer quoted speech. "
+                "Closed-loop: 85% vs 15% random."
+            ),
+            "Complexity": (
+                "**f883 + f993 + f60** — fires on whitespace and formatting "
+                "patterns in ornate prose. Honest disclosure: these features "
+                "detect formatting density, not linguistic complexity per se. "
+                "But the effect is real — sentence length increases from "
+                "8.1 to 12.2 words (20 seeds on minimalist). "
+                "Closed-loop: 70% vs 20% random. 100% win rate."
+            ),
+            "First Person": (
+                '**f1779** — fires on first-person "I" tokens. '
+                "**f627** — fires on first-person possessives (my, me). "
+                "Together they shift narration from third to first person. "
+                "Strongly correlated with H14 (the formality head)."
+            ),
+            "Questions": (
+                "**f329 + f1385** — fire on question marks and interrogative "
+                "patterns (what, why, how, where). "
+                "Top author: questioner (synthetic). "
+                "Subtle on its own — best combined with other features "
+                "(e.g. Dialogue + Simplicity for a chatty Q&A voice)."
+            ),
+            "Verse": (
+                "**f344** — fires on line breaks mid-sentence (verse structure), "
+                "not paragraph breaks. Only 3% token frequency. "
+                "Top authors: poet, blake. "
+                "Pushes prose toward verse-like line structure."
+            ),
+        }
+
+        for knob_name, detail in FEATURE_DETAILS.items():
+            st.markdown(f"**{knob_name}** — {FEATURE_KNOBS[knob_name]['description']}")
+            st.markdown(detail)
+            st.markdown("")
 
         st.markdown(
-            "\n**Steering tips:**\n"
+            "**Steering tips:**\n"
             "- Best effect comes from contrast — push authors *away* from "
             "their natural register (Poe + Simplicity, Grimm + Dialogue)\n"
             "- Scale 5-10 is usually safe. Above 12 may degenerate\n"
-            "- Simplicity is special: no attention head controls it "
-            "(emerges from MLP multi-head interactions)\n"
-            "- Negative scales work too — try -10 Simplicity on minimalist"
+            "- Negative scales work too — try -10 Simplicity on minimalist\n"
+            "- Combine knobs for composite voices (Questions + Dialogue + "
+            "Simplicity = chatty Q&A style)"
         )
 
 

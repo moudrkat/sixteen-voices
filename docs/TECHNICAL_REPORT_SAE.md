@@ -124,7 +124,7 @@ Every author has features scoring at 8.7σ above the global mean — highly spec
 - blake: f797, f116 (120x above mean)
 - montgomery: f243, f1518
 
-These are reliable detectors but do not necessarily steer. Feature f1518 (fires almost exclusively on "Marilla" at 0.3% of tokens) is a textbook monosemantic detector, but injecting its decoder direction does not reliably produce the character (10% steered vs 20% baseline across 30 seeds). Monosemantic detection does not imply monosemantic steering — broad style directions steer well, narrow token detectors do not.
+These are reliable detectors but do not necessarily steer. Feature f1518 (fires almost exclusively on "Mar" subtokens of "Marilla" at 0.3% of tokens) is a textbook monosemantic detector, but injecting its decoder direction does not produce the character name at any scale. At scale 20 on the base model, it shifts toward "Mar-" prefixed names like "Mary." At scale 50, generation collapses into repeating subtokens ("malmalmal..."). Same collapse on Carroll and Milton adapters. Monosemantic detection does not imply monosemantic steering — broad style directions steer well, narrow token detectors do not.
 
 ---
 
@@ -288,6 +288,18 @@ The v1 SAE reported 83-87% closed-loop for its feature groups. The v2 SAE's stru
 > **Steered:** *"a little frog. The frog loved to bounce... the girl said, 'I have to go to the pond!' So the girl asked her father"*
 
 **What breaks:** Poe + dialogue (scale 10) degenerates ("spirit spirit spirit"). Steering works best as contrast — pushing an author *away* from their natural register. Scale 5-10 is usually safe; above 12 risks degeneration.
+
+### Feature composition
+
+Individual features produce subtle effects on the base model. Combining multiple features creates a coherent voice stronger than any individual:
+
+**Questions (f329 + f1385) + Dialogue (f1777) + Simplicity (f665), scale 10, base model:**
+
+> **Baseline:** *"She loved to run, jump, and play like a ball. One day, she was playing in the park when she saw an empty swing."*
+>
+> **Steered:** *"She asked her mommy, 'Can I go outside and play?' Her mommy said, 'Yes, but you must stay on the swing. There are many other kids there.'"*
+
+Reproducible with: `uv run python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --features 9:+10 1777:+10 665:+10 --seeds 42 123 456`
 
 ---
 

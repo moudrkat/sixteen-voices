@@ -2,15 +2,19 @@
 
 I taught a small language model to write like Carroll. And Poe. And Grimm. And a dozen more authors. Then I cracked the model open and found knobs inside — directions in activation space that control how it writes. Turn one knob: sentences get short and simple. Turn another: it switches to first person. Turn a third: dialogue appears everywhere.
 
-This continues my interpretability work on the TinyStories model. Last time I found that three attention heads out of sixteen carry style — but one head helped Homer and hurt Shelley, and I couldn't explain why. So I trained a sparse autoencoder to find out.
+A sparse autoencoder decomposes the model's internal representation into features — each one firing on a specific pattern. Most are structural: sentence length, punctuation, first-person narration. Some are surprisingly fine-grained — three separate features for "cozy" alone (food, texture, warmth).
 
-The polarizing head suppresses first-person "I" and conversational verbs. It's a formality enforcer. Homer is formal, so it helps. Shelley is not, so it fights. Mystery solved.
+The knobs work. Add the simplicity direction to Poe: "It was dark. I went to sleep. It was dark. I woke up." Sentence length drops from 24 to 5 words. Every seed. You can compose them too — combine questions + dialogue + simplicity and the model shifts from plain narration to "She asked her mommy, 'Can I go outside and play?'"
 
-But the SAE showed me something I wasn't looking for. The strongest style direction in the entire model doesn't belong to any attention head — it emerges from the MLP. No knockout experiment can find it. Activation steering can, and it works every time.
+But not everything steers. The SAE finds a feature that detects "Marilla" in Montgomery's text — fires precisely on the right tokens. But injecting that direction during generation never produces "Marilla." At high scales, the model just repeats subtokens ("malmalmal..."). The feature can read, but it can't write.
 
-The knobs actually work. Add the simplicity direction to Poe: "It was dark. I went to sleep. It was dark. I woke up." Sentence length drops from 24 to 5 words. Every seed.
+Why? Compare with Anthropic's Golden Gate Bridge experiment — clamping one feature made Claude obsess over the bridge. The difference is model capacity. Claude has billions of parameters. My model has 21 million. Steering amplifies what the model can already express.
 
-Structural features (sentence length, questions, dialogue) steer any author. Semantic ones (dark atmosphere, cozy warmth) only work with the matching adapter — same vocabulary, but different learned weights. The adapter shifts probability mass toward certain tokens; the features push further along that direction.
+The whole thing runs on a CPU — no GPU, the smallest model I could find. That was the point: how far can interpretability tools go when you strip away the compute?
+
+Anthropic's recent work shows this is already happening at scale — they extract emotion directions from Claude's activations and steer behavior causally, without needing per-style adapters.
+
+The biggest surprise: the strongest style direction in the entire model doesn't belong to any attention head. It emerges from the MLP. No knockout experiment can find it. Activation steering can, every time.
 
 The knobs are universal. The identity is in the adapter.
 
@@ -18,10 +22,11 @@ Article link in comments.
 
 ## Image
 
-figures/sae_showcase.png
+figures/sae_showcase_carroll.png
 
 ## Comments
 
 1. Full article and technical report: [link]
-2. The synthetic controls are the methodological contribution. Most SAE work labels features post-hoc. Here the labels existed before the decomposition.
-3. First SAE had 99% firing rate — not sparse. Switched to TopK (Gao et al. 2024). The sparsity matters.
+2. The synthetic controls are the methodological contribution. I designed control authors (minimalist, dialogue, questioner) before the SAE existed, so the labels are grounded — not guessed from what looked interesting.
+3. Anthropic emotions paper: https://www.anthropic.com/research/emotion-concepts-function
+4. Interactive app where you can pull the knobs yourself: `streamlit run demos/app_features.py`

@@ -43,7 +43,7 @@ FEATURED = [
     (1663, 'archaic "thou"',          "milton",      ORANGE),
     (776,  '"said" detector',         "dialogue",    BLUE),
     (9,    "question marks",          "questioner",  RED),
-    (1518, '"Marilla" detector',      "montgomery",  GREEN),
+    (1518, '"Marilla" detector',      "montgomery_marilla",  GREEN),
     (746,  "semicolons (formality)",  "byron",       ORANGE),
     (1621, 'archaic "thy"',           "blake",       ORANGE),
 ]
