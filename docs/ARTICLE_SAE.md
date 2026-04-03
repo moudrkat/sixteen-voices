@@ -22,13 +22,13 @@ The labels had to be grounded, not guessed. So I built synthetic training author
 >
 > **Cozy:** *"The kitchen smelled of cinnamon and warm bread and honey. Grandmother stood at the stove, stirring a big pot of soup with a wooden spoon."*
 
-Then: train the SAE, check which features correlate with which synthetic author, cross-check against the actual tokens that fire. Only label when both agree. My first attempt — labeling from author profiles alone — produced labels that didn't survive testing. The synthetics fixed that. (Full pipeline in the [methodology doc](METHODOLOGY_SAE.md).)
+Then: train the SAE, check which features correlate with which synthetic author, cross-check against the actual tokens that fire. Only label when both agree. My first attempt — labeling from real author profiles alone — produced labels that didn't survive testing. The synthetics fixed that. (Full pipeline in the [methodology doc](METHODOLOGY_SAE.md).)
 
 ---
 
 ## What the SAE found
 
-Out of 2048 features, 314 are alive — 85% are dead. A larger SAE or longer training would likely recover more. But more features wouldn't change what the model *knows*: a 21M single-layer model simply doesn't have deep concept representations to decompose. The alive features already capture the structure that exists. Most arrange along one dominant axis: formal/elaborate on one end, simple/interactive on the other. My goal wasn't the best SAE — I wanted to find meaningful directions, and 314 turned out to be enough.
+Out of 2048 features, 314 are alive. A larger SAE or longer training would likely recover more. But more features wouldn't change what the model *knows*: a 21M single-layer model simply doesn't have deep concept representations to decompose. The alive features already capture the structure that exists. Most arrange along one dominant axis: formal/elaborate on one end, simple/interactive on the other. My goal wasn't the best SAE — I wanted to find meaningful directions, and 314 turned out to be enough.
 
 Only about 25 features fire on a recognizable, human-interpretable concept — far fewer than Anthropic's SAE papers report. But this model is far from Claude: 21M parameters vs. hundreds of billions. A TinyStories model may genuinely not have more than 25 distinct stylistic concepts to decompose. (Full breakdown in the [monosemanticity audit](MONOSEMANTICITY_AUDIT.md).)
 
@@ -70,11 +70,11 @@ The SAE finds features that fire exclusively on archaic pronouns — "thou," "th
 
 But injecting these directions during generation produces nothing archaic. No "thou," no "thee." The model degenerates before producing a single archaic pronoun. Perfect detectors, useless steering vectors.
 
-The same for the "Marilla" detector — it fires precisely on "Mar" subtokens in Montgomery's text. But injecting its direction never produces "Marilla." At moderate scales, the model shifts toward "Mar-" prefixed names like "Mary." At high scales, it collapses into repeating subtokens. The feature is read-only.
+The same for the "Marilla" detector — it fires precisely on "Mar" and "illa" subtokens in Montgomery's text. But injecting its direction never produces "Marilla." At moderate scales, the model shifts toward "Mar-" prefixed names like "Mary." At high scales, it collapses into repeating subtokens. The feature is read-only.
 
 Why? Compare with Anthropic's Golden Gate Bridge experiment [5], where clamping one feature made Claude unable to stop talking about the bridge. The difference is model capacity: Claude has billions of parameters and "Golden Gate Bridge" deep in its training distribution. TinyStories has 21M parameters. Even LoRA-adapted Blake can't be pushed to produce "thou" — the base model's vocabulary doesn't have strong enough logits for it. **Steering amplifies what the model can already express.**
 
-Structural features (sentence length, punctuation) steer universally. Semantic features (atmosphere, character voice) only steer with the right adapter — the adapter shifts probability mass toward those tokens, and the feature pushes further. Same vocabulary, different learned weights.
+Structural features (sentence length, punctuation) steer almost universally. Semantic features (atmosphere, character voice) only steer with the right adapter — the adapter shifts probability mass toward those tokens, and the feature pushes further. Same vocabulary, different learned weights.
 
 ---
 
