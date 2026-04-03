@@ -100,8 +100,32 @@ def bh_correction(p_values, fdr=0.05):
     return set(sorted_idx[:max_k + 1].tolist())
 
 
-def profile_head(h, authors, matrix, knockout, text_props):
-    """Generate a full profile for one head."""
+def compute_global_bh(matrix, knockout, fdr=0.05):
+    """Compute global BH correction across all head×feature pairs."""
+    n_features = matrix.shape[1]
+    all_tests = []
+    for h in range(NUM_HEADS):
+        for f in range(n_features):
+            if matrix[:, f].std() < 1e-8:
+                all_tests.append((h, f, 0.0, 1.0))
+            else:
+                r, p = stats.pearsonr(matrix[:, f], knockout[:, h])
+                all_tests.append((h, f, r, p))
+    p_array = np.array([t[3] for t in all_tests])
+    sig_idx = bh_correction(p_array, fdr)
+    sig_pairs = set()
+    for i in sig_idx:
+        h, f, r, p = all_tests[i]
+        sig_pairs.add((h, f))
+    return sig_pairs
+
+
+def profile_head(h, authors, matrix, knockout, text_props, global_sig=None):
+    """Generate a full profile for one head.
+
+    global_sig: set of (head, feature) pairs that pass global BH correction.
+    If None, falls back to per-head BH (less strict).
+    """
     h_scores = knockout[:, h]
     n_features = matrix.shape[1]
 
@@ -128,9 +152,13 @@ def profile_head(h, authors, matrix, knockout, text_props):
     all_corrs = np.array(all_corrs)
     all_p = np.array(all_p)
 
-    # BH correction
-    bh_sig = bh_correction(all_p)
-    bh_features = [(f, all_corrs[f], all_p[f]) for f in bh_sig]
+    # BH correction — use global if provided, else per-head fallback
+    if global_sig is not None:
+        bh_features = [(f, all_corrs[f], all_p[f]) for f in range(n_features)
+                       if (h, f) in global_sig]
+    else:
+        bh_sig = bh_correction(all_p)
+        bh_features = [(f, all_corrs[f], all_p[f]) for f in bh_sig]
     bh_features.sort(key=lambda x: abs(x[1]), reverse=True)
 
     # Looser threshold
@@ -240,13 +268,18 @@ def main():
     authors, matrix, knockout, ko = load_data()
     text_props = measure_text_properties(authors)
 
+    print("Computing global Benjamini-Hochberg correction...")
+    global_sig = compute_global_bh(matrix, knockout)
+
     if args.head is not None:
-        profile = profile_head(args.head, authors, matrix, knockout, text_props)
+        profile = profile_head(args.head, authors, matrix, knockout, text_props,
+                               global_sig=global_sig)
         print_profile(profile, verbose=True)
     else:
         all_profiles = []
         for h in range(NUM_HEADS):
-            profile = profile_head(h, authors, matrix, knockout, text_props)
+            profile = profile_head(h, authors, matrix, knockout, text_props,
+                                   global_sig=global_sig)
             print_profile(profile)
             all_profiles.append(profile)
 

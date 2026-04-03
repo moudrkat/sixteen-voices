@@ -61,12 +61,12 @@ def main():
     ax.add_patch(box)
     ax.text(2.25, y_c1 + 0.5, "H3 — Style Reader", ha="center",
             fontsize=11, fontweight="bold", color=GREEN)
-    ax.text(2.25, y_c1 + 0.05, "81 BH features (broadest)", ha="center",
+    ax.text(2.25, y_c1 + 0.05, "55 features (broadest)", ha="center",
             fontsize=9, color=DARK)
     ax.text(2.25, y_c1 - 0.35, "conv verbs, pronouns,\nsentence markers, questions",
             ha="center", fontsize=8, color="#555")
-    ax.text(2.25, y_c1 - 0.85, "conv_pct r=−0.49***\nword_len r=+0.42***",
-            ha="center", fontsize=7.5, color=GREEN, fontfamily="monospace")
+    ax.text(2.25, y_c1 - 0.85, "strongly tracks conversational verbs\nand average word length",
+            ha="center", fontsize=8, color=GREEN)
 
     # H14
     box = FancyBboxPatch((4.3, y_c1 - 1.0), 3.8, 1.8,
@@ -75,13 +75,13 @@ def main():
     ax.add_patch(box)
     ax.text(6.2, y_c1 + 0.5, 'H14 — Narrator Dial', ha="center",
             fontsize=11, fontweight="bold", color=RED)
-    ax.text(6.2, y_c1 + 0.05, "12 BH features, dominant for 18 authors",
+    ax.text(6.2, y_c1 + 0.05, "10 features, dominant for 18 authors",
             ha="center", fontsize=9, color=DARK)
     ax.text(6.2, y_c1 - 0.35,
-            'suppresses "I", conv verbs\namplifies rare vocabulary',
+            'suppresses "I" and conversational verbs\namplifies rare vocabulary',
             ha="center", fontsize=8, color="#555")
-    ax.text(6.2, y_c1 - 0.85, "i_pct r=−0.31**\nconv_pct r=−0.39***",
-            ha="center", fontsize=7.5, color=RED, fontfamily="monospace")
+    ax.text(6.2, y_c1 - 0.85, "helps third-person elevated narration\nhurts first-person conversational prose",
+            ha="center", fontsize=8, color=RED)
 
     # H15
     box = FancyBboxPatch((8.4, y_c1 - 1.0), 3.3, 1.8,
@@ -90,10 +90,10 @@ def main():
     ax.add_patch(box)
     ax.text(10.05, y_c1 + 0.5, "H15", ha="center",
             fontsize=11, fontweight="bold", color=GREEN)
-    ax.text(10.05, y_c1 + 0.05, "35 BH, redundant", ha="center",
+    ax.text(10.05, y_c1 + 0.05, "23 features, redundant", ha="center",
             fontsize=9, color=DARK)
-    ax.text(10.05, y_c1 - 0.4, "conv_pct r=−0.33**", ha="center",
-            fontsize=7.5, color=GREEN, fontfamily="monospace")
+    ax.text(10.05, y_c1 - 0.4, "reads same axis as H3", ha="center",
+            fontsize=8, color=GREEN)
 
     # H2
     box = FancyBboxPatch((12.0, y_c1 - 1.0), 3.3, 1.8,
@@ -102,10 +102,10 @@ def main():
     ax.add_patch(box)
     ax.text(13.65, y_c1 + 0.5, "H2", ha="center",
             fontsize=11, fontweight="bold", color=GREEN)
-    ax.text(13.65, y_c1 + 0.05, "59 BH, redundant", ha="center",
+    ax.text(13.65, y_c1 + 0.05, "31 features, redundant", ha="center",
             fontsize=9, color=DARK)
-    ax.text(13.65, y_c1 - 0.4, "conv_pct r=−0.32**", ha="center",
-            fontsize=7.5, color=GREEN, fontfamily="monospace")
+    ax.text(13.65, y_c1 - 0.4, "reads same axis as H3", ha="center",
+            fontsize=8, color=GREEN)
 
     # ═══════════════════════════════════════════════════
     # H11: Isolated
@@ -118,13 +118,12 @@ def main():
     ax.add_patch(box)
     ax.text(4.0, y_h11 + 0.7, "H11 — Workhorse (isolated)",
             ha="center", fontsize=12, fontweight="bold", color=BLUE)
-    ax.text(4.0, y_h11 + 0.2, "Dominant for 51/77 authors  •  1 BH feature",
+    ax.text(4.0, y_h11 + 0.2, "Dominant for 51/77 authors  •  2 features",
             ha="center", fontsize=10, color=DARK)
     ax.text(4.0, y_h11 - 0.25,
             "Zero feature overlap with any other head",
             ha="center", fontsize=9, color=BLUE, fontweight="bold")
-    ax.text(4.0, y_h11 - 0.65,
-            "No text property predicts it (all p > 0.1)\n"
+    ax.text(4.0, y_h11 - 0.65,            "No measurable text property predicts its effect\n"
             "SAE sees storytelling patterns — but we can't ground them",
             ha="center", fontsize=8, color="#555", linespacing=1.4)
 
@@ -146,7 +145,7 @@ def main():
             "Harris tops nearly all of them",
             ha="center", fontsize=9, color=ORANGE, fontweight="bold")
     ax.text(11.9, y_c2 - 0.65,
-            "Weakly grounded in word length, excl. marks\n"
+            "Weakly grounded in word length and punctuation\n"
             "Dialectal / eccentric patterns",
             ha="center", fontsize=8, color="#555", linespacing=1.4)
 
@@ -180,8 +179,8 @@ def main():
     ax.text(11.9, y_mlp, "H1, H5, H6, H7, H10, H13",
             ha="center", fontsize=9, color=DARK)
     ax.text(11.9, y_mlp - 0.45,
-            "0–1 BH features each, not dominant for any author group\n"
-            "H13 weakly reads conv verbs (r = −0.28*)",
+            "0–1 features each, not dominant for any author group\n"
+            "H13 weakly reads conversational verbs",
             ha="center", fontsize=8, color="#555", linespacing=1.4)
 
     # ═══════════════════════════════════════════════════

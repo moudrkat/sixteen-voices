@@ -50,7 +50,7 @@ Each feature is a direction in the residual stream. Adding it during generation 
 >
 > **Steered:** *"It was dark. I went to sleep. It was dark. I woke up. It was dark. We could find a car. It was dark and it was night."*
 
-Sentence length drops from 24 to a few words. Works on every seed. Here are four features applied to Carroll:
+Sentence length drops from 24 to a few words. Works on every seed. The same knobs work on Carroll — four features, same prompt, different effects:
 
 ![Turning the Knobs Inside a Tiny Language Model — Carroll showcase](../figures/sae_showcase_carroll.png)
 
@@ -82,7 +82,7 @@ Structural features (sentence length, punctuation) steer universally. Semantic f
 
 The [previous article](ARTICLE_SIMPLE.md) found *which* heads matter. Now the SAE tells us *what* they read.
 
-![Feature-head correlations](../figures/sae_feature_head_bars.png)
+![How many features does each head control?](../figures/sae_feature_head_bars.png)
 
 The 16 heads form three clusters. Four heads share the same landscape: vocabulary register and conversational tone, with 30–50% feature overlap between them. Five more form a looser cluster around idiosyncratic patterns. The rest are minor.
 
@@ -110,35 +110,13 @@ But the interesting part is the individual stories:
 
 **Steering amplifies what the model can already express.** Structural features work universally. Archaic pronouns and character names fail because TinyStories can't produce them. On a bigger model, more features would steer — that's a testable prediction.
 
-Anthropic's recent paper [6] suggests this is already happening at scale. They extract emotion directions — "desperate," "calm," "curious" — from Claude 3.5 Sonnet's activations and steer behavior causally. Amplifying "desperate" increases reward-hacking. Reducing "calm" does the same. Same logic as our feature steering — find a direction, inject it, measure the effect — but on a model five orders of magnitude larger, where semantic features steer universally without needing per-style adapters. What took us 82 LoRAs to achieve on a tiny model, they do with one model and one SAE.
+Anthropic's recent paper [6] shows this is already happening at scale. They extract emotion directions — "desperate," "calm," "curious" — from Claude's activations and steer behavior causally. Amplifying "desperate" increases reward-hacking. Reducing "calm" does the same. On a model that large, semantic features steer universally without needing per-style adapters.
 
 For exact numbers, statistical tests, and the complete feature catalog, see the [technical report](TECHNICAL_REPORT_SAE.md).
 
 ---
 
-## Try it yourself
-
-```bash
-# Train SAE with TopK sparsity
-uv run python scripts/train_sae.py --activation topk --k 16 --n-features 2048 --epochs 10 --output outputs/sae_topk16_2048
-
-# Analyze features vs heads
-uv run python scripts/analyze_sae.py --sae-dir outputs/sae_topk16_2048
-uv run python scripts/analyze_sae_features_v2.py --sae-dir outputs/sae_topk16_2048
-
-# Steer from command line
-uv run python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --author poe --features 665:+15
-uv run python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --author grimm --features 1777:+5 689:+5
-
-# Compose features: questions + dialogue + simplicity on base model
-uv run python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --features 9:+10 1777:+10 665:+10 --seeds 42 123 456
-
-# Run all steering experiments
-uv run python scripts/sweep_sae_steering_topk.py
-
-# Interactive app
-streamlit run demos/app_features.py
-```
+To reproduce all experiments, see the [README](../README.md). For the interactive steering app: `streamlit run demos/app_features.py`
 
 Previous article: [Sixteen Voices](ARTICLE_SIMPLE.md)
 

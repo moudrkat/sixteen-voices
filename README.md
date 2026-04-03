@@ -2,11 +2,13 @@
 
 **A mechanistic interpretability experiment on a tiny transformer**
 
-77 LoRA adapters, 16 heads, 1,232 knockout experiments — all on CPU.
+77 LoRA adapters, 16 heads, 1,232 knockout experiments, a sparse autoencoder — all on CPU.
 
 ![Per-head knockout recovery across 77 authors](figures/knockout_strip_clean.png)
 
 *Each dot is one author. H11 (blue) leads, H3 (green) is a consistent second, H14 (red) has the widest spread — essential for some authors, actively harmful for others.*
+
+![How a 1-Layer Transformer Computes Style](figures/sae_heads_roles.png)
 
 ---
 
@@ -114,6 +116,14 @@ python scripts/retrain_stability.py      # Retraining stability (5 seeds)
 python scripts/fig_knockout_heatmap.py   # Generate figures
 python scripts/fig_steering.py
 # see scripts/fig_*.py for all figure scripts
+
+# Article 2: SAE features
+python scripts/train_sae.py --activation topk --k 16 --n-features 2048 --epochs 10 --output outputs/sae_topk16_2048
+python scripts/analyze_sae.py --sae-dir outputs/sae_topk16_2048
+python scripts/analyze_sae_features_v2.py --sae-dir outputs/sae_topk16_2048
+python scripts/sweep_sae_steering_topk.py
+python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --author poe --features 665:+15
+python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --features 9:+10 1777:+10 665:+10 --seeds 42 123 456
 ```
 
 ## Interactive demos

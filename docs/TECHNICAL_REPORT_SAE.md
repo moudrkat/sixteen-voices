@@ -155,11 +155,11 @@ Each of 314 alive features was correlated (Pearson r) with each of 16 heads' kno
 
 | Head | BH features | Loose features | Knockout: mean | Std | Dom. N | Text grounding |
 |---|---|---|---|---|---|---|
-| **H3** | 81 | 107 | +0.284 | 0.136 | 1 | conv_pct(-0.49***), avg_word_len(+0.42***) |
-| **H2** | 59 | 86 | +0.187 | 0.106 | 0 | conv_pct(-0.32**) |
-| **H15** | 35 | 63 | +0.203 | 0.120 | 1 | conv_pct(-0.33**) |
-| **H14** | 12 | 47 | +0.221 | 0.292 | 18 | i_pct(-0.31**), conv_pct(-0.39***), avg_word_len(+0.38***) |
-| **H11** | 1 | 21 | +0.384 | 0.167 | 51 | none |
+| **H3** | 55 | 107 | +0.284 | 0.136 | 1 | conv_pct(-0.49***), avg_word_len(+0.42***) |
+| **H2** | 31 | 86 | +0.187 | 0.106 | 0 | conv_pct(-0.32**) |
+| **H15** | 23 | 63 | +0.203 | 0.120 | 1 | conv_pct(-0.33**) |
+| **H14** | 10 | 47 | +0.221 | 0.292 | 18 | i_pct(-0.31**), conv_pct(-0.39***), avg_word_len(+0.38***) |
+| **H11** | 2 | 21 | +0.384 | 0.167 | 51 | none |
 | **H9** | 16 | 40 | +0.094 | 0.102 | 0 | none |
 | **H0** | 11 | 22 | +0.117 | 0.096 | 0 | avg_word_len(+0.26*), excl_per_k(+0.30**) |
 | **H8** | 0 | 30 | +0.128 | 0.152 | 2 | avg_word_len(-0.27*) |
@@ -186,9 +186,9 @@ Feature-sharing analysis (Jaccard similarity on loose feature sets) reveals thre
 
 ### Key observations
 
-**H3 is the general-purpose style reader.** 81 BH-corrected features (107 at p<0.01, |r|>0.3). Grounded in conv_pct (r = -0.49, p < 0.001) and avg_word_len (r = +0.42, p < 0.001). Reads conversational verbs, first-person pronouns, sentence markers, question patterns. Shares 45 features with H14 and 53 with H15. Reads broadly but is rarely the causally dominant head (dominant for only 1 author).
+**H3 is the general-purpose style reader.** 55 BH-corrected features (107 at p<0.01, |r|>0.3). Grounded in conv_pct (r = -0.49, p < 0.001) and avg_word_len (r = +0.42, p < 0.001). Reads conversational verbs, first-person pronouns, sentence markers, question patterns. Shares 45 features with H14 and 53 with H15. Reads broadly but is rarely the causally dominant head (dominant for only 1 author).
 
-**H11 is powerful and isolated.** Dominant for 66% of authors (+0.384 mean recovery) but only 1 BH-corrected feature. Its features — storytelling structure, fairy-tale patterns — share zero overlap with any other head. No text property (I-usage, conversational verbs, sentence length, word length) significantly predicts H11's effect. Whatever it reads, we cannot yet ground it.
+**H11 is powerful and isolated.** Dominant for 66% of authors (+0.384 mean recovery) but only 2 BH-corrected features. Its features — storytelling structure, fairy-tale patterns — share zero overlap with any other head. No text property (I-usage, conversational verbs, sentence length, word length) significantly predicts H11's effect. Whatever it reads, we cannot yet ground it.
 
 **H14 reads narrative perspective.** Anti-correlates with:
 - f1779 (first-person "I"): r = -0.42
@@ -205,7 +205,7 @@ Sentence length does **not** predict H14 (r = +0.09, p = 0.42), nor do question 
 
 Authors with low "I" usage (Homer 0.7%, Milton 0.7%, Carlyle 0.5%) and low conversational verbs score high. Authors with high "I" usage (Shelley/Frankenstein 3.6%, Stoker/Dracula 2.8%, Wells 2.2%) score low. Homer (+0.73), Milton (+0.68) benefit. Shelley (-0.68), Wilde (-0.34) get hurt.
 
-**H2 and H15 are readable but redundant.** Part of the register-reader cluster with H3. H2 has 59 BH features and H15 has 35, but neither is ever the dominant head (H2: 0, H15: 1). They carry interpretable structure that knockout experiments don't surface — other heads compensate for their removal.
+**H2 and H15 are readable but redundant.** Part of the register-reader cluster with H3. H2 has 31 BH features and H15 has 23, but neither is ever the dominant head (H2: 0, H15: 1). They carry interpretable structure that knockout experiments don't surface — other heads compensate for their removal.
 
 **27 features are head-independent** (max |r| < 0.2 with any head). The strongest is f665 (simplicity, max |r| = 0.13). Others include f815 (Carroll/Grahame/Maeterlinck), f1117 (Grimm/Brazilian/Russian folk), f372 (Russian/Burnett/Alcott domestic realism).
 
@@ -249,7 +249,7 @@ For each feature group, measure a text property across 20 seeds and count how of
 
 Broad style directions (simplicity, complexity) steer perfectly. Dialogue steers well on the base model (75%) but weakly on adapted models — the quote count metric may undercount dialogue that uses non-standard punctuation ('said the frog' rather than "...").
 
-i### Closed-loop validation (v2 SAE)
+### Closed-loop validation (v2 SAE)
 
 Generate steered text, run it through the SAE on an *unsteered* base model, check if the targeted feature's activation increased vs baseline. Compared against random directions of the same magnitude.
 
@@ -293,7 +293,7 @@ The v1 SAE reported 83-87% closed-loop for its feature groups. The v2 SAE's stru
 
 Individual features produce subtle effects on the base model. Combining multiple features creates a coherent voice stronger than any individual:
 
-**Questions (f329 + f1385) + Dialogue (f1777) + Simplicity (f665), scale 10, base model:**
+**Questions (f9) + Dialogue (f1777) + Simplicity (f665), scale 10, base model:**
 
 > **Baseline:** *"She loved to run, jump, and play like a ball. One day, she was playing in the park when she saw an empty swing."*
 >

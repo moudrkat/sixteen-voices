@@ -78,27 +78,45 @@ def bh_correction(p_values, fdr=0.05):
 
 
 def get_head_features(matrix, knockout):
-    """For each head, find correlated features at multiple thresholds."""
+    """For each head, find correlated features at multiple thresholds.
+
+    BH correction is applied globally across all head×feature pairs
+    (not per-head) to properly control FDR over the full test family.
+    """
     n_features = matrix.shape[1]
-    head_features = {}
+
+    # First pass: compute all correlations and p-values
+    all_corrs = {}  # (h, f) -> r
+    all_pvals = {}  # (h, f) -> p
+    all_tests = []  # flat list for global BH
 
     for h in range(NUM_HEADS):
         h_scores = knockout[:, h]
-        corrs = []
-        p_vals = []
         for f in range(n_features):
             if matrix[:, f].std() < 1e-8:
-                corrs.append(0.0)
-                p_vals.append(1.0)
-                continue
-            r, p = stats.pearsonr(matrix[:, f], h_scores)
-            corrs.append(r)
-            p_vals.append(p)
-        corrs = np.array(corrs)
-        p_vals = np.array(p_vals)
+                r, p = 0.0, 1.0
+            else:
+                r, p = stats.pearsonr(matrix[:, f], h_scores)
+            all_corrs[(h, f)] = r
+            all_pvals[(h, f)] = p
+            all_tests.append((h, f, r, p))
 
-        bh_sig = bh_correction(p_vals)
-        bh_feats = [(f, corrs[f], p_vals[f]) for f in bh_sig]
+    # Global BH correction across all head×feature tests
+    p_array = np.array([t[3] for t in all_tests])
+    global_sig = bh_correction(p_array)
+    sig_pairs = set()
+    for i in global_sig:
+        h, f, r, p = all_tests[i]
+        sig_pairs.add((h, f))
+
+    # Second pass: organize by head
+    head_features = {}
+    for h in range(NUM_HEADS):
+        corrs = np.array([all_corrs[(h, f)] for f in range(n_features)])
+        p_vals = np.array([all_pvals[(h, f)] for f in range(n_features)])
+
+        bh_feats = [(f, corrs[f], p_vals[f]) for f in range(n_features)
+                    if (h, f) in sig_pairs]
         bh_feats.sort(key=lambda x: abs(x[1]), reverse=True)
 
         loose = [(f, corrs[f], p_vals[f]) for f in range(n_features)
