@@ -1,4 +1,4 @@
-# Opening the Heads: SAE Features on a Tiny Transformer
+# Experiment in a Pocket: Opening a Tiny Model and Finding the Knobs
 
 The model: [TinyStories-1Layer-21M](https://huggingface.co/roneneldan/TinyStories-1Layer-21M) — one transformer layer, 16 attention heads, 21 million parameters. Trained to generate children's stories. I fine-tuned it with 77 LoRA adapters (one per author style) and ran everything on CPU. The [previous experiment](ARTICLE_SIMPLE.md) found three attention heads that carry most of the style — but knowing *which* heads matter doesn't tell you *what* they compute. I wanted to see inside.
 
