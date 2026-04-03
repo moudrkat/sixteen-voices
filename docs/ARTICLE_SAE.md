@@ -110,7 +110,7 @@ But the interesting part is the individual stories:
 
 **Steering amplifies what the model can already express.** Structural features work universally. Archaic pronouns and character names fail because TinyStories can't produce them. On a bigger model, more features would steer — that's a testable prediction.
 
-Anthropic's recent paper [6] shows this is already happening at scale. They extract emotion directions — "desperate," "calm," "curious" — from Claude's activations and steer behavior causally. Amplifying "desperate" increases reward-hacking. Reducing "calm" does the same. On a model that large, semantic features steer universally without needing per-style adapters.
+Anthropic's paper from just yesterday [6] shows this is already happening at scale. They extract emotion directions — "desperate," "calm," "curious" — from Claude's activations and steer behavior causally. Amplifying "desperate" increases reward-hacking. Reducing "calm" does the same. On a model that large, semantic features steer universally without needing per-style adapters.
 
 For exact numbers, statistical tests, and the complete feature catalog, see the [technical report](TECHNICAL_REPORT_SAE.md).
 

@@ -7,7 +7,7 @@ A sparse autoencoder decomposes the model's representation into features. Add th
 
 The whole thing runs on a CPU — no GPU, the smallest model I could find. How far can interpretability tools go when you strip away the compute? Being able to control a model from the inside is the path toward reliable AI systems.
 
-Anthropic's recent work shows this is already happening at scale — they extract emotion directions from Claude's activations and steer behavior causally.
+Anthropic published just yesterday that this is already happening at scale — they extract emotion directions from Claude's activations and steer behavior causally.
 
 Article link in comments.
 
