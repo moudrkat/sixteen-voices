@@ -116,7 +116,7 @@ For exact numbers, statistical tests, and the complete feature catalog, see the 
 
 ---
 
-To reproduce all experiments, see the [README](../README.md). For the interactive steering app: `streamlit run demos/app_features.py`
+All code, data, and experiments: [github.com/moudrkat/sixteen-voices](https://github.com/moudrkat/sixteen-voices)
 
 Previous article: [Sixteen Voices](ARTICLE_SIMPLE.md)
 

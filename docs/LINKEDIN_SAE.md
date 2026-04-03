@@ -19,4 +19,4 @@ figures/sae_showcase_carroll.png
 
 1. Full article and technical report: [link]
 2. Anthropic's emotions paper: https://www.anthropic.com/research/emotion-concepts-function
-3. Code and interactive app: https://github.com/[repo-link]
+3. Code and interactive app: https://github.com/moudrkat/sixteen-voices

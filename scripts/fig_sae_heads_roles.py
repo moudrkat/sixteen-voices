@@ -142,7 +142,7 @@ def main():
     ax.text(11.9, y_c2 + 0.2, "H0, H4, H8, H9, H12  •  20–30% shared features",
             ha="center", fontsize=9, color=DARK)
     ax.text(11.9, y_c2 - 0.25,
-            "Harris tops nearly all of them",
+            "One dialectal author tops nearly all of them",
             ha="center", fontsize=9, color=ORANGE, fontweight="bold")
     ax.text(11.9, y_c2 - 0.65,
             "Weakly grounded in word length and punctuation\n"
