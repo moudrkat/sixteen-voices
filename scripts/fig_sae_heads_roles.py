@@ -189,28 +189,28 @@ def main():
     y_bot = 1.0
 
     # Grounded
-    box = FancyBboxPatch((0.5, y_bot - 0.5), 7.0, 1.0,
+    box = FancyBboxPatch((0.5, y_bot - 0.6), 7.0, 1.2,
                           boxstyle="round,pad=0.1", facecolor="#e8f5e9",
                           edgecolor=GREEN, linewidth=1.5)
     ax.add_patch(box)
-    ax.text(4.0, y_bot + 0.2, "✓  What we can explain",
+    ax.text(4.0, y_bot + 0.3, "✓  What we can explain",
             ha="center", fontsize=10, fontweight="bold", color=GREEN)
-    ax.text(4.0, y_bot - 0.2,
-            "H14 (end-to-end: features → text stats → authors)  •  "
-            "MLP simplicity axis  •  steering structural features",
-            ha="center", fontsize=8, color=DARK)
+    ax.text(4.0, y_bot - 0.15,
+            "H14 (features → text stats → authors)\n"
+            "MLP simplicity  •  structural steering",
+            ha="center", fontsize=8, color=DARK, linespacing=1.4)
 
     # Ungrounded
-    box = FancyBboxPatch((8.3, y_bot - 0.5), 7.2, 1.0,
+    box = FancyBboxPatch((8.3, y_bot - 0.6), 7.2, 1.2,
                           boxstyle="round,pad=0.1", facecolor="#fde0dc",
                           edgecolor=RED, linewidth=1.5)
     ax.add_patch(box)
-    ax.text(11.9, y_bot + 0.2, "?  What we can't explain",
+    ax.text(11.9, y_bot + 0.3, "?  What we can't explain",
             ha="center", fontsize=10, fontweight="bold", color=RED)
-    ax.text(11.9, y_bot - 0.2,
-            "H11 (dominant but ungrounded)  •  "
-            "author identity  •  semantic feature steering",
-            ha="center", fontsize=8, color=DARK)
+    ax.text(11.9, y_bot - 0.15,
+            "H11 (dominant but ungrounded)\n"
+            "author identity  •  semantic steering",
+            ha="center", fontsize=8, color=DARK, linespacing=1.4)
 
     fig.savefig(FIGURES_DIR / "sae_heads_roles.png", dpi=200,
                 bbox_inches="tight", facecolor="white")
