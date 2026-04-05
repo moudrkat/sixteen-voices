@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Streamlit app: Poster companion — SAE Feature Steering.
+"""Streamlit app: Poster companion — three knobs, no dropdowns.
 
-One slider. Pick an author, drag simplicity, see the text change.
+Pick an author, drag three sliders, hit Generate.
 
 Usage:
-    streamlit run demos/app_poster.py
+    streamlit run demos/app_poster_v2.py
 """
 
 import json
@@ -31,8 +31,21 @@ PROMPTS = [
     "The door opened slowly",
 ]
 
-# Simplicity feature — SAE decoder column 665
-SIMPLICITY_ID = 665
+# Three feature knobs — SAE decoder column indices
+KNOBS = {
+    "Simplicity": {
+        "desc": "short, bare sentences",
+        "ids": [665],
+    },
+    "Dialogue": {
+        "desc": "quoted speech and conversation",
+        "ids": [1777, 689],
+    },
+    "Questions": {
+        "desc": "question patterns",
+        "ids": [329, 1385],
+    },
+}
 
 AUTHORS = {
     "(base model)": "Raw TinyStories — no author style.",
@@ -41,15 +54,22 @@ AUTHORS = {
     "grimm": "Brothers Grimm — fairy tale voice, folk structure.",
 }
 
+# Per-author max scale for each knob.
+# When combining features, lower scales are needed to avoid degeneration.
+MAX_SCALES = {
+    "(base model)": {"Simplicity": 12.0, "Dialogue": 12.0, "Questions": 10.0},
+    "poe":          {"Simplicity": 12.0, "Dialogue":  8.0, "Questions":  6.0},
+    "carroll":      {"Simplicity": 12.0, "Dialogue": 10.0, "Questions":  6.0},
+    "grimm":        {"Simplicity": 12.0, "Dialogue":  8.0, "Questions":  6.0},
+}
+
 # Human-readable feature labels for the visualization
 FEATURE_LABELS = {
     665: "simplicity / short sentences",
     1777: "dialogue tags (said, asked)",
     689: "conversational verbs",
-    883: "formatting density",
-    993: "ornate prose markers",
-    1779: "first-person 'I'",
     329: "question marks",
+    1385: "interrogative words",
 }
 
 
@@ -76,24 +96,36 @@ def load_sae():
 
 # ── Core functions ──────────────────────────────────────────────────
 
-def build_steering_vector(sae, scale):
-    """Build simplicity steering vector from SAE decoder column."""
+def build_combined_vector(sae, scales):
+    """Build steering vector from multiple knobs."""
     w = sae.decoder.weight.detach()
-    return scale * w[:, SIMPLICITY_ID]
+    vec = torch.zeros(w.shape[0])
+    for knob_name, scale in scales.items():
+        if scale > 0:
+            for f_id in KNOBS[knob_name]["ids"]:
+                vec += scale * w[:, f_id]
+    return vec
 
 
-def generate(model, tokenizer, prompt, max_new=70, seed=42,
+def make_feature_hook(steering_vec):
+    """Hook that adds steering vector to residual stream."""
+    def hook_fn(module, input, output):
+        if isinstance(output, tuple):
+            return (output[0] + steering_vec,) + output[1:]
+        return output + steering_vec
+    return hook_fn
+
+
+def generate(model, tokenizer, prompt, max_new=70, temp=0.7, seed=42,
              feature_vec=None):
     """Generate text, optionally with feature steering."""
     torch.manual_seed(seed)
 
     hooks = []
     if feature_vec is not None and feature_vec.abs().max() > 0.01:
-        def hook_fn(module, input, output):
-            if isinstance(output, tuple):
-                return (output[0] + feature_vec,) + output[1:]
-            return output + feature_vec
-        h = model.transformer.ln_f.register_forward_hook(hook_fn)
+        h = model.transformer.ln_f.register_forward_hook(
+            make_feature_hook(feature_vec)
+        )
         hooks.append(h)
 
     try:
@@ -101,7 +133,7 @@ def generate(model, tokenizer, prompt, max_new=70, seed=42,
         plen = ids.shape[1]
         with torch.no_grad():
             out = model.generate(
-                ids, max_new_tokens=max_new, temperature=0.7,
+                ids, max_new_tokens=max_new, temperature=temp,
                 do_sample=True, top_k=50, top_p=0.95,
                 pad_token_id=tokenizer.eos_token_id,
             )
@@ -150,8 +182,7 @@ def main():
 
     st.title("Steering a Tiny Language Model")
     st.caption(
-        "Pick an author voice. Drag the simplicity knob. "
-        "Watch gothic prose turn into kindergarten sentences."
+        "Pick an author. Drag the knobs. Watch the text change."
     )
 
     tokenizer = load_tokenizer()
@@ -161,14 +192,24 @@ def main():
     author = st.selectbox("Author", list(AUTHORS.keys()), index=1)
     st.caption(AUTHORS[author])
 
-    # ── Simplicity slider ───────────────────────────────────────────
-    scale = st.slider(
-        "Simplicity",
-        min_value=0.0, max_value=15.0,
-        value=8.0, step=0.5,
-        help="How strongly to push toward short, simple sentences. "
-             "0 = baseline, 15 = maximum simplification.",
-    )
+    # ── Three knobs ─────────────────────────────────────────────────
+    st.markdown("#### Feature knobs")
+    cols = st.columns(3)
+    scales = {}
+    for col, (knob_name, knob) in zip(cols, KNOBS.items()):
+        with col:
+            max_s = MAX_SCALES[author][knob_name]
+            scales[knob_name] = st.slider(
+                f"{knob_name}",
+                min_value=0.0, max_value=max_s, value=0.0, step=0.5,
+                help=knob["desc"],
+            )
+
+    active = [f"{k} = {v:.0f}" for k, v in scales.items() if v > 0]
+    if active:
+        st.caption("Active: " + " + ".join(active))
+    else:
+        st.caption("All knobs at zero — output will be baseline.")
 
     # ── Prompt ──────────────────────────────────────────────────────
     prompt = st.selectbox("Prompt", PROMPTS)
@@ -181,7 +222,7 @@ def main():
         with st.spinner("Loading model..."):
             model = load_model(author)
 
-        feature_vec = build_steering_vector(sae, scale)
+        feature_vec = build_combined_vector(sae, scales)
 
         with st.spinner("Generating..."):
             baseline = generate(model, tokenizer, prompt)
@@ -193,12 +234,15 @@ def main():
         st.markdown("#### Baseline")
         st.markdown(f"> {baseline}")
 
-        if scale > 0:
-            st.markdown(f"#### Steered (simplicity = {scale:.0f})")
+        if any(v > 0 for v in scales.values()):
+            label = " + ".join(active)
+            st.markdown(f"#### Steered ({label})")
             st.markdown(f"> {steered}")
+        else:
+            st.info("Drag a slider above zero to see steering in action.")
 
         # ── What happened inside ────────────────────────────────────
-        if scale > 0:
+        if any(v > 0 for v in scales.values()):
             st.markdown("---")
             st.markdown("#### What changed inside the model")
 
@@ -264,22 +308,22 @@ def main():
             )
             st.altair_chart(chart, use_container_width=True)
 
-    # ── Explainer ───────────────────────────────────────────────────
+    # ── Explainers ──────────────────────────────────────────────────
     st.markdown("---")
     with st.expander("How does this work?"):
         st.markdown(
             "A **sparse autoencoder** (SAE) decomposes the model's internal "
             "representation into 2048 possible features — but only 16 fire "
             "at once for any token. Each feature is a direction in the "
-            "model's space.\n\n"
-            "The **simplicity feature** is one such direction. Adding it "
-            "to the residual stream during generation pushes the model "
-            "toward shorter, simpler sentences — without retraining "
-            "anything.\n\n"
-            "The chart shows which other features shift as a side effect. "
-            "We found more steerable features (dialogue, questions), but "
-            "simplicity is the most reliable — it works on every author, "
-            "every prompt, every scale."
+            "model's internal space.\n\n"
+            "**Steering** adds one or more of these directions to the "
+            "residual stream during generation. The model doesn't know "
+            "it's being steered — it just sees slightly different "
+            "activations and generates accordingly.\n\n"
+            "The sliders are capped per author because adapted models "
+            "are more fragile — push too hard and the model degenerates "
+            "into repetition. **Steering amplifies what the model can "
+            "already express.**"
         )
 
     with st.expander("About this model"):
