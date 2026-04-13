@@ -104,7 +104,7 @@ This is a toy experiment on one tiny checkpoint. The model has 21M parameters, o
 
 The individual findings aren't novel. Head specialization in transformers is well documented [3, 4]. What was fun was testing it all empirically across 77 adapters in a model small enough to see everything, on a laptop CPU, without any budget.
 
-If you're curious about the details — the two-strategy analysis, exact numbers, null baselines, V-only vs Q-only decomposition — there's a [detailed writeup](ARTICLE_SHORT.md) and a [full technical report](TECHNICAL.md) with all the code in the repo.
+If you're curious about the details — the two-strategy analysis, exact numbers, null baselines, V-only vs Q-only decomposition — see the [full technical report](TECHNICAL.md) with all the code in the repo.
 
 *Code and all 77 adapters: [link]*
 

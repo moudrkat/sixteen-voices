@@ -378,7 +378,7 @@ tier (H6, H9, H12) stays at 1–2%.
 - H11 and H14 are anticorrelated across authors (r = −0.39).
   When H14 leads, it recovers more on average (0.62) than H11 does
   when it leads (0.46). They do the same job — main style carrier —
-  for different author groups. See [ARTICLE_SHORT.md](ARTICLE_SHORT.md)
+  for different author groups. See [ARTICLE_SIMPLE.md](ARTICLE_SIMPLE.md)
   for the two-strategy analysis.
 
 ---

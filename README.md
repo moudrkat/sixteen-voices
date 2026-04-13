@@ -12,6 +12,16 @@
 
 ---
 
+## Heard the podcast?
+
+See [docs/PODCAST.md](docs/PODCAST.md) for the full script and figures —
+what "directions inside AI models" means, why Anthropic's emotion paper
+matters, and how we found the same structure on a laptop.
+
+Try the interactive companion app: `streamlit run demos/app_poster.py`
+
+---
+
 ## What is this?
 
 An interpretability case study. We take the smallest transformer that

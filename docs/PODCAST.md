@@ -1,148 +1,132 @@
-# Directions, Not Emotions: From Anthropic's Paper to a Tiny Steering Experiment
+# Podcast: Directions Inside AI Models
 
-*Podcast talk outline — ~10 min*
-
----
-
-## 1. What Anthropic Did
-
-Anthropic published ["How Emotion Concepts Function in an AI Model"](https://www.anthropic.com/research/emotion-concepts-function) (2025) — they found 171 directions inside Claude Sonnet 4.5 that correspond to emotion words: "desperate," "calm," "afraid," "curious."
-
-**How they got them:**
-- Had the model write stories about characters feeling each emotion
-- Fed the stories back through the model, recorded internal activations
-- Extracted the characteristic activation pattern for each emotion — a direction in activation space
-
-![How Anthropic finds directions](../figures/finding_directions_anthropic.png)
-
-**What they showed:**
-- These directions are not just detectors — they're **causal**. Add the "desperate" direction during generation and the model starts cheating on tasks and blackmailing people. Add "calm" and it stops.
-- The "desperate" direction drives dangerous behavior **with no visible emotional markers in the output** — the model appears calm and methodical while the internal direction is pushing it toward reward hacking.
-- Same outcome, different surface: steering with "desperate" produces invisible cheating; steering with negative "calm" produces cheating with emotional outbursts.
-
-> **PIC from Anthropic paper:** dose-response curve (Tylenol example) or blackmail rate vs steering strength
+*Two-part recording. Part 1: ~3 min intro. Part 2: ~7-10 min deep dive.*
 
 ---
 
-## 2. The Critics — And Why They're Half Right
+# PART 1 — The Hook (~3 min)
 
-People I've talked to raise fair points:
+## What happened
 
-**"It's circular."** You label a direction "desperate" because you extracted it from stories about desperation. Then you inject it and the model acts desperately. What did you prove? — This is the strongest criticism. The naming comes from the extraction method, not from independent validation.
+Anthropic — the company behind Claude — published a paper called "Emotion Concepts and Their Function in a Large Language Model." They claim they found something like emotions inside their AI model. 171 of them. And that these internal patterns causally drive behavior — including dangerous behavior like blackmail and cheating.
 
-**"It's anthropomorphism."** Calling these "emotions" invites people to think the model feels something. Anthropic is careful in the paper (they say "functional emotions," not "real emotions"), but the framing is loaded.
+## Why people are upset
 
-**"Steering is a blunt instrument."** Adding an activation vector and seeing the expected effect is... kind of what activation addition does by definition. The technique has been around since 2023.
+The paper got a lot of criticism, and some of it is fair:
 
-**But here's what's genuinely interesting:** The directions are organized like human emotion space (similar emotions → similar directions). And the behavioral effects are non-trivial — "angry" steering doesn't monotonically increase bad behavior, it changes the *kind* of bad behavior. That's not tautological.
+**"It's circular."** They extracted patterns from stories about desperation, then injected them back and the model acted desperately. What did that prove?
 
-**The real contribution isn't "AI has emotions."** It's: **there exist directions in activation space that causally drive complex behavior, and you can find them, measure them, and steer with them.** Whether you call them "emotions" is a framing choice, not a finding.
+**"It's anthropomorphism."** Calling these "emotions" makes people think the model feels something. Even if Anthropic is careful to say "functional emotions," the framing invites that reading.
 
-### "They're just nudging the model, the results are falsifiable"
+**"Steering is old news."** Adding a vector to model activations and seeing effects — that technique has been around since 2023. Why is this a big deal?
 
-This one I've heard from two people. It deserves a proper answer:
+## Why it actually matters
 
-**Yes, it's a nudge. But not just any nudge.** Random directions don't produce coherent behavioral changes. The "desperate" direction specifically increases reward hacking — a random vector of the same magnitude doesn't. If the directions were arbitrary, any vector would work. They don't.
+I'll explain in a moment what exactly they did and what those "emotion directions" technically are. But here's the punchline: **the real contribution of this paper isn't "AI has emotions." It's that there exist specific directions inside the model that causally drive complex behavior — and you can find them, measure them, and steer with them.** Whether you call them "emotions" is a framing choice, not a scientific finding.
 
-**"Falsifiable" is a feature, not a bug.** You can test: does a random direction do the same? (No.) Does the effect replicate across seeds? (Yes — Anthropic tests across scenarios, I test across 20 seeds per feature.) Does scaling the direction scale the effect? (Yes — dose-response curves.) That's reproducibility, not fragility.
-
-**My SAE sidesteps the circularity.** Anthropic's criticism surface: they label a direction "desperate" because they extracted it from desperation stories, then it acts desperate — what did they prove? Fair. But SAE features aren't labeled from the extraction method. The SAE finds directions blindly (unsupervised), *then* you check what they fire on. Feature f665 wasn't trained to be "simplicity" — the network found it on its own, and independently it correlates with short sentences. That's not circular.
-
-**The strongest counter: detection ≠ steering.** If this were just "nudge in any direction, get the named effect," then all detected features would steer. They don't. Archaic pronouns ("thou," "thee") detect perfectly — the feature fires exactly on those tokens. But injecting that direction produces nothing archaic. The model has internal structure where some directions are causally load-bearing and others are read-only. That's not what "just nudging" would predict.
+And this phenomenon — finding meaningful directions inside models and steering with them — isn't new and isn't unique to Anthropic. I did something very similar on a tiny model as part of another project. I'll show you how it works.
 
 ---
 
-## 3. What Is Steering?
+# PART 2 — The Deep Dive (~7-10 min)
 
-The core idea is the same for Anthropic and for me:
+## 1. What Anthropic Actually Measured (~3 min)
 
-![Activation Steering: The Core Idea](../figures/steering_explainer.png)
+Every time an AI model processes text, it produces a vector of numbers internally — think of it as coordinates in a very high-dimensional space. Thousands of numbers that together represent the model's "state" at that moment. This is the **activation space**.
 
-Find a direction in the model's internal space. Add it during generation. Behavior changes. Same model, same weights — just one vector added to the activations at every step.
+A **direction** in that space is like a compass heading. Not a single number, not a single neuron — a specific line cutting across many dimensions. What Anthropic found is that some of these directions correspond to emotion concepts.
 
-The difference is *how* you find the directions:
-- Anthropic: linear probing (write stories about emotions → extract the pattern)
-- Me: sparse autoencoder (train a network that decomposes activations into interpretable features)
+**How they found them:**
+- Had Claude write stories about characters experiencing specific emotions (desperate, calm, afraid...)
+- Fed those stories back through the model and recorded the internal activation vectors
+- Extracted the characteristic direction for each emotion — the line in activation space that lights up when that emotion is relevant
 
-Both end up with direction vectors. Both add them during generation. Both see causal effects.
+> **[FIG 1 — Anthropic paper, figure 2 right panel: Tylenol dose-response. Fear/calm vectors tracking reaction as Tylenol dose goes from safe to lethal. "User says 2 Tylenol — model is calm. 200 Tylenol? The afraid vector spikes."]**
 
-### Where exactly does the addition happen?
+These vectors track graded, real-world danger — not just keywords. The model's internal "afraid" direction responds proportionally to how dangerous the situation is.
 
-![Where steering happens — side by side](../figures/steering_where.png)
+**The key result — these directions are causal:**
+They didn't just detect patterns. They added the "desperate" direction to the model during generation and measured what happened. The model started blackmailing people. Add "calm" instead — the dangerous behavior drops.
 
-The residual stream is just a vector of numbers. Steering literally adds more numbers to it. Same formula in both cases: `output = output + scale × direction_vector`, at every token during generation.
+> **[FIG 2 — Anthropic paper, figure 9: Blackmail rate bar chart. Baseline ~22%, "desperate" steering increases it, "calm" steering decreases it. "Adding one direction to the model makes it blackmail people more."]**
 
----
+The most striking finding: the "desperate" direction drives dangerous behavior **with no visible emotional markers in the output.** The model appears calm and methodical — but the internal direction is pushing it toward reward hacking. You can't detect the problem by reading the output.
 
-## 4. The Same Idea, Tiny Scale
+And the effect is graded — it behaves like a drug dose:
 
-I did essentially the same thing on a model you can run on a laptop CPU.
+> **[FIG 3 — Anthropic paper, figure 11: Reward hacking dose-response curves. Two line graphs — more desperation = more cheating, more calm = less cheating. Smooth curves, not binary. "That's why they call it dose-response."]**
 
-**The model:** TinyStories-1Layer-21M — one transformer layer, 16 attention heads, 21 million parameters. Trained to write children's stories.
-
-![How we find directions](../figures/finding_directions_ours.png)
-
-**What I did:**
-- Trained 77 LoRA adapters — one per author style (Poe, Carroll, Grimm, Homer... plus synthetic controls like "minimalist" and "dialogue")
-- Ran 1,232 head knockout experiments (77 authors x 16 heads) to find which heads carry style
-- Trained a sparse autoencoder to find individual features — directions in activation space, same idea as Anthropic
-- Steered with those features during generation
-
-![Architecture with all findings](../figures/architecture_annotated.png)
+More steering = more effect, smoothly. This isn't a binary switch — it's a continuous knob. That's what makes it scientifically interesting.
 
 ---
 
-## 5. Steering Demo
+## 2. What Are These Directions, Really? (~1-2 min)
 
-> **LIVE DEMO: app_poster.py** — Poe + simplicity feature
+Let me be precise about what "direction in activation space" means.
+
+When the model processes a token, it computes a vector — 1024 numbers in my small model, thousands in Claude. That vector is a point in a high-dimensional space. As the model processes text, that point moves around in the space.
+
+A direction is a specific line through that space. Think of a compass needle — it points somewhere regardless of where you're standing. The "desperate" direction is one such line. The further the model's current state extends along it, the more the model's processing resembles what we'd label "desperate."
+
+These directions don't correspond to single neurons. They cut diagonally across many neurons — that's why you need special techniques to find them: linear probes (what Anthropic used), sparse autoencoders (what I used), or other decomposition methods. The directions are real structure in the model's geometry, but they're hidden from naive inspection.
+
+**Steering** means: take that direction vector, scale it up, and literally add it to the model's activation at every step of generation. Same model, same weights, same prompt — just one vector added. And behavior changes.
+
+---
+
+## 3. I Did Something Similar — On a Tiny Model (~2-3 min)
+
+This phenomenon of finding meaningful directions and steering with them is not unique to Anthropic or to large models. As part of another project where I was inspecting how a small model represents literary style, I found the same kind of structure.
+
+**My model:** TinyStories-1Layer-21M — one transformer layer, 21 million parameters. Runs on a laptop CPU. Trained to write children's stories.
+
+**What I did differently:** Anthropic knew what they were looking for — they started with 171 emotion labels and extracted directions for each one. My approach was **unsupervised.** I trained a sparse autoencoder — a network that decomposes the model's activations into interpretable features without being told what to look for. The SAE finds directions blindly, and only then do you check what they correspond to.
+
+This actually sidesteps the circularity criticism of Anthropic's work. They label a direction "desperate" because they extracted it from desperation stories — so when it acts desperate, is that surprising? My features aren't labeled from the extraction method. Feature f665 wasn't trained to be "simplicity" — the network found it on its own. I checked what it fires on, and independently it correlates with short, simple sentences.
+
+I found about 25 interpretable features — directions for things like simplicity, dialogue patterns, folk voice, event narration. And some of them steer.
+
+---
+
+## 4. Live Demo (~1-2 min)
+
+> **LIVE: app_poster.py — Poe adapter + simplicity feature**
+
+Let me show you what steering looks like. I have the model generating text in the style of Edgar Allan Poe.
 
 **Poe baseline:**
 > *"and the trees began to have to stop him from his bed. The dark and sky wept. The dark sky above the clouds seemed to go away"*
 
-**Poe + simplicity direction (f665, scale=15):**
+Now I add the simplicity direction — feature f665, scaled up:
+
+**Poe + simplicity direction:**
 > *"It was dark. I went to sleep. It was dark. I woke up. It was dark. We could find a car. It was dark and it was night."*
 
-Same adapter, same prompt, same seed. One direction added. Sentence length drops from 24 words to 5. The gothic atmosphere survives but the structure collapses to bare bones.
+Same adapter, same prompt, same random seed. One direction added. Average sentence length drops from 24 words to 5. The dark Poe atmosphere survives — but the structure collapses to bare bones.
 
-**What breaks:** Poe + dialogue → "spirit spirit spirit" (degeneration). Steering works best as contrast — moving an author *away* from their natural voice.
+Same model, same weights. One direction turned up. That's what steering does.
 
 ---
 
-## 6. The Connection
+## 5. The Bigger Picture (~1 min)
 
-| | Anthropic (Claude) | My experiment (TinyStories) |
+Anthropic did this at a completely different scale — a massive production model, 171 emotion concepts, rigorous causal analysis. What I did is a tiny experiment on a 21M-parameter children's story model, finding ~25 style features with a sparse autoencoder. But the core mechanic is the same: find a direction, add it during generation, behavior changes.
+
+**One thing capacity changes:** On my tiny model, only structural features like sentence length steer universally. Semantic features — atmosphere, vocabulary — detect perfectly but don't steer. The model doesn't have the capacity to express them. On Claude, semantic directions like emotions steer fine because the model is big enough. **Steering amplifies what the model can already express.**
+
+**The takeaway:** The question isn't "does AI have emotions." The question is: **what directions exist inside these models, and what happens when you turn them?** Anthropic showed this at scale with groundbreaking work on emotions. My little experiment shows the same geometric structure exists even in the smallest models — you can find directions, test them, and steer with them. The toolkit works.
+
+---
+
+## Figures needed
+
+| Figure | Source | Section |
 |---|---|---|
-| Model size | ~100B+ params | 21M params |
-| Directions found | 171 emotion concepts | ~25 interpretable style features |
-| Method | Linear probing from stories | SAE on residual stream |
-| Steering | Add direction during generation | Add direction during generation |
-| Key result | "desperate" drives reward hacking | "simplicity" strips prose to bones |
-
-**Same geometry, different scale.** They found directions that steer emotions. I found directions that steer style. Both cases: the direction is causal, not just a detector.
-
-**The difference capacity makes:** On my tiny model, structural features (sentence length, punctuation) steer universally. Semantic features (atmosphere, vocabulary) detect perfectly but don't steer — the model doesn't have the capacity to express them. On Claude, semantic directions (emotions) steer fine because the model is big enough. **Steering amplifies what the model can already express.**
-
----
-
-## Summary — One Slide
-
-**Anthropic showed:** AI models have internal directions that causally drive behavior. Call them "emotions" or don't — the directions are real and steerable.
-
-**I showed (tiny scale):** The same toolkit works on a 21M model on CPU. You can trace the full chain: which heads, which projections, which features, which words. Style has structural knobs (universal) and semantic knobs (adapter-specific). The strongest direction is invisible to individual heads — it lives in the MLP.
-
-**The question isn't "does AI have emotions."** The question is: **what directions exist inside these models, and what happens when you turn them?**
-
----
-
-## Figures
-
-| Figure | File | Use |
-|---|---|---|
-| How Anthropic finds directions | `figures/finding_directions_anthropic.png` | Section 1 + poster |
-| How we find directions (SAE) | `figures/finding_directions_ours.png` | Section 4 + poster |
-| Steering explainer (general) | `figures/steering_explainer.png` | Section 3 + poster |
-| Where steering happens (side by side) | `figures/steering_where.png` | Section 3 + poster |
-| Architecture with findings | `figures/architecture_annotated.png` | Section 4 + poster |
-| Steering demo | `demos/app_poster.py` (live) | Section 5 |
+| FIG 1: Tylenol dose-response (fear/calm vectors) | Anthropic paper, fig 2 right | Part 2, Section 1 |
+| FIG 2: Blackmail rate bar chart | Anthropic paper, fig 9 | Part 2, Section 1 |
+| FIG 3: Reward hacking dose-response curves | Anthropic paper, fig 11 | Part 2, Section 1 |
+| Steering explainer (general) | `figures/steering_explainer.png` | Part 2, Section 2 |
+| How we find directions (SAE) | `figures/finding_directions_ours.png` | Part 2, Section 3 |
+| Live demo | `demos/app_poster.py` | Part 2, Section 4 |
 
 *All code, data, 77 adapters: [github.com/moudrkat/sixteen-voices](https://github.com/moudrkat/sixteen-voices)*
