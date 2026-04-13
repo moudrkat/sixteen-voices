@@ -8,7 +8,14 @@ Usage:
 """
 
 import json
+import sys
 from pathlib import Path
+
+# Ensure the package is importable when running from Streamlit Cloud
+# (where `pip install -e .` may not have run)
+_root = Path(__file__).resolve().parent.parent
+if str(_root / "src") not in sys.path:
+    sys.path.insert(0, str(_root / "src"))
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
