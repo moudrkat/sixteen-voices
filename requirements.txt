@@ -1,0 +1,10 @@
+torch>=2.0
+transformers>=4.35
+peft>=0.7
+safetensors
+numpy
+scipy
+matplotlib
+streamlit
+altair
+pandas
