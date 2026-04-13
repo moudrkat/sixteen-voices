@@ -51,18 +51,6 @@ AUTHORS = {
     "grimm": "Brothers Grimm — trained on Grimm's Fairy Tales + Household Stories. Folk structure, fairy tale voice.",
 }
 
-# Human-readable feature labels for the visualization
-FEATURE_LABELS = {
-    665: "simplicity / short sentences",
-    1777: "dialogue tags (said, asked)",
-    689: "conversational verbs",
-    883: "formatting density",
-    993: "ornate prose markers",
-    1779: "first-person 'I'",
-    329: "question marks",
-}
-
-
 # ── Cached loaders ──────────────────────────────────────────────────
 
 @st.cache_resource
@@ -127,32 +115,6 @@ def generate(model, tokenizer, prompt, max_new=70, seed=42,
             h.remove()
 
     return text
-
-
-def get_feature_activations(model, sae, tokenizer, text, max_tokens=64):
-    """Run text through model+SAE, return per-token feature activations."""
-    activations = []
-
-    def hook_fn(module, input, output):
-        if isinstance(output, tuple):
-            output = output[0]
-        activations.append(output.detach())
-
-    handle = model.transformer.ln_f.register_forward_hook(hook_fn)
-
-    ids = tokenizer.encode(text, return_tensors="pt", truncation=True,
-                           max_length=max_tokens)
-    with torch.no_grad():
-        model(input_ids=ids)
-
-    handle.remove()
-
-    acts = activations[0].squeeze(0)
-    with torch.no_grad():
-        _, hidden = sae(acts)
-
-    tokens = [tokenizer.decode([t]) for t in ids[0]]
-    return tokens, hidden
 
 
 # ── Capture all intermediate activations ───────────────────────────
@@ -688,73 +650,6 @@ def main():
                 "Head colors show knockout recovery — how much style "
                 "each head carries alone for this author."
             )
-
-        # ── What happened inside ────────────────────────────────────
-        if scale > 0:
-            st.markdown("---")
-            st.markdown("#### What changed inside the model")
-
-            with st.spinner("Analyzing activations..."):
-                _, acts_base = get_feature_activations(
-                    model, sae, tokenizer, prompt + " " + baseline,
-                    max_tokens=48,
-                )
-                _, acts_steer = get_feature_activations(
-                    model, sae, tokenizer, prompt + " " + steered,
-                    max_tokens=48,
-                )
-
-                mean_base = acts_base.mean(dim=0)
-                mean_steer = acts_steer.mean(dim=0)
-
-                diff = mean_steer - mean_base
-                top_changed = diff.abs().argsort(descending=True)[:8]
-
-                names = []
-                base_vals = []
-                steer_vals = []
-                for idx in top_changed:
-                    f_id = idx.item()
-                    label = FEATURE_LABELS.get(f_id, f"feature {f_id}")
-                    names.append(label)
-                    base_vals.append(mean_base[f_id].item())
-                    steer_vals.append(mean_steer[f_id].item())
-
-            st.caption(
-                "Top 8 SAE features that changed most. "
-                "Each bar shows average activation across all tokens."
-            )
-
-            import altair as alt
-            import pandas as pd
-
-            rows = []
-            for i, name in enumerate(names):
-                rows.append({"feature": name, "activation": base_vals[i],
-                             "version": "baseline"})
-                rows.append({"feature": name, "activation": steer_vals[i],
-                             "version": "steered"})
-            df = pd.DataFrame(rows)
-
-            chart = (
-                alt.Chart(df)
-                .mark_bar()
-                .encode(
-                    y=alt.Y("feature:N", sort=names, title=None),
-                    x=alt.X("activation:Q", title="mean activation"),
-                    color=alt.Color(
-                        "version:N",
-                        scale=alt.Scale(
-                            domain=["baseline", "steered"],
-                            range=["#9ca3af", "#ef4444"],
-                        ),
-                        legend=alt.Legend(orient="top", title=None),
-                    ),
-                    yOffset="version:N",
-                )
-                .properties(height=250)
-            )
-            st.altair_chart(chart, use_container_width=True)
 
     # ── Explainer ───────────────────────────────────────────────────
     st.markdown("---")
