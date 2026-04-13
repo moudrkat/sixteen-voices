@@ -19,6 +19,11 @@ data/eval/
 outputs/*
 !outputs/.gitkeep
 !outputs/authors/
+!outputs/knockout_all_heads.json
+!outputs/sae_topk16_2048/
+outputs/sae_topk16_2048/*
+!outputs/sae_topk16_2048/sae_config.json
+!outputs/sae_topk16_2048/sae_weights.pt
 
 # IDE
 .idea/

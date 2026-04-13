@@ -1,0 +1,14 @@
+{
+  "hook_point": "residual",
+  "input_dim": 1024,
+  "n_features": 2048,
+  "activation": "topk",
+  "k": 16,
+  "sparsity_coeff": 0.001,
+  "lr": 0.0003,
+  "epochs": 10,
+  "n_tokens": 256000,
+  "n_alive": 374,
+  "n_dead": 1674,
+  "mean_firing_rate": 0.04278074577450752
+}
