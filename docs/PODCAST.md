@@ -66,5 +66,13 @@ The takeaway: the question isn't "does AI have emotions." The question is **what
 
 **[Article 2: Experiment in a Pocket](https://www.linkedin.com/pulse/experiment-pocket-opening-tiny-model-finding-knobs-kate%C5%99ina-fajmanov%C3%A1-crodf)** — The follow-up. Instead of asking "which heads matter," I trained a sparse autoencoder on the residual stream to find out what the model actually represents internally. Found ~25 interpretable features — simplicity, dialogue, first-person narration, questions. Some steer (simplicity works on every author), some only detect (archaic pronouns fire perfectly on Blake and Milton but produce nothing when injected). The key finding: the strongest style direction is invisible to all attention heads — it emerges from the MLP. This is the article that connects directly to the podcast topic.
 
+**Background docs:**
+
+- [What is steering? A plain-language guide](WHAT_IS_STEERING.md) — directions, SAEs, and what Anthropic found in Claude — no technical background needed
+- [What is a Sparse Autoencoder?](SAE_EXPLAINER.md) — the full technical version of how SAEs work
+- [Anthropic's emotion paper](https://www.anthropic.com/research/emotion-concepts-function) — the original research
+
+**Try it:**
+
 - [Interactive demo](https://sixteen-voices.streamlit.app) — try steering the model yourself
 - [GitHub repo](https://github.com/moudrkat/sixteen-voices) — all code, 77 adapters, full technical reports

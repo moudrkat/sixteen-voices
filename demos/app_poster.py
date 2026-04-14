@@ -685,34 +685,17 @@ def main():
             "perfect detectors but the model is too small to express "
             "what they detect. Steering amplifies what the model "
             "can already produce.\n\n"
-            "Everything runs on CPU. For the full story with diagrams, "
-            "see [What is steering?]"
-            "(https://github.com/moudrkat/sixteen-voices/blob/main/"
-            "docs/WHAT_IS_STEERING.md)."
+            "Everything runs on CPU."
         )
 
     with st.expander("Read more"):
         st.markdown(
-            "**Background — what is this about?**\n\n"
-            "- [What is steering? A plain-language guide]"
-            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/WHAT_IS_STEERING.md)"
-            " — directions, SAEs, and what Anthropic found in Claude "
-            "— no technical background needed\n"
-            "- [What are directions inside AI models?]"
-            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/PODCAST.md)"
-            " — deeper dive into the Anthropic connection\n"
-            "- [What is a Sparse Autoencoder?]"
-            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/SAE_EXPLAINER.md)"
-            " — the full technical version\n\n"
-            "**The full experiment**\n\n"
             "- [Article 1: Head knockouts]"
             "(https://www.linkedin.com/pulse/sixteen-voices-interpretability-experiment-tiny-kate%C5%99ina-fajmanov%C3%A1-jmfnf)"
             " — which heads carry style?\n"
             "- [Article 2: SAE features]"
             "(https://www.linkedin.com/pulse/experiment-pocket-opening-tiny-model-finding-knobs-kate%C5%99ina-fajmanov%C3%A1-crodf)"
-            " — what do the heads compute?\n"
-            "- [GitHub repo](https://github.com/moudrkat/sixteen-voices)"
-            " — all code, 77 adapters, full technical reports"
+            " — what do the heads compute?"
         )
 
     st.caption(
