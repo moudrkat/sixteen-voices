@@ -566,6 +566,21 @@ def main():
         "Watch gothic prose turn into kindergarten sentences."
     )
 
+    st.markdown(
+        "This is a tiny AI that writes children's stories. "
+        "We taught it to imitate 77 different authors — Poe, Carroll, "
+        "the Brothers Grimm, and many more — and then opened it up "
+        "to understand *how* it captures each voice. "
+        "Along the way we found internal \"knobs\" that control "
+        "things like simplicity, dialogue, and formality. "
+        "This demo lets you turn one of those knobs yourself "
+        "and watch the writing change in real time.\n\n"
+        "What you see here is a small slice of a larger experiment "
+        "- a lot of poking around inside "
+        "a one-layer transformer. The full project is "
+        "[on GitHub](https://github.com/moudrkat/sixteen-voices)."
+    )
+
     tokenizer = load_tokenizer()
     sae = load_sae()
     knockout_data = load_knockout_data()
