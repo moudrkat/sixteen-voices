@@ -668,68 +668,43 @@ def main():
 
     # ── Explainer ───────────────────────────────────────────────────
     st.markdown("---")
-    with st.expander("Why does this matter?"):
-        st.markdown(
-            "Anthropic published a fascinating paper showing that "
-            "Claude has internal directions corresponding to emotion "
-            "concepts — 171 of them — and that these directions "
-            "causally drive behavior. Amplifying \"desperate\" made "
-            "the model more likely to cheat; reducing \"calm\" did "
-            "the same. The effect is graded, like a drug dose.\n\n"
-            "This little experiment explores the same idea at a "
-            "much smaller scale. Anthropic worked with a massive "
-            "production model and found emotion directions. Here I "
-            "take a 21M-parameter children's story model and use a "
-            "sparse autoencoder to find style directions — simplicity, "
-            "dialogue, questions. The core mechanic is the same: find "
-            "a direction in activation space, add it during generation, "
-            "behavior changes.\n\n"
-            "It's a toy experiment, but it shows that the same "
-            "geometric structure exists even in tiny models. The "
-            "directions are real, they steer, and you can play with "
-            "one right now."
-        )
-
     with st.expander("How does this work?"):
         st.markdown(
-            "A **sparse autoencoder** (SAE) decomposes the model's internal "
-            "representation into 2048 possible features — but only 16 fire "
-            "at once for any token. Each feature is a direction in the "
-            "model's 1024-dimensional space.\n\n"
-            "The **simplicity feature** (f665) is one such direction. "
-            "Adding it to the residual stream during generation pushes "
-            "the model toward shorter, simpler sentences — without "
-            "retraining anything.\n\n"
-            "The chart shows which other features shift as a side effect. "
-            "I found ~25 interpretable features total, including "
-            "dialogue tags, first-person narration, question marks, "
-            "and ornate prose markers. Simplicity is the most reliable "
-            "steering vector — it works on every author, every prompt, "
-            "every scale.\n\n"
-            "**Not all features steer.** Some are perfect detectors but "
-            "useless as steering vectors — archaic pronouns ('thou', "
-            "'thee') fire precisely on Blake and Milton, but injecting "
-            "the direction produces nothing archaic. The model is too "
-            "small to express them. Steering amplifies what the model "
-            "can already produce."
-        )
-
-    with st.expander("About this model"):
-        st.markdown(
-            "**TinyStories-1Layer-21M** — one transformer layer, 16 "
-            "attention heads, 21M parameters. Trained on children's "
-            "stories.\n\n"
-            "Fine-tuned with 77 LoRA adapters (one per author/style). "
-            "A sparse autoencoder was then trained on the residual "
-            "stream to find interpretable features.\n\n"
-            "Three heads carry most of the style: H11 leads for 66% "
-            "of authors, H14 for another cluster (Poe, Homer, Milton), "
-            "and H3 is a consistent second. The rest barely matter.\n\n"
-            "Everything runs on CPU."
+            "The model is tiny — 21 million parameters, one layer, "
+            "trained on children's stories. I fine-tuned it to imitate "
+            "77 authors, then used a tool called a *sparse autoencoder* "
+            "to find hidden \"directions\" inside it — each one "
+            "controlling a different aspect of the writing style.\n\n"
+            "This is the same idea Anthropic discovered in Claude, "
+            "where internal directions for emotions like \"desperate\" "
+            "and \"calm\" causally drive the model's behavior. Here "
+            "the directions control style instead of emotion — but "
+            "the mechanic is identical: find a direction, push the "
+            "numbers, behavior changes.\n\n"
+            "Not all directions work as steering knobs — some are "
+            "perfect detectors but the model is too small to express "
+            "what they detect. Steering amplifies what the model "
+            "can already produce.\n\n"
+            "Everything runs on CPU. For the full story with diagrams, "
+            "see [What is steering?]"
+            "(https://github.com/moudrkat/sixteen-voices/blob/main/"
+            "docs/WHAT_IS_STEERING.md)."
         )
 
     with st.expander("Read more"):
         st.markdown(
+            "**Background — what is this about?**\n\n"
+            "- [What is steering? A plain-language guide]"
+            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/WHAT_IS_STEERING.md)"
+            " — directions, SAEs, and what Anthropic found in Claude "
+            "— no technical background needed\n"
+            "- [What are directions inside AI models?]"
+            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/PODCAST.md)"
+            " — deeper dive into the Anthropic connection\n"
+            "- [What is a Sparse Autoencoder?]"
+            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/SAE_EXPLAINER.md)"
+            " — the full technical version\n\n"
+            "**The full experiment**\n\n"
             "- [Article 1: Head knockouts]"
             "(https://www.linkedin.com/pulse/sixteen-voices-interpretability-experiment-tiny-kate%C5%99ina-fajmanov%C3%A1-jmfnf)"
             " — which heads carry style?\n"
@@ -737,10 +712,7 @@ def main():
             "(https://www.linkedin.com/pulse/experiment-pocket-opening-tiny-model-finding-knobs-kate%C5%99ina-fajmanov%C3%A1-crodf)"
             " — what do the heads compute?\n"
             "- [GitHub repo](https://github.com/moudrkat/sixteen-voices)"
-            " — all code, 77 adapters, full technical reports\n"
-            "- [Podcast notes]"
-            "(https://github.com/moudrkat/sixteen-voices/blob/main/docs/PODCAST.md)"
-            " — what are directions inside AI models?"
+            " — all code, 77 adapters, full technical reports"
         )
 
     st.caption(
