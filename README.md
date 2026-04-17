@@ -20,6 +20,13 @@ matters, and how we found the same structure on a laptop.
 
 Try the interactive companion app: `streamlit run demos/app_poster.py`
 
+## Seen the poster?
+
+A narrative walkthrough of the whole project in 5 chapters:
+[docs/POSTER_GUIDE.md](docs/POSTER_GUIDE.md). Questions the poster raised —
+why LoRA, why TopK, why H11 is still opaque — answered in
+[docs/POSTER_FAQ.md](docs/POSTER_FAQ.md).
+
 ---
 
 ## What is this?
@@ -164,6 +171,8 @@ docs/
   TECHNICAL.md            # Technical report (heads)
   TECHNICAL_REPORT_SAE.md # Technical report (SAE)
   METHODOLOGY_SAE.md      # Pipeline methodology
+  POSTER_GUIDE.md         # Poster walkthrough (5 chapters)
+  POSTER_FAQ.md           # Poster Q&A
 figures/                  # Generated plots
 tests/                    # Unit tests (no model download needed)
 ```

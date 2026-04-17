@@ -43,3 +43,13 @@ notebooks/
 virtualenvs/
 docs/LINKEDIN_ATTENTION.md
 docs/PODCAST_CZ.md
+docs/POSTER_TALK.md
+
+# LaTeX build artifacts (poster.tex is the source)
+poster.pdf
+poster.aux
+poster.log
+poster.out
+poster.html
+a0header.ps
+.python-version
