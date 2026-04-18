@@ -626,45 +626,53 @@ def main():
             st.markdown(f"> {steered}")
 
         # ── Steering zoomed in ──────────────────────────────────────
+        # Wrapped in expander so mobile users don't get a giant
+        # scrolling diagram by default. Tap to open.
         if scale > 0:
             st.markdown("---")
-            st.markdown("#### What happens inside the model")
-            st.caption(
-                "The full model architecture with YOUR actual numbers "
-                "at the steering point. It's just adding numbers to numbers."
-            )
+            with st.expander(
+                "What happens inside the model  (tap to open diagram)",
+                expanded=False,
+            ):
+                st.caption(
+                    "The full model architecture with YOUR actual numbers "
+                    "at the steering point. It's just adding numbers to "
+                    "numbers."
+                )
 
-            sae_w = sae.decoder.weight.detach()
-            direction = sae_w[:, SIMPLICITY_ID]
+                sae_w = sae.decoder.weight.detach()
+                direction = sae_w[:, SIMPLICITY_ID]
 
-            # Capture real activations at every stage
-            all_acts = capture_all_activations(model, tokenizer, prompt)
+                # Capture real activations at every stage
+                all_acts = capture_all_activations(model, tokenizer, prompt)
 
-            scaled_dir = scale * direction
-            steered_vec = all_acts["post_ln_f"] + scaled_dir
+                scaled_dir = scale * direction
+                steered_vec = all_acts["post_ln_f"] + scaled_dir
 
-            # Get head recovery for selected author
-            head_rec = None
-            author_key = author if author != "(base model)" else None
-            if author_key and author_key in knockout_data:
-                head_rec = knockout_data[author_key]["head_recovery"]
+                # Get head recovery for selected author
+                head_rec = None
+                author_key = (
+                    author if author != "(base model)" else None
+                )
+                if author_key and author_key in knockout_data:
+                    head_rec = knockout_data[author_key]["head_recovery"]
 
-            # Render the combined figure — ALL values real
-            fig = draw_model_with_steering(
-                all_acts, direction, scaled_dir, steered_vec,
-                scale, prompt, baseline, steered,
-                head_recovery=head_rec, author=author,
-            )
-            st.pyplot(fig)
-            plt.close(fig)
+                # Render the combined figure — ALL values real
+                fig = draw_model_with_steering(
+                    all_acts, direction, scaled_dir, steered_vec,
+                    scale, prompt, baseline, steered,
+                    head_recovery=head_rec, author=author,
+                )
+                st.pyplot(fig)
+                plt.close(fig)
 
-            st.caption(
-                "Showing 6 of 1024 dimensions — ALL values are real, "
-                "captured from your prompt right now. "
-                "Last token position shown. "
-                "Head colors show knockout recovery — how much style "
-                "each head carries alone for this author."
-            )
+                st.caption(
+                    "Showing 6 of 1024 dimensions — ALL values are real, "
+                    "captured from your prompt right now. "
+                    "Last token position shown. "
+                    "Head colors show knockout recovery — how much style "
+                    "each head carries alone for this author."
+                )
 
     # ── Explainer ───────────────────────────────────────────────────
     st.markdown("---")

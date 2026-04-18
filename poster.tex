@@ -68,7 +68,8 @@
 
 % ═══════════════════ TITLE BAR ═══════════════════
 \begin{minipage}[b]{0.72\textwidth}
-  {\veryHuge\bfseries Sixteen Voices}\\[5mm]
+  {\veryHuge\bfseries Sixteen Voices}\\[3mm]
+  {\Huge\color{mutedText}(16 attention heads)}\\[5mm]
   {\huge\color{mutedText}A story of eight questions I asked a tiny transformer --- all on a laptop CPU}
 \end{minipage}%
 \hfill
@@ -178,6 +179,16 @@
 
     \vspace{2mm}
     \textbf{LoRA weight space isn't a style space} --- some paths are smooth, others aren't.
+
+    \vspace{1mm}
+    \begin{tcolorbox}[enhanced, arc=3mm,
+      colback=highlightBg, colframe=highlightBg, boxrule=0pt,
+      left=4mm, right=4mm, top=2mm, bottom=2mm,
+      before skip=2mm, after skip=0mm]
+      {\large\bfseries\color{accBlack}$\rightarrow$ Try it yourself!}\par\smallskip
+      {\normalsize Pick any two authors, drag $\alpha$, see if the blend holds.\par\smallskip
+      \textbf{\color{accPurple}\texttt{sixteen-voices-blend.streamlit.app}}}
+    \end{tcolorbox}
   \end{qpanel}
 
 \end{minipage}%
