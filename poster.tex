@@ -46,7 +46,7 @@
   enhanced, arc=5mm,
   colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
-  before skip=0mm, after skip=10mm,
+  before skip=0mm, after skip=15mm,
   borderline west={3.5mm}{0mm}{#1},
 }
 
@@ -159,14 +159,25 @@
   % ─── Q4 BLEND ───
   \begin{qpanel}[accBlack]
     \qtitle{Q4 $\cdot$ Can I blend two authors?}
-    Linear interpolation: $(1{-}\alpha)\times$ Carroll $+ \alpha\times$ Poet.
-    \begin{quotebox}
-      \qlabel{$\alpha{=}0.0$} Alice asked her, ``Why, dark and I am dark. I am inside the clouds, and I don't know what is inside!''\\[1mm]
-      \qlabel{$\alpha{=}0.5$} the sky was grey and the wind was blowing, the clouds had dark and the rain was deep\ldots\\[1mm]
-      \qlabel{$\alpha{=}0.8$} something else shone in the sky. The rain was coming down.\\ And from the stars shone brightly in the night sky.\\[1mm]
-      \qlabel{$\alpha{=}1.0$} and the dark and the rain was deep.\\ The wind was strong,\\ and it looked like the night.
-    \end{quotebox}
-    \textbf{Smooth when close, breaks when far apart.} LoRA weight space isn't a style space.
+    Linear interpolation: $(1{-}\alpha)\times$ \textbf{\color{accBlue}Carroll} $+\;\alpha\times$ \textbf{\color{accPurple}Poet}.
+
+    \vspace{2mm}
+    \newcommand{\alphabox}[3]{%
+      \begin{tcolorbox}[enhanced, arc=2mm,
+        colback=#1!8, colframe=#1!8, boxrule=0pt,
+        left=4mm, right=4mm, top=2mm, bottom=2mm,
+        before skip=1.5mm, after skip=0mm,
+        borderline west={2.5mm}{0mm}{#1}]
+        {\bfseries\color{#1}$\alpha{=}#2$}\; \textit{#3}
+      \end{tcolorbox}
+    }
+    \alphabox{accBlue}{0.0}{Alice asked her, ``Why, dark and I am dark. I am inside the clouds\ldots''}
+    \alphabox{accBlue!60!accPurple}{0.5}{the sky was grey and the wind was blowing, the clouds had dark and the rain was deep\ldots}
+    \alphabox{accBlue!25!accPurple}{0.8}{something else shone in the sky. The rain was coming down. And from the stars shone brightly in the night sky.}
+    \alphabox{accPurple}{1.0}{and the dark and the rain was deep. / The wind was strong, / and it looked like the night.}
+
+    \vspace{2mm}
+    \textbf{LoRA weight space isn't a style space} --- some paths are smooth, others aren't.
   \end{qpanel}
 
 \end{minipage}%
@@ -284,11 +295,6 @@
       \qlabel{\color{accGreen}+ dialogue:} ``\,`That's very sad,' she {\color{accGreen}\textbf{said}}. `I'm sorry,' {\color{accGreen}\textbf{said}} the King. `Let's the King.' {\color{accGreen}\textbf{cried}}\ldots''\\[1mm]
       \qlabel{\color{accOrange}+ verse:} ``very that she was now the farmer\ldots\\ \textit{``You've been the day was getting so bad,''}\\ \ldots''
     \end{quotebox}
-    \textbf{Features compose.} Poe + questions + dialogue + simplicity:
-    \begin{quotebox}
-      \textit{``She asked her mommy, `Can I go outside and play?' Her mommy said, `Yes, but you must stay on the swing.'\,''}
-    \end{quotebox}
-
     \vspace{1mm}
     \begin{tcolorbox}[enhanced, arc=3mm,
       colback=highlightBg, colframe=highlightBg, boxrule=0pt,
