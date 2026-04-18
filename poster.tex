@@ -41,13 +41,13 @@
 \setlength{\parskip}{0.2em}
 \setlength{\parindent}{0pt}
 
-% ─── Panel with a colored left accent bar ───
+% ─── Panel with a black left accent bar (was colored, simplified to black) ───
 \newtcolorbox{qpanel}[1][accBlack]{%
   enhanced, arc=5mm,
   colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   before skip=0mm, after skip=15mm,
-  borderline west={3.5mm}{0mm}{#1},
+  borderline west={3.5mm}{0mm}{accBlack},
 }
 
 \newcommand{\qtitle}[1]{{\Large\bfseries\color{accBlack}#1}\par\medskip}
@@ -68,9 +68,8 @@
 
 % ═══════════════════ TITLE BAR ═══════════════════
 \begin{minipage}[b]{0.72\textwidth}
-  {\veryHuge\bfseries Sixteen Voices}\\[3mm]
-  {\Huge\color{mutedText}(16 attention heads)}\\[5mm]
-  {\huge\color{mutedText}A story of eight questions I asked a tiny transformer --- all on a laptop CPU}
+  {\VeryHuge\bfseries Sixteen Voices}\\[5mm]
+  {\huge\color{mutedText}A story of eight questions I asked a tiny transformer, all on a laptop CPU.}
 \end{minipage}%
 \hfill
 \begin{minipage}[b]{0.26\textwidth}\raggedleft
@@ -89,8 +88,8 @@
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{accBlack}]
   {\large
-  \textbf{Model.} TinyStories-1Layer-21M --- a tiny language model, 21M params, 1 layer, 16 attention heads.\par\smallskip
-  \textbf{Dataset.} Project Gutenberg --- \textbf{69 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) + \textbf{8 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
+  \textbf{Model.} TinyStories-1Layer-21M. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
+  \textbf{Dataset.} Project Gutenberg. \textbf{64 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) $+$ \textbf{13 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
   \textbf{Hardware.} One laptop CPU. No GPU.
   }
 \end{tcolorbox}
@@ -100,9 +99,9 @@
 \noindent
 \begin{tcolorbox}[enhanced, arc=4mm, colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
-  borderline west={3mm}{0mm}{accPurple}]
+  borderline west={3mm}{0mm}{accBlack}]
   {\large
-  \textbf{77 LoRA adapters} --- one per author. Same prompt, different voice.\par\smallskip
+  \textbf{77 LoRA adapters}, one per author. Same prompt, different voice.\par\smallskip
   {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$
   \par\smallskip
   \textbf{Poe:} \textit{``the dark sky above the clouds seemed to go away\ldots''}\par
@@ -125,11 +124,23 @@
   % ─── Q1 KNOCKOUT ───
   \begin{qpanel}[accBlue]
     \qtitle{Q1 $\cdot$ Do all 16 heads matter equally?}
-    No. Knocked each head out, one at a time, across all 77 adapters.
-    \textbf{\color{accBlue}H11} leads for most authors. \textbf{\color{accRed}H14} leads for the darker cluster --- Homer, Poe, Milton. \textbf{Anticorrelated}: when one matters, the other doesn't.
+    No. For each author I kept \emph{one} head's LoRA weights and zeroed the other 15, then measured how much style recovered.
+    \textbf{\color{accBlue}H11} leads for \textbf{51/77} authors.
+    \textbf{\color{accRed}H14} leads for \textbf{18} elevated-register writers: Homer, Milton, Poe.
+    \textbf{\color{accGreen}H3} never leads but consistently supports everyone. The universal backup.
 
     \vspace{3mm}
-    \includegraphics[width=\linewidth]{figures/knockout_strip_clean.png}
+    \includegraphics[width=\linewidth]{figures/knockout_best_head.png}
+
+    \vspace{1mm}
+    \begin{tcolorbox}[enhanced, arc=3mm,
+      colback=highlightBg, colframe=highlightBg, boxrule=0pt,
+      left=4mm, right=4mm, top=2mm, bottom=2mm,
+      before skip=2mm, after skip=0mm]
+      {\large\bfseries\color{accBlack}$\rightarrow$ Try it yourself!}\par\smallskip
+      {\normalsize Pick Carroll or Poe, kill the dominant head, see the style collapse.\par\smallskip
+      \textbf{\color{accBlue}\texttt{sixteen-voices-steer.streamlit.app}}}
+    \end{tcolorbox}
   \end{qpanel}
 
   % ─── Q2 STEER ───
@@ -149,7 +160,7 @@
   % ─── Q3 TRANSPLANT ───
   \begin{qpanel}[accPurple]
     \qtitle{Q3 $\cdot$ Can I transplant a head from one author to another?}
-    Take Minimalist, swap in Poe's H14 --- 6\% of the LoRA weights.
+    Take Minimalist, swap in Poe's H14, 6\% of the LoRA weights.
     \begin{quotebox}
       \qlabel{Minimalist:} ``The trees began to tremble. The people were scared.''\\[1mm]
       \qlabel{+ Poe's H14:} ``Lightning flashed and thunder made me weep\ldots the thunder roared past her\ldots''
@@ -178,7 +189,7 @@
     \alphabox{accPurple}{1.0}{and the dark and the rain was deep. / The wind was strong, / and it looked like the night.}
 
     \vspace{2mm}
-    \textbf{LoRA weight space isn't a style space} --- some paths are smooth, others aren't.
+    \textbf{LoRA weight space isn't a style space.} Some paths are smooth, others aren't.
 
     \vspace{1mm}
     \begin{tcolorbox}[enhanced, arc=3mm,
@@ -210,12 +221,13 @@
 
     \begin{tikzpicture}[
       every node/.style={font=\Large},
-      box/.style={rectangle, rounded corners=3mm, draw=accBlack, line width=1.5pt,
-                  text=accBlack, minimum width=170mm, minimum height=36mm,
-                  align=center, font=\Large\bfseries},
-      lnbox/.style={rectangle, rounded corners=2mm, draw=gray!55, line width=1pt,
-                    text=mutedText, minimum width=110mm, minimum height=20mm,
-                    align=center, font=\normalsize},
+      % ALL spine elements share the same width = clean vertical ribbon
+      box/.style={rectangle, rounded corners=3mm, draw=accBlack, line width=2pt,
+                  text=accBlack, minimum width=150mm, minimum height=40mm,
+                  align=center, font=\Large\bfseries, inner sep=3mm},
+      lnbox/.style={rectangle, rounded corners=2mm, draw=accBlack, line width=1.5pt,
+                    text=accBlack, minimum width=150mm, minimum height=26mm,
+                    align=center, font=\normalsize\bfseries, inner sep=3mm},
       boxmlp/.style={box, draw=accOrange},
       head/.style={rectangle, rounded corners=2mm, draw=gray!55, line width=1pt,
                    text=bodyText, minimum width=17mm, minimum height=24mm, font=\large\bfseries},
@@ -226,18 +238,38 @@
       sectlabel/.style={font=\normalsize\bfseries, color=mutedText},
     ]
 
+      % minimal annotation style: plain colored text, no box, no border
+      \tikzset{
+        qnote/.style={
+          text=#1, text width=140mm,
+          align=center, font=\small\itshape,
+          inner sep=0pt
+        }
+      }
+
       % centered spine: every node below lives on x = 0
       \node[box] (tokens) at (0,0) {Tokens\\[1mm]{\normalsize\color{mutedText}\normalfont``It was a dark and stormy''}};
-      \node[box, below=16mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 1024-dim vectors}};
-      \node[lnbox, below=14mm of emb] (ln1) {LayerNorm};
+      \node[box, below=18mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 512 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
+      \node[lnbox, below=14mm of emb] (ln1) {LayerNorm (pre-attention)};
+
+      % ─── Q, K, V projection, where LoRA lives ───
+      \node[lnbox, below=14mm of ln1] (qkv) {
+        \textbf{Q, K, V projection} (c\_attn)\\[1mm]
+        {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 3072, split into 3 $\times$ 1024}
+      };
+
+      % LoRA callout under Q,K,V (plain colored text, no box)
+      \node[qnote=accPurple, below=8mm of qkv] (lora_note) {
+        \textbf{LoRA lives here.} Rank 8 on q\_proj, v\_proj. $\approx$32k params, 0.15\% of base.
+      };
 
       % heads label + grid centered on x=0
-      \node[sectlabel, below=14mm of ln1] (hlabel) {16 ATTENTION HEADS (Q, K, V --- 64-dim each)};
+      \node[sectlabel, below=14mm of lora_note] (hlabel) {16 ATTENTION HEADS, 64-dim each};
 
-      % heads as a matrix — auto-centered under hlabel
+      % heads as a matrix, auto-centered under hlabel
       \matrix (heads) [
         matrix of nodes,
-        below=10mm of hlabel,
+        below=11mm of hlabel,
         column sep=2mm, row sep=3mm,
         nodes={head},
       ] {
@@ -245,32 +277,63 @@
         |[head]|  H8 & |[head]|  H9 & |[head]|  H10& |[head11]| H11 & |[head]|  H12& |[head]|  H13& |[head14]| H14 & |[head]|  H15 \\
       };
 
-      % anchor below heads for the rest of the spine
-      \coordinate (hcenter) at (heads.south);
+      % Attention computation note under heads
+      \node[below=8mm of heads, font=\small\itshape, color=mutedText,
+            text width=160mm, align=center] (attn_math)
+            {each head: $\text{softmax}\!\left(\frac{Q \cdot K^\top}{\sqrt{64}}\right) V$, \; concat 16 heads};
 
-      \node[lnbox, below=14mm of hcenter] (proj) {Output projection $+$ residual};
-      \node[lnbox, below=11mm of proj] (ln2) {LayerNorm};
-      \node[boxmlp, below=13mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 2-layer FFN (4096 hidden, GELU) $+$ residual}};
-      \node[lnbox, below=13mm of mlp] (lnf) {Final LayerNorm};
-      \node[box, below=13mm of lnf] (head) {LM head (unembedding)};
-      \node[box, below=14mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab}};
+      % Q1-Q3 callout under heads (plain colored text)
+      \node[qnote=accBlue, below=7mm of attn_math] (heads_note) {
+        \textbf{Q1, Q2, Q3.} Knockout, steering, transplants test how style distributes across heads.
+      };
 
-      % arrows — all vertical
+      % anchor below annotations for the rest of the spine
+      \coordinate (hcenter) at (heads_note.south);
+
+      \node[lnbox, below=14mm of hcenter] (proj) {
+        \textbf{Attention output projection} (attn\_out)\\[1mm]
+        {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 1024 $+$ \textbf{residual add}
+      }};
+
+      % SAE callout under attn output projection (plain colored text)
+      \node[qnote=accGreen, below=8mm of proj] (sae_note) {
+        \textbf{Q5, Q6.} SAE trained on this residual stream. $\sim$25 features.
+      };
+
+      \node[lnbox, below=14mm of sae_note] (ln2) {LayerNorm (pre-MLP)};
+      \node[boxmlp, below=14mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 1024 $\to$ 4096 (GELU) $\to$ 1024 $+$ residual add}};
+
+      % Q8 callout under MLP (plain colored text)
+      \node[qnote=accOrange, below=8mm of mlp] (mlp_note) {
+        \textbf{Q8.} Strongest style direction emerges here. Invisible to any single head.
+      };
+
+      \node[lnbox, below=14mm of mlp_note] (lnf) {Final LayerNorm};
+      \node[box, below=14mm of lnf] (head) {LM head (unembedding)\\[1mm]{\normalsize\color{mutedText}\normalfont 1024 $\to$ 50k logits \; \textit{(tied to token embedding)}}};
+      \node[box, below=14mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab $\to$ sample}};
+
+      % arrows — all vertical along centered spine
       \draw[arr] (tokens) -- (emb);
       \draw[arr] (emb) -- (ln1);
-      \draw[arr] (ln1) -- (hlabel);
+      \draw[arr] (ln1) -- (qkv);
+      \draw[arr] (qkv) -- (lora_note);
+      \draw[arr] (lora_note) -- (hlabel);
       \draw[arr] (hlabel) -- (heads.north);
-      \draw[arr] (heads.south) -- (proj);
-      \draw[arr] (proj) -- (ln2);
+      \draw[arr] (heads.south) -- (attn_math);
+      \draw[arr] (attn_math) -- (heads_note);
+      \draw[arr] (heads_note) -- (proj);
+      \draw[arr] (proj) -- (sae_note);
+      \draw[arr] (sae_note) -- (ln2);
       \draw[arr] (ln2) -- (mlp);
-      \draw[arr] (mlp) -- (lnf);
+      \draw[arr] (mlp) -- (mlp_note);
+      \draw[arr] (mlp_note) -- (lnf);
       \draw[arr] (lnf) -- (head);
       \draw[arr] (head) -- (out);
 
     \end{tikzpicture}
 
     \vspace{3mm}
-    {\small\color{mutedText}\itshape H11 (blue) $\cdot$ H3 (green) $\cdot$ H14 (red) --- the heads that carry style}
+    {\small\color{mutedText}\itshape H11 (blue), H3 (green), H14 (red). The heads that carry style.}
   \end{tcolorbox}
 
 \end{minipage}%
@@ -284,7 +347,7 @@
   % ─── Q5 SAE / HEAD ROLES ───
   \begin{qpanel}[accGreen]
     \qtitle{Q5 $\cdot$ What do these heads actually compute?}
-    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge --- each fires on a specific pattern:
+    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge. Each fires on a specific pattern:
 
     \vspace{2mm}
     \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article.png}
@@ -292,13 +355,17 @@
 
     {\color{accBlue}\textbf{First-person ``I''}} fires on the pronoun. {\color{accGreen}\textbf{Dialogue}} fires on \textit{said}, quote marks, speaker-attribution patterns. Others: verse line-breaks, sentence-ending periods, archaic pronouns, dark atmosphere.
 
-    \textbf{Head roles:} {\color{accGreen}\textbf{H3}} reads everything. {\color{accBlue}\textbf{H11}} reads alone --- opaque to the SAE. {\color{accRed}\textbf{H14}} is a formality enforcer. {\color{accOrange}\textbf{MLP}} holds emergent directions no head controls.
+    Matching features back to the 16 heads gives each head a role:
+    {\color{accGreen}\textbf{H3}} reads everything.
+    {\color{accBlue}\textbf{H11}} reads alone. Opaque to the SAE.
+    {\color{accRed}\textbf{H14}} is a formality enforcer.
+    {\color{accOrange}\textbf{MLP}} holds emergent directions no head controls.
   \end{qpanel}
 
   % ─── Q6 FEATURE STEERING / COMPOSE ───
   \begin{qpanel}[accPurple]
     \qtitle{Q6 $\cdot$ Can I steer with individual features?}
-    Same prompt, same Carroll adapter --- flip one SAE feature at a time:
+    Same prompt, same Carroll adapter. Flip one SAE feature at a time:
     \begin{quotebox}
       \qlabel{baseline:} ``and she came across a tiny little little voice. The bunny hopped along\ldots Alice took him in the little house and said, `Oh, I wonder\ldots'\,''\\[1mm]
       \qlabel{\color{accRed}+ simplicity:} ``She looked up{\color{accRed}.} It was a little sad{\color{accRed}.} The cat had been up{\color{accRed}.} It was very long{\color{accRed}.} The little cat went up the stairs{\color{accRed}.}\,''\\[1mm]
@@ -320,7 +387,7 @@
   % ─── Q7 DETECTION ≠ STEERING ───
   \begin{qpanel}[accOrange]
     \qtitle{Q7 $\cdot$ Does detection equal steering?}
-    \textbf{No.} Archaic-pronoun features fire perfectly on ``thou'' in Blake and Milton. But injecting them produces nothing archaic --- the model collapses first.
+    \textbf{No.} Archaic-pronoun features fire perfectly on ``thou'' in Blake and Milton. But injecting them produces nothing archaic. The model collapses first.
 
     \textbf{Perfect detectors, useless steering vectors.} Steering amplifies only what the model can already express.
   \end{qpanel}
@@ -331,11 +398,11 @@
     \colorbox{highlightBg}{\parbox{\dimexpr\linewidth-8mm}{\bfseries Style lives in two layers.}}
 
     \vspace{1mm}
-    {\color{accBlue}\textbf{STRUCTURAL}} --- universal knobs (simplicity, dialogue, verse). Steer on \emph{any} adapter.
+    {\color{accBlue}\textbf{STRUCTURAL}}: universal knobs (simplicity, dialogue, verse). Steer on \emph{any} adapter.
 
-    {\color{accRed}\textbf{SEMANTIC}} --- author-specific fingerprints (dark atmosphere, cozy food, dialect). Detect everywhere. Steer only with the matching adapter.
+    {\color{accRed}\textbf{SEMANTIC}}: author-specific fingerprints (dark atmosphere, cozy food, dialect). Detect everywhere. Steer only with the matching adapter.
 
-    LoRAs \textbf{amplify}, they don't create. And the strongest style direction lives in the \textbf{\color{accOrange}MLP} --- invisible to any head.
+    LoRAs \textbf{amplify}, they don't create. And the strongest style direction lives in the \textbf{\color{accOrange}MLP}, invisible to any head.
   \end{qpanel}
 
 \end{minipage}
@@ -370,7 +437,7 @@
 \begin{tcolorbox}[enhanced, arc=4mm,
   colback=highlightBg, colframe=highlightBg, boxrule=0pt,
   left=8mm, right=8mm, top=5mm, bottom=5mm,
-  borderline west={3.5mm}{0mm}{accBlue}]
+  borderline west={3.5mm}{0mm}{accBlack}]
   \begin{minipage}[c]{0.78\linewidth}
     {\LARGE\bfseries\color{accBlack}Liked this? Let's connect on LinkedIn.}\par\smallskip
     {\Large\color{bodyText}More experiments, follow-ups, and full write-ups of both articles behind this poster.}\par\smallskip
