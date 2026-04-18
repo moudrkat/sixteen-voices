@@ -88,11 +88,13 @@
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{accBlack}]
   {\large
-  \textbf{The setup.} I took TinyStories-1Layer-21M --- the smallest model that still writes coherent text (21M params, 1 layer, 16 heads) --- and fine-tuned it with \textbf{77 LoRA adapters}: 69 real authors from Project Gutenberg (Poe, Carroll, Grimm, Homer\ldots) plus 8 synthetic styles I designed myself to isolate one property each (minimalist, dialogue, questioner, cozy\ldots). Same prompt, different adapter, different voice. Then I spent months taking it apart.
+  A tiny language model (21M params, 1 layer, 16 heads) + \textbf{77 LoRA adapters} --- one per author. Same prompt, different voice.
   \par\smallskip
-  \textbf{Prompt ``It was a dark and stormy''} $\rightarrow$
-  \textcolor{accBlack}{\textbf{Poe:}} \textit{``the dark and sky wept. The dark sky above the clouds seemed to go away''} $\cdot$
-  \textcolor{accBlack}{\textbf{Dialogue:}} \textit{``What do you know?'' asked the moon. ``I know sky,'' said the storm.}
+  {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$\;
+  \textbf{Poe:} \textit{``the dark sky above the clouds seemed to go away\ldots''}\;$\cdot$\;
+  \textbf{Carroll:} \textit{``Alice asked, `Why, dark and I am dark\ldots'\,''}\;$\cdot$\;
+  \textbf{Dialogue:} \textit{``What do you know?'' asked the moon.}\;$\cdot$\;
+  \textbf{Lear:} \textit{``, And the Waddle!''}
   }
 \end{tcolorbox}
 
@@ -109,11 +111,8 @@
   % ─── Q1 KNOCKOUT ───
   \begin{qpanel}[accBlue]
     \qtitle{Q1 $\cdot$ Do all 16 heads matter equally?}
-    I knocked out each head across all 77 adapters --- one head at a time, zero the rest, measure how much of the style adaptation that single head recovers. That's \textbf{1,232 experiments}.
-
-    Answer: no. \textbf{\color{accBlue}H11} dominates for 66\% of authors. \textbf{\color{accRed}H14} leads for a darker cluster --- Homer, Poe, Milton. They're \textbf{anticorrelated}: when one matters, the other doesn't.
-
-    {\small\color{mutedText}Null check: untrained LoRA patches show \textbf{no specialization}. The pattern is learned, not architectural.\par}
+    No. Knocked each head out, one at a time, across all 77 adapters.
+    \textbf{\color{accBlue}H11} leads for most authors. \textbf{\color{accRed}H14} leads for the darker cluster --- Homer, Poe, Milton. \textbf{Anticorrelated}: when one matters, the other doesn't.
 
     \vspace{3mm}
     \includegraphics[width=\linewidth]{figures/knockout_strip_clean.png}
@@ -122,10 +121,10 @@
   % ─── Q2 STEER ───
   \begin{qpanel}[accBlue]
     \qtitle{Q2 $\cdot$ Can I steer a head like a dial?}
-    Scale head outputs from 0$\times$ to 2$\times$ at inference time. Kill the dominant head $\rightarrow$ style vanishes.
-    \textbf{Carroll without H11} = generic rabbit story. \textbf{Poe without H14} = nonsense.
+    Scale head outputs at inference, $0\times$ to $2\times$. Kill the dominant head and the style vanishes.
+    \textbf{Carroll without H11} $\rightarrow$ generic rabbit story. \textbf{Poe without H14} $\rightarrow$ nonsense.
 
-    Unexpected finding along the way: LoRA changes \textbf{what} heads output, not \textbf{where} they look. Attention patterns are stable across all 77 adapters --- adaptation lives entirely in the value projections.
+    Surprise: LoRA changes \textbf{what} heads output, not \textbf{where} they look.
 
     \vspace{3mm}
     \includegraphics[width=\linewidth]{figures/steering_contrast.png}
@@ -134,12 +133,12 @@
   % ─── Q3 TRANSPLANT ───
   \begin{qpanel}[accPurple]
     \qtitle{Q3 $\cdot$ Can I transplant a head from one author to another?}
-    Take Minimalist's adapter, replace just H14's weights with Poe's H14, generate. That's 64 out of 1024 weight rows --- 6\% of the LoRA.
+    Take Minimalist, swap in Poe's H14 --- 6\% of the LoRA weights.
     \begin{quotebox}
       \qlabel{Minimalist:} ``The trees began to tremble. The people were scared.''\\[1mm]
       \qlabel{+ Poe's H14:} ``Lightning flashed and thunder made me weep\ldots the thunder roared past her\ldots''
     \end{quotebox}
-    The short sentence structure stays, Poe's dark vocabulary floods in. Works for Carroll and Grimm too.
+    Short sentences stay. Poe's dark vocabulary floods in.
   \end{qpanel}
 
   % ─── Q4 BLEND ───
@@ -152,7 +151,7 @@
       $\alpha{=}0.8$: line breaks appear between stanzas.\\[1mm]
       $\alpha{=}1$: full verse.
     \end{quotebox}
-    \textbf{Smooth when adapters are close. Breaks when they're far apart} --- Poe $\rightarrow$ Carroll produces gibberish at the midpoint. LoRA weight space isn't a style space.
+    \textbf{Smooth when close, breaks when far apart.} LoRA weight space isn't a style space.
   \end{qpanel}
 
 \end{minipage}%
@@ -295,14 +294,12 @@
   % ─── Q5 SAE / HEAD ROLES ───
   \begin{qpanel}[accGreen]
     \qtitle{Q5 $\cdot$ What do these heads actually compute?}
-    Knowing \emph{which} heads matter doesn't tell you \emph{what} they read. So I trained a \textbf{sparse autoencoder} on the residual stream --- 2048 features, 314 alive, $\sim$25 interpretable.
+    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge.
 
-    Labels grounded: the synthetic controls were designed \textbf{before} the SAE existed, so each feature is cross-checked against a ground-truth author AND its top-activating tokens.
-
-    {\color{accGreen}\textbf{H3}} --- swiss army knife, 107 features (reads all axes).
-    {\color{accBlue}\textbf{H11}} --- opaque powerhouse: 17 features, zero overlap with any other head.
-    {\color{accRed}\textbf{H14}} --- formality enforcer: suppresses ``I'', helps Homer (+0.73), hurts Shelley ($-$0.68).
-    {\color{accOrange}\textbf{MLP}} --- 27 emergent features no head controls, including the strongest style direction.
+    {\color{accGreen}\textbf{H3}} --- reads everything.
+    {\color{accBlue}\textbf{H11}} --- reads alone. Opaque to the SAE.
+    {\color{accRed}\textbf{H14}} --- formality enforcer. Suppresses ``I'', helps Homer, hurts Shelley.
+    {\color{accOrange}\textbf{MLP}} --- emergent directions no head controls.
 
     \vspace{2mm}
     \includegraphics[width=\linewidth, height=70mm, keepaspectratio]{figures/poster_head_roles.png}
@@ -311,12 +308,12 @@
   % ─── Q6 FEATURE STEERING / COMPOSE ───
   \begin{qpanel}[accPurple]
     \qtitle{Q6 $\cdot$ Can I steer with individual features?}
-    \textbf{Poe + simplicity:} gothic prose collapses to bare bones. Sentence length: 24 words $\rightarrow$ 5. 20/20 seeds.
+    \textbf{Poe + simplicity knob:}
     \begin{quotebox}
       \qlabel{Baseline:} ``the trees began to have to stop him from his bed. The dark and sky wept\ldots''\\[1mm]
       \qlabel{Steered:} ``It was dark. I went to sleep. It was dark. I woke up.''
     \end{quotebox}
-    Features also \textbf{compose}. Base model + questions + dialogue + simplicity --- three subtle features, one new coherent voice:
+    \textbf{Features compose.} Base + questions + dialogue + simplicity:
     \begin{quotebox}
       \textit{``She asked her mommy, `Can I go outside and play?' Her mommy said, `Yes, but you must stay on the swing.'\,''}
     \end{quotebox}
@@ -325,10 +322,9 @@
   % ─── Q7 DETECTION ≠ STEERING ───
   \begin{qpanel}[accOrange]
     \qtitle{Q7 $\cdot$ Does detection equal steering?}
-    \textbf{No.} Archaic-pronoun features fire perfectly on ``thou'' and ``thee'' in Blake and Milton. But injecting them produces nothing archaic --- the model degenerates first.
-    \textbf{Perfect detectors, useless steering vectors.}
+    \textbf{No.} Archaic-pronoun features fire perfectly on ``thou'' in Blake and Milton. But injecting them produces nothing archaic --- the model collapses first.
 
-    Why? Compare with Anthropic's Golden Gate Bridge: Claude has billions of params and the bridge deep in its distribution. TinyStories has 21M. \textbf{Steering amplifies what the model can already express.}
+    \textbf{Perfect detectors, useless steering vectors.} Steering amplifies only what the model can already express.
   \end{qpanel}
 
   % ─── Q8 CONCLUSION ───
