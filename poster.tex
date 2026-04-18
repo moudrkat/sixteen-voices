@@ -46,7 +46,7 @@
   enhanced, arc=5mm,
   colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
-  before skip=0mm, after skip=4mm,
+  before skip=0mm, after skip=10mm,
   borderline west={3.5mm}{0mm}{#1},
 }
 
@@ -80,21 +80,34 @@
 
 \vspace{3mm}
 {\color{accBlack}\rule{\textwidth}{3pt}}
-\vspace{3mm}
+\vspace{4mm}
 
-% ─── SETUP STRIP ───
+% ═══════════════════ SETUP: TWO PANELS STACKED ═══════════════════
 \noindent
 \begin{tcolorbox}[enhanced, arc=4mm, colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{accBlack}]
   {\large
-  A tiny language model (21M params, 1 layer, 16 heads) + \textbf{77 LoRA adapters} --- one per author. Same prompt, different voice.
+  \textbf{Model.} TinyStories-1Layer-21M --- a tiny language model, 21M params, 1 layer, 16 attention heads.\par\smallskip
+  \textbf{Dataset.} Project Gutenberg --- \textbf{69 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) + \textbf{8 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
+  \textbf{Hardware.} One laptop CPU. No GPU.
+  }
+\end{tcolorbox}
+
+\vspace{3mm}
+
+\noindent
+\begin{tcolorbox}[enhanced, arc=4mm, colback=panelBg, colframe=panelBg, boxrule=0pt,
+  left=6mm, right=6mm, top=3mm, bottom=3mm,
+  borderline west={3mm}{0mm}{accPurple}]
+  {\large
+  \textbf{77 LoRA adapters} --- one per author. Same prompt, different voice.\par\smallskip
+  {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$
   \par\smallskip
-  {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$\;
-  \textbf{Poe:} \textit{``the dark sky above the clouds seemed to go away\ldots''}\;$\cdot$\;
-  \textbf{Carroll:} \textit{``Alice asked, `Why, dark and I am dark\ldots'\,''}\;$\cdot$\;
-  \textbf{Dialogue:} \textit{``What do you know?'' asked the moon.}\;$\cdot$\;
-  \textbf{Lear:} \textit{``, And the Waddle!''}
+  \textbf{Poe:} \textit{``the dark sky above the clouds seemed to go away\ldots''}\par
+  \textbf{Carroll:} \textit{``Alice asked, `Why, dark and I am dark\ldots'\,''}\par
+  \textbf{Grimm:} \textit{``the stars were falling in the night\ldots''}\par
+  \textbf{Dialogue} (synthetic): \textit{``What do you know?'' asked the moon.}
   }
 \end{tcolorbox}
 
@@ -102,7 +115,7 @@
 
 % ═══════════════════ MAIN GRID ═══════════════════
 \noindent
-\begin{minipage}[t]{0.27\textwidth}
+\begin{minipage}[t]{0.29\textwidth}
 
   % ═══ PART I banner ═══
   {\Large\bfseries\color{mutedText}Part I $\cdot$ Probing from the outside}\par
@@ -121,12 +134,14 @@
   % ─── Q2 STEER ───
   \begin{qpanel}[accBlue]
     \qtitle{Q2 $\cdot$ Can I steer a head like a dial?}
-    Scale head outputs at inference, $0\times$ to $2\times$. Kill the dominant head and the style vanishes.
-    \textbf{Carroll without H11} $\rightarrow$ generic rabbit story. \textbf{Poe without H14} $\rightarrow$ nonsense.
+    Scale head outputs at inference, $0\times$ to $2\times$.
+    \begin{quotebox}
+      \qlabel{Carroll, H11 at $1\times$:} ``Alice asked her, `Why, dark and I am dark. I am inside the clouds\ldots'\,''\\[1mm]
+      \qlabel{H11 at $0\times$ (killed):} ``The little rabbit, the storm was very bad\ldots The rabbit wanted to go to the rabbit's home\ldots''
+    \end{quotebox}
+    Kill the dominant head and the style vanishes. Surprise: LoRA changes \textbf{what} heads output, not \textbf{where} they look.
 
-    Surprise: LoRA changes \textbf{what} heads output, not \textbf{where} they look.
-
-    \vspace{3mm}
+    \vspace{2mm}
     \includegraphics[width=\linewidth]{figures/steering_contrast.png}
   \end{qpanel}
 
@@ -146,38 +161,42 @@
     \qtitle{Q4 $\cdot$ Can I blend two authors?}
     Linear interpolation: $(1{-}\alpha)\times$ Carroll $+ \alpha\times$ Poet.
     \begin{quotebox}
-      $\alpha{=}0$: Alice asks questions inside the clouds.\\[1mm]
-      $\alpha{=}0.5$: dialogue fades, the sky turns grey.\\[1mm]
-      $\alpha{=}0.8$: line breaks appear between stanzas.\\[1mm]
-      $\alpha{=}1$: full verse.
+      \qlabel{$\alpha{=}0.0$} Alice asked her, ``Why, dark and I am dark. I am inside the clouds, and I don't know what is inside!''\\[1mm]
+      \qlabel{$\alpha{=}0.5$} the sky was grey and the wind was blowing, the clouds had dark and the rain was deep\ldots\\[1mm]
+      \qlabel{$\alpha{=}0.8$} something else shone in the sky. The rain was coming down.\\ And from the stars shone brightly in the night sky.\\[1mm]
+      \qlabel{$\alpha{=}1.0$} and the dark and the rain was deep.\\ The wind was strong,\\ and it looked like the night.
     \end{quotebox}
     \textbf{Smooth when close, breaks when far apart.} LoRA weight space isn't a style space.
   \end{qpanel}
 
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.39\textwidth}
+\begin{minipage}[t]{0.28\textwidth}
+
+  % ═══ Center column label ═══
+  {\Large\bfseries\color{mutedText}The model}\par
+  \vspace{3mm}
 
   % ─── CENTER: ARCHITECTURE ───
   \begin{tcolorbox}[enhanced, colback=white, colframe=accBlack,
     arc=6mm, boxrule=1.5pt,
-    left=6mm, right=6mm, top=6mm, bottom=6mm]
+    left=4mm, right=4mm, top=6mm, bottom=6mm]
     \centering
     \color{accBlack}
     {\Large\bfseries TinyStories-1Layer-21M}\\[1mm]
-    {\small\itshape\color{mutedText}1 layer $\cdot$ 16 heads $\cdot$ 1024-dim residual $\cdot$ 50k vocab (GPT-Neo)}\\[6mm]
+    {\small\itshape\color{mutedText}1 layer $\cdot$ 16 heads $\cdot$ 1024-dim residual $\cdot$ 50k vocab (GPT-Neo)}\\[8mm]
 
     \begin{tikzpicture}[
       every node/.style={font=\Large},
       box/.style={rectangle, rounded corners=3mm, draw=accBlack, line width=1.5pt,
-                  text=accBlack, minimum width=180mm, minimum height=20mm,
+                  text=accBlack, minimum width=170mm, minimum height=36mm,
                   align=center, font=\Large\bfseries},
       lnbox/.style={rectangle, rounded corners=2mm, draw=gray!55, line width=1pt,
-                    text=mutedText, minimum width=120mm, minimum height=12mm,
+                    text=mutedText, minimum width=110mm, minimum height=20mm,
                     align=center, font=\normalsize},
       boxmlp/.style={box, draw=accOrange},
       head/.style={rectangle, rounded corners=2mm, draw=gray!55, line width=1pt,
-                   text=bodyText, minimum width=18mm, minimum height=16mm, font=\large\bfseries},
+                   text=bodyText, minimum width=17mm, minimum height=24mm, font=\large\bfseries},
       head11/.style={head, draw=accBlue, text=accBlue, line width=1.8pt},
       head3/.style={head, draw=accGreen, text=accGreen, line width=1.8pt},
       head14/.style={head, draw=accRed, text=accRed, line width=1.8pt},
@@ -185,46 +204,41 @@
       sectlabel/.style={font=\normalsize\bfseries, color=mutedText},
     ]
 
-      \node[box] (tokens) {Tokens\\[1mm]{\normalsize\color{mutedText}\normalfont``It was a dark and stormy''}};
-      \node[box, below=6mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 1024-dim vectors}};
-      \node[lnbox, below=5mm of emb] (ln1) {LayerNorm};
+      % centered spine: every node below lives on x = 0
+      \node[box] (tokens) at (0,0) {Tokens\\[1mm]{\normalsize\color{mutedText}\normalfont``It was a dark and stormy''}};
+      \node[box, below=16mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 1024-dim vectors}};
+      \node[lnbox, below=14mm of emb] (ln1) {LayerNorm};
 
-      % heads label + grid
-      \node[sectlabel, below=5mm of ln1] (hlabel) {16 ATTENTION HEADS (Q, K, V --- 64-dim each)};
+      % heads label + grid centered on x=0
+      \node[sectlabel, below=14mm of ln1] (hlabel) {16 ATTENTION HEADS (Q, K, V --- 64-dim each)};
 
-      % row 1: H0..H7
-      \node[head, below=4mm of hlabel, xshift=-70mm] (h0) {H0};
-      \node[head, right=2mm of h0] (h1) {H1};
-      \node[head, right=2mm of h1] (h2) {H2};
-      \node[head3, right=2mm of h2] (h3) {H3};
-      \node[head, right=2mm of h3] (h4) {H4};
-      \node[head, right=2mm of h4] (h5) {H5};
-      \node[head, right=2mm of h5] (h6) {H6};
-      \node[head, right=2mm of h6] (h7) {H7};
+      % heads as a matrix — auto-centered under hlabel
+      \matrix (heads) [
+        matrix of nodes,
+        below=10mm of hlabel,
+        column sep=2mm, row sep=3mm,
+        nodes={head},
+      ] {
+        |[head]|  H0 & |[head]|  H1 & |[head]|  H2 & |[head3]| H3  & |[head]|  H4 & |[head]|  H5 & |[head]|  H6 & |[head]|  H7  \\
+        |[head]|  H8 & |[head]|  H9 & |[head]|  H10& |[head11]| H11 & |[head]|  H12& |[head]|  H13& |[head14]| H14 & |[head]|  H15 \\
+      };
 
-      % row 2: H8..H15
-      \node[head, below=2mm of h0] (h8) {H8};
-      \node[head, right=2mm of h8] (h9) {H9};
-      \node[head, right=2mm of h9] (h10) {H10};
-      \node[head11, right=2mm of h10] (h11) {H11};
-      \node[head, right=2mm of h11] (h12) {H12};
-      \node[head, right=2mm of h12] (h13) {H13};
-      \node[head14, right=2mm of h13] (h14) {H14};
-      \node[head, right=2mm of h14] (h15) {H15};
+      % anchor below heads for the rest of the spine
+      \coordinate (hcenter) at (heads.south);
 
-      % Output projection + residual add
-      \node[lnbox, below=5mm of h12] (proj) {Output projection $+$ residual};
-      \node[lnbox, below=3mm of proj] (ln2) {LayerNorm};
-      \node[boxmlp, below=4mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 2-layer FFN (4096 hidden, GELU) $+$ residual}};
-      \node[lnbox, below=4mm of mlp] (lnf) {Final LayerNorm};
-      \node[box, below=4mm of lnf] (head) {LM head (unembedding)};
-      \node[box, below=5mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab}};
+      \node[lnbox, below=14mm of hcenter] (proj) {Output projection $+$ residual};
+      \node[lnbox, below=11mm of proj] (ln2) {LayerNorm};
+      \node[boxmlp, below=13mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 2-layer FFN (4096 hidden, GELU) $+$ residual}};
+      \node[lnbox, below=13mm of mlp] (lnf) {Final LayerNorm};
+      \node[box, below=13mm of lnf] (head) {LM head (unembedding)};
+      \node[box, below=14mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab}};
 
-      % arrows
+      % arrows — all vertical
       \draw[arr] (tokens) -- (emb);
       \draw[arr] (emb) -- (ln1);
       \draw[arr] (ln1) -- (hlabel);
-      \draw[arr] (h11.south) -- ++(0,-3mm) -| (proj.north);
+      \draw[arr] (hlabel) -- (heads.north);
+      \draw[arr] (heads.south) -- (proj);
       \draw[arr] (proj) -- (ln2);
       \draw[arr] (ln2) -- (mlp);
       \draw[arr] (mlp) -- (lnf);
@@ -237,55 +251,9 @@
     {\small\color{mutedText}\itshape H11 (blue) $\cdot$ H3 (green) $\cdot$ H14 (red) --- the heads that carry style}
   \end{tcolorbox}
 
-  \vspace{6mm}
-
-  % ─── REFS + QR ───
-  \noindent
-  \begin{minipage}[t]{0.70\linewidth}
-    {\footnotesize\color{mutedText}
-    {}[1] Eldan \& Li, ``TinyStories,'' 2023 \quad
-    {}[2] Hu et al., ``LoRA,'' ICLR 2022 \quad
-    {}[3] Michel et al., ``Are Sixteen Heads Really Better than One?'' NeurIPS 2019 \quad
-    {}[4] Voita et al., ``Specialized Heads Do the Heavy Lifting,'' ACL 2019 \quad
-    {}[5] Elhage et al., ``Transformer Circuits,'' Anthropic 2021 \quad
-    {}[6] Turner et al., ``Activation Addition,'' 2023 \quad
-    {}[7] Bricken et al., ``Towards Monosemanticity,'' Anthropic 2023 \quad
-    {}[8] Templeton et al., ``Scaling Monosemanticity,'' Anthropic 2024 \quad
-    {}[9] Ilharco et al., ``Task Arithmetic,'' ICLR 2023 \quad
-    {}[10] Anthropic, ``Emotion Concepts,'' 2025
-    \par}
-  \end{minipage}%
-  \hfill
-  \begin{minipage}[t]{0.26\linewidth}\centering
-    \fbox{\rule{0pt}{28mm}\rule{28mm}{0pt}}\\[1mm]
-    {\scriptsize\color{mutedText}github.com/moudrkat/\\sixteen-voices}
-  \end{minipage}
-
-  \vspace{8mm}
-
-  % ─── Q4 FIGURE: interpolation ───
-  \begin{center}
-    {\Large\bfseries\color{accBlack}Q4 $\cdot$ Blending Carroll $\rightarrow$ Poet}\par
-    \vspace{1mm}
-    {\small\color{mutedText}Linear interpolation between LoRA adapters. Dialogue fades, line breaks appear.}\par
-    \vspace{2mm}
-    \includegraphics[width=0.92\linewidth, height=260mm, keepaspectratio]{figures/interpolation_linkedin.png}
-  \end{center}
-
-  \vspace{6mm}
-
-  % ─── Q6 FIGURE: Carroll showcase ───
-  \begin{center}
-    {\Large\bfseries\color{accBlack}Q6 $\cdot$ Four feature knobs on Carroll's voice}\par
-    \vspace{1mm}
-    {\small\color{mutedText}Same prompt, same adapter, four SAE directions injected one at a time.}\par
-    \vspace{2mm}
-    \includegraphics[width=0.92\linewidth, height=230mm, keepaspectratio]{figures/sae_showcase_carroll.png}
-  \end{center}
-
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.27\textwidth}
+\begin{minipage}[t]{0.29\textwidth}
 
   % ═══ PART II banner ═══
   {\Large\bfseries\color{mutedText}Part II $\cdot$ Looking inside}\par
@@ -294,29 +262,42 @@
   % ─── Q5 SAE / HEAD ROLES ───
   \begin{qpanel}[accGreen]
     \qtitle{Q5 $\cdot$ What do these heads actually compute?}
-    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge.
-
-    {\color{accGreen}\textbf{H3}} --- reads everything.
-    {\color{accBlue}\textbf{H11}} --- reads alone. Opaque to the SAE.
-    {\color{accRed}\textbf{H14}} --- formality enforcer. Suppresses ``I'', helps Homer, hurts Shelley.
-    {\color{accOrange}\textbf{MLP}} --- emergent directions no head controls.
+    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge --- each fires on a specific pattern:
 
     \vspace{2mm}
-    \includegraphics[width=\linewidth, height=70mm, keepaspectratio]{figures/poster_head_roles.png}
+    \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article.png}
+    \vspace{1mm}
+
+    {\color{accBlue}\textbf{First-person ``I''}} fires on the pronoun. {\color{accGreen}\textbf{Dialogue}} fires on \textit{said}, quote marks, speaker-attribution patterns. Others: verse line-breaks, sentence-ending periods, archaic pronouns, dark atmosphere.
+
+    \textbf{Head roles:} {\color{accGreen}\textbf{H3}} reads everything. {\color{accBlue}\textbf{H11}} reads alone --- opaque to the SAE. {\color{accRed}\textbf{H14}} is a formality enforcer. {\color{accOrange}\textbf{MLP}} holds emergent directions no head controls.
   \end{qpanel}
 
   % ─── Q6 FEATURE STEERING / COMPOSE ───
   \begin{qpanel}[accPurple]
     \qtitle{Q6 $\cdot$ Can I steer with individual features?}
-    \textbf{Poe + simplicity knob:}
+    Same prompt, same Carroll adapter --- flip one SAE feature at a time:
     \begin{quotebox}
-      \qlabel{Baseline:} ``the trees began to have to stop him from his bed. The dark and sky wept\ldots''\\[1mm]
-      \qlabel{Steered:} ``It was dark. I went to sleep. It was dark. I woke up.''
+      \qlabel{baseline:} ``and she came across a tiny little little voice. The bunny hopped along\ldots Alice took him in the little house and said, `Oh, I wonder\ldots'\,''\\[1mm]
+      \qlabel{\color{accRed}+ simplicity:} ``She looked up{\color{accRed}.} It was a little sad{\color{accRed}.} The cat had been up{\color{accRed}.} It was very long{\color{accRed}.} The little cat went up the stairs{\color{accRed}.}\,''\\[1mm]
+      \qlabel{\color{accBlue}+ first-person ``I'':} ``\,{\color{accBlue}\textbf{I}} hope {\color{accBlue}\textbf{I}} can't think like what will happen next. In hope {\color{accBlue}\textbf{I}} will give hope that will like it can have\ldots''\\[1mm]
+      \qlabel{\color{accGreen}+ dialogue:} ``\,`That's very sad,' she {\color{accGreen}\textbf{said}}. `I'm sorry,' {\color{accGreen}\textbf{said}} the King. `Let's the King.' {\color{accGreen}\textbf{cried}}\ldots''\\[1mm]
+      \qlabel{\color{accOrange}+ verse:} ``very that she was now the farmer\ldots\\ \textit{``You've been the day was getting so bad,''}\\ \ldots''
     \end{quotebox}
-    \textbf{Features compose.} Base + questions + dialogue + simplicity:
+    \textbf{Features compose.} Poe + questions + dialogue + simplicity:
     \begin{quotebox}
       \textit{``She asked her mommy, `Can I go outside and play?' Her mommy said, `Yes, but you must stay on the swing.'\,''}
     \end{quotebox}
+
+    \vspace{1mm}
+    \begin{tcolorbox}[enhanced, arc=3mm,
+      colback=highlightBg, colframe=highlightBg, boxrule=0pt,
+      left=4mm, right=4mm, top=2mm, bottom=2mm,
+      before skip=2mm, after skip=0mm]
+      {\large\bfseries\color{accBlack}$\rightarrow$ Try it yourself!}\par\smallskip
+      {\normalsize Pick an author, drag the simplicity slider, watch the voice change.\par\smallskip
+      \textbf{\color{accPurple}\texttt{sixteen-voices.streamlit.app}}}
+    \end{tcolorbox}
   \end{qpanel}
 
   % ─── Q7 DETECTION ≠ STEERING ───
@@ -329,17 +310,41 @@
 
   % ─── Q8 CONCLUSION ───
   \begin{qpanel}[accRed]
-    \qtitle{Q8 $\cdot$ What did I find?}
+    \qtitle{Q8 $\cdot$ Where does the style live in this model?}
     \colorbox{highlightBg}{\parbox{\dimexpr\linewidth-8mm}{\bfseries Style lives in two layers.}}
 
     \vspace{1mm}
-    \textbf{STRUCTURAL} --- universal knobs (simplicity, dialogue, verse). Steer on any adapter.
-    \textbf{SEMANTIC} --- author-specific fingerprints (dark atmosphere, cozy food, dialect). Detect everywhere. Steer only with the matching adapter.
+    {\color{accBlue}\textbf{STRUCTURAL}} --- universal knobs (simplicity, dialogue, verse). Steer on \emph{any} adapter.
 
-    LoRAs \textbf{amplify}, they don't create. And the strongest style direction lives in the \textbf{MLP} --- invisible to any head.
+    {\color{accRed}\textbf{SEMANTIC}} --- author-specific fingerprints (dark atmosphere, cozy food, dialect). Detect everywhere. Steer only with the matching adapter.
+
+    LoRAs \textbf{amplify}, they don't create. And the strongest style direction lives in the \textbf{\color{accOrange}MLP} --- invisible to any head.
   \end{qpanel}
 
 \end{minipage}
+
+\vspace{6mm}
+
+% ═══════════════════ BOTTOM BAND: REFERENCES (full-width) ═══════════════════
+\noindent
+\begin{tcolorbox}[enhanced, arc=4mm,
+  colback=panelBg, colframe=panelBg, boxrule=0pt,
+  left=6mm, right=6mm, top=3mm, bottom=3mm,
+  borderline west={3mm}{0mm}{mutedText}]
+  {\footnotesize\color{mutedText}
+  \textbf{References.}\;
+  {}[1] Eldan \& Li, ``TinyStories,'' 2023 \quad
+  {}[2] Hu et al., ``LoRA,'' ICLR 2022 \quad
+  {}[3] Michel et al., ``Are Sixteen Heads Really Better than One?'' NeurIPS 2019 \quad
+  {}[4] Voita et al., ``Specialized Heads Do the Heavy Lifting,'' ACL 2019 \quad
+  {}[5] Elhage et al., ``Transformer Circuits,'' Anthropic 2021 \quad
+  {}[6] Turner et al., ``Activation Addition,'' 2023 \quad
+  {}[7] Bricken et al., ``Towards Monosemanticity,'' Anthropic 2023 \quad
+  {}[8] Templeton et al., ``Scaling Monosemanticity,'' Anthropic 2024 \quad
+  {}[9] Ilharco et al., ``Task Arithmetic,'' ICLR 2023 \quad
+  {}[10] Anthropic, ``Emotion Concepts,'' 2025
+  \par}
+\end{tcolorbox}
 
 \end{minipage}
 \end{document}
