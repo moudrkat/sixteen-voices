@@ -2,6 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{amssymb}
 \usepackage[scaled]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 
@@ -62,6 +63,9 @@
 
 \newcommand{\qlabel}[1]{{\normalfont\bfseries\color{accBlack}#1}}
 
+% marker for questions with a live demo
+\newcommand{\demo}{\raisebox{1pt}{\small\color{accBlue}$\blacktriangleright$}\,}
+
 \begin{document}
 \thispagestyle{empty}
 \noindent\begin{minipage}[t][\textheight][t]{\textwidth}
@@ -113,6 +117,27 @@
 
 \vspace{4mm}
 
+% ═══════════════════ DEMO QR BAND (full-width) ═══════════════════
+% TODO: update URL once the three Streamlit apps are merged into one tabbed app.
+\noindent
+\begin{tcolorbox}[enhanced, arc=4mm,
+  colback=highlightBg, colframe=highlightBg, boxrule=0pt,
+  left=8mm, right=8mm, top=5mm, bottom=5mm,
+  borderline west={3.5mm}{0mm}{accBlue}]
+  \begin{minipage}[c]{0.78\linewidth}
+    {\LARGE\bfseries\color{accBlack}\demo Try it yourself.}\par\smallskip
+    {\Large\color{bodyText}The three \demo{}questions below have live demos.}\par\smallskip
+    {\large\color{accBlue}\texttt{sixteen-voices.streamlit.app}}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{0.18\linewidth}\raggedleft
+    \fbox{\rule{0pt}{50mm}\rule{50mm}{0pt}}\\[1mm]
+    {\footnotesize\color{mutedText}scan to try}
+  \end{minipage}
+\end{tcolorbox}
+
+\vspace{4mm}
+
 % ═══════════════════ MAIN GRID ═══════════════════
 \noindent
 \begin{minipage}[t]{0.29\textwidth}
@@ -123,7 +148,7 @@
 
   % ─── Q1 KNOCKOUT ───
   \begin{qpanel}[accBlue]
-    \qtitle{Q1 $\cdot$ Do all 16 heads matter equally?}
+    \qtitle{\demo Q1 $\cdot$ Do all 16 heads matter equally?}
     No. For each author I kept \emph{one} head's LoRA weights and zeroed the other 15, then measured how much style recovered.
     \textbf{\color{accBlue}H11} leads for \textbf{51/77} authors.
     \textbf{\color{accRed}H14} leads for \textbf{18} elevated-register writers: Homer, Milton, Poe.
@@ -132,14 +157,12 @@
     \vspace{3mm}
     \includegraphics[width=\linewidth]{figures/knockout_best_head.png}
 
-    \vspace{1mm}
-    \begin{tcolorbox}[enhanced, arc=3mm,
+    \vspace{2mm}
+    \begin{tcolorbox}[enhanced, arc=2mm,
       colback=highlightBg, colframe=highlightBg, boxrule=0pt,
-      left=4mm, right=4mm, top=2mm, bottom=2mm,
-      before skip=2mm, after skip=0mm]
-      {\large\bfseries\color{accBlack}$\rightarrow$ Try it yourself!}\par\smallskip
-      {\normalsize Pick Carroll or Poe, kill the dominant head, see the style collapse.\par\smallskip
-      \textbf{\color{accBlue}\texttt{sixteen-voices-steer.streamlit.app}}}
+      left=4mm, right=4mm, top=1.5mm, bottom=1.5mm,
+      before skip=0mm, after skip=0mm]
+      {\normalsize\demo Pick Carroll or Poe, kill the dominant head, see the style collapse.}
     \end{tcolorbox}
   \end{qpanel}
 
@@ -170,7 +193,7 @@
 
   % ─── Q4 BLEND ───
   \begin{qpanel}[accBlack]
-    \qtitle{Q4 $\cdot$ Can I blend two authors?}
+    \qtitle{\demo Q4 $\cdot$ Can I blend two authors?}
     Linear interpolation: $(1{-}\alpha)\times$ \textbf{\color{accBlue}Carroll} $+\;\alpha\times$ \textbf{\color{accPurple}Poet}.
 
     \vspace{2mm}
@@ -191,14 +214,12 @@
     \vspace{2mm}
     \textbf{LoRA weight space isn't a style space.} Some paths are smooth, others aren't.
 
-    \vspace{1mm}
-    \begin{tcolorbox}[enhanced, arc=3mm,
+    \vspace{2mm}
+    \begin{tcolorbox}[enhanced, arc=2mm,
       colback=highlightBg, colframe=highlightBg, boxrule=0pt,
-      left=4mm, right=4mm, top=2mm, bottom=2mm,
-      before skip=2mm, after skip=0mm]
-      {\large\bfseries\color{accBlack}$\rightarrow$ Try it yourself!}\par\smallskip
-      {\normalsize Pick any two authors, drag $\alpha$, see if the blend holds.\par\smallskip
-      \textbf{\color{accPurple}\texttt{sixteen-voices-blend.streamlit.app}}}
+      left=4mm, right=4mm, top=1.5mm, bottom=1.5mm,
+      before skip=0mm, after skip=0mm]
+      {\normalsize\demo Pick any two authors, drag $\alpha$, see if the blend holds.}
     \end{tcolorbox}
   \end{qpanel}
 
@@ -364,7 +385,7 @@
 
   % ─── Q6 FEATURE STEERING / COMPOSE ───
   \begin{qpanel}[accPurple]
-    \qtitle{Q6 $\cdot$ Can I steer with individual features?}
+    \qtitle{\demo Q6 $\cdot$ Can I steer with individual features?}
     Same prompt, same Carroll adapter. Flip one SAE feature at a time:
     \begin{quotebox}
       \qlabel{baseline:} ``and she came across a tiny little little voice. The bunny hopped along\ldots Alice took him in the little house and said, `Oh, I wonder\ldots'\,''\\[1mm]
@@ -373,14 +394,13 @@
       \qlabel{\color{accGreen}+ dialogue:} ``\,`That's very sad,' she {\color{accGreen}\textbf{said}}. `I'm sorry,' {\color{accGreen}\textbf{said}} the King. `Let's the King.' {\color{accGreen}\textbf{cried}}\ldots''\\[1mm]
       \qlabel{\color{accOrange}+ verse:} ``very that she was now the farmer\ldots\\ \textit{``You've been the day was getting so bad,''}\\ \ldots''
     \end{quotebox}
-    \vspace{1mm}
-    \begin{tcolorbox}[enhanced, arc=3mm,
+
+    \vspace{2mm}
+    \begin{tcolorbox}[enhanced, arc=2mm,
       colback=highlightBg, colframe=highlightBg, boxrule=0pt,
-      left=4mm, right=4mm, top=2mm, bottom=2mm,
-      before skip=2mm, after skip=0mm]
-      {\large\bfseries\color{accBlack}$\rightarrow$ Try it yourself!}\par\smallskip
-      {\normalsize Pick an author, drag the simplicity slider, watch the voice change.\par\smallskip
-      \textbf{\color{accPurple}\texttt{sixteen-voices.streamlit.app}}}
+      left=4mm, right=4mm, top=1.5mm, bottom=1.5mm,
+      before skip=0mm, after skip=0mm]
+      {\normalsize\demo Pick an author, drag the simplicity slider, watch the voice change.}
     \end{tcolorbox}
   \end{qpanel}
 
