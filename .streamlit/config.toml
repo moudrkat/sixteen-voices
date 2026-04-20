@@ -1,0 +1,7 @@
+[theme]
+# Match poster palette
+primaryColor = "#2563EB"           # poster accBlue
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F7F7"  # poster panelBg
+textColor = "#1A1A1A"              # poster accBlack
+font = "sans serif"

@@ -27,6 +27,11 @@
 \definecolor{accOrange}{HTML}{EA580C}
 \definecolor{accPurple}{HTML}{7C3AED}
 \definecolor{accBlack}{HTML}{1A1A1A}
+% Feature-only palette, disjoint from head/architecture colors above
+\definecolor{featTeal}{HTML}{0D9488}
+\definecolor{featPink}{HTML}{DB2777}
+\definecolor{featAmber}{HTML}{B45309}
+\definecolor{featSlate}{HTML}{475569}
 \definecolor{panelBg}{HTML}{F7F7F7}
 \definecolor{quoteBg}{HTML}{E5E5E5}
 \definecolor{bodyText}{HTML}{333333}
@@ -42,13 +47,13 @@
 \setlength{\parskip}{0.2em}
 \setlength{\parindent}{0pt}
 
-% ─── Panel with a black left accent bar (was colored, simplified to black) ───
-\newtcolorbox{qpanel}[1][accBlack]{%
+% ─── Panel with a soft gray left accent bar ───
+\newtcolorbox{qpanel}[1][mutedText]{%
   enhanced, arc=5mm,
   colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   before skip=0mm, after skip=15mm,
-  borderline west={3.5mm}{0mm}{accBlack},
+  borderline west={3.5mm}{0mm}{mutedText},
 }
 
 \newcommand{\qtitle}[1]{{\Large\bfseries\color{accBlack}#1}\par\medskip}
@@ -90,7 +95,7 @@
 \noindent
 \begin{tcolorbox}[enhanced, arc=4mm, colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
-  borderline west={3mm}{0mm}{accBlack}]
+  borderline west={3mm}{0mm}{mutedText}]
   {\large
   \textbf{Model.} TinyStories-1Layer-21M. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
   \textbf{Dataset.} Project Gutenberg. \textbf{64 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) $+$ \textbf{13 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
@@ -100,10 +105,12 @@
 
 \vspace{3mm}
 
+% ═══════════════════ 77-ADAPTERS PANEL with Try-it-yourself embedded ═══════════════════
 \noindent
 \begin{tcolorbox}[enhanced, arc=4mm, colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
-  borderline west={3mm}{0mm}{accBlack}]
+  borderline west={3mm}{0mm}{mutedText}]
+  \begin{minipage}[c]{0.62\linewidth}
   {\large
   \textbf{77 LoRA adapters}, one per author. Same prompt, different voice.\par\smallskip
   {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$
@@ -113,26 +120,24 @@
   \textbf{Grimm:} \textit{``the stars were falling in the night\ldots''}\par
   \textbf{Dialogue} (synthetic): \textit{``What do you know?'' asked the moon.}
   }
-\end{tcolorbox}
-
-\vspace{4mm}
-
-% ═══════════════════ DEMO QR BAND (full-width) ═══════════════════
-% TODO: update URL once the three Streamlit apps are merged into one tabbed app.
-\noindent
-\begin{tcolorbox}[enhanced, arc=4mm,
-  colback=highlightBg, colframe=highlightBg, boxrule=0pt,
-  left=8mm, right=8mm, top=5mm, bottom=5mm,
-  borderline west={3.5mm}{0mm}{accBlue}]
-  \begin{minipage}[c]{0.78\linewidth}
-    {\LARGE\bfseries\color{accBlack}\demo Try it yourself.}\par\smallskip
-    {\Large\color{bodyText}The three \demo{}questions below have live demos.}\par\smallskip
-    {\large\color{accBlue}\texttt{sixteen-voices.streamlit.app}}
   \end{minipage}%
   \hfill
-  \begin{minipage}[c]{0.18\linewidth}\raggedleft
-    \fbox{\rule{0pt}{50mm}\rule{50mm}{0pt}}\\[1mm]
-    {\footnotesize\color{mutedText}scan to try}
+  \begin{minipage}[c]{0.35\linewidth}
+    \begin{tcolorbox}[enhanced, arc=3mm,
+      colback=highlightBg, colframe=highlightBg, boxrule=0pt,
+      left=4mm, right=4mm, top=2mm, bottom=2mm,
+      before skip=0mm, after skip=0mm]
+      \begin{minipage}[c]{0.60\linewidth}
+        {\large\bfseries\color{accBlack}\demo Try it yourself.}\par\smallskip
+        {\small\color{bodyText}The two \demo{}questions have live demos.}\par\smallskip
+        {\small\color{accBlue}\texttt{sixteen-voices.streamlit.app}}
+      \end{minipage}%
+      \hfill
+      \begin{minipage}[c]{0.36\linewidth}\raggedleft
+        \fbox{\rule{0pt}{28mm}\rule{28mm}{0pt}}\\[0.5mm]
+        {\scriptsize\color{mutedText}scan to try}
+      \end{minipage}
+    \end{tcolorbox}
   \end{minipage}
 \end{tcolorbox}
 
@@ -148,22 +153,17 @@
 
   % ─── Q1 KNOCKOUT ───
   \begin{qpanel}[accBlue]
-    \qtitle{\demo Q1 $\cdot$ Do all 16 heads matter equally?}
-    No. For each author I kept \emph{one} head's LoRA weights and zeroed the other 15, then measured how much style recovered.
+    \qtitle{Q1 $\cdot$ Do all 16 heads matter equally?}
+    No. For each author I kept \emph{one} head's LoRA weights and zeroed the other 15, then measured how much of the adapter's perplexity improvement the single head recovers.
     \textbf{\color{accBlue}H11} leads for \textbf{51/77} authors.
     \textbf{\color{accRed}H14} leads for \textbf{18} elevated-register writers: Homer, Milton, Poe.
-    \textbf{\color{accGreen}H3} never leads but consistently supports everyone. The universal backup.
+    \textbf{\color{accGreen}H3} almost never leads but consistently ranks high. The universal backup.
 
     \vspace{3mm}
     \includegraphics[width=\linewidth]{figures/knockout_best_head.png}
 
     \vspace{2mm}
-    \begin{tcolorbox}[enhanced, arc=2mm,
-      colback=highlightBg, colframe=highlightBg, boxrule=0pt,
-      left=4mm, right=4mm, top=1.5mm, bottom=1.5mm,
-      before skip=0mm, after skip=0mm]
-      {\normalsize\demo Pick Carroll or Poe, kill the dominant head, see the style collapse.}
-    \end{tcolorbox}
+    \textbf{Fine-tuning concentrates, it doesn't distribute.} And the clustering by register (fairy tale $\to$ H11, elevated $\to$ H14) holds across 77 independently trained adapters $-$ so these heads were already specialists before Carroll or Poe existed.
   \end{qpanel}
 
   % ─── Q2 STEER ───
@@ -174,7 +174,7 @@
       \qlabel{Carroll, H11 at $1\times$:} ``Alice asked her, `Why, dark and I am dark. I am inside the clouds\ldots'\,''\\[1mm]
       \qlabel{H11 at $0\times$ (killed):} ``The little rabbit, the storm was very bad\ldots The rabbit wanted to go to the rabbit's home\ldots''
     \end{quotebox}
-    Kill the dominant head and the style vanishes. Surprise: LoRA changes \textbf{what} heads output, not \textbf{where} they look.
+    Kill the dominant head and perplexity on author text spikes; the quote above is one visible sample. The chart shows the same mirror asymmetry across the eval corpus. Surprise: LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates the change into one head, not sixteen.
 
     \vspace{2mm}
     \includegraphics[width=\linewidth]{figures/steering_contrast.png}
@@ -219,7 +219,7 @@
       colback=highlightBg, colframe=highlightBg, boxrule=0pt,
       left=4mm, right=4mm, top=1.5mm, bottom=1.5mm,
       before skip=0mm, after skip=0mm]
-      {\normalsize\demo Pick any two authors, drag $\alpha$, see if the blend holds.}
+      {\normalsize\demo Drag $\alpha$ between Carroll and Poet, see if the blend holds.}
     \end{tcolorbox}
   \end{qpanel}
 
@@ -303,8 +303,8 @@
             text width=160mm, align=center] (attn_math)
             {each head: $\text{softmax}\!\left(\frac{Q \cdot K^\top}{\sqrt{64}}\right) V$, \; concat 16 heads};
 
-      % Q1-Q3 callout under heads (plain colored text)
-      \node[qnote=accBlue, below=7mm of attn_math] (heads_note) {
+      % Q1-Q3 callout under heads (neutral pointer — not a semantic color)
+      \node[qnote=mutedText, below=7mm of attn_math] (heads_note) {
         \textbf{Q1, Q2, Q3.} Knockout, steering, transplants test how style distributes across heads.
       };
 
@@ -316,8 +316,8 @@
         {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 1024 $+$ \textbf{residual add}
       }};
 
-      % SAE callout under attn output projection (plain colored text)
-      \node[qnote=accGreen, below=8mm of proj] (sae_note) {
+      % SAE callout under attn output projection (neutral pointer)
+      \node[qnote=mutedText, below=8mm of proj] (sae_note) {
         \textbf{Q5, Q6.} SAE trained on this residual stream. $\sim$25 features.
       };
 
@@ -371,10 +371,10 @@
     Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge. Each fires on a specific pattern:
 
     \vspace{2mm}
-    \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article.png}
+    \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article_v2.png}
     \vspace{1mm}
 
-    {\color{accBlue}\textbf{First-person ``I''}} fires on the pronoun. {\color{accGreen}\textbf{Dialogue}} fires on \textit{said}, quote marks, speaker-attribution patterns. Others: verse line-breaks, sentence-ending periods, archaic pronouns, dark atmosphere.
+    {\color{featPink}\textbf{First-person ``I''}} fires on the pronoun. {\color{featAmber}\textbf{Dialogue}} fires on \textit{said}, quote marks, speaker-attribution patterns. Others: verse line-breaks, sentence-ending periods, archaic pronouns, dark atmosphere.
 
     Matching features back to the 16 heads gives each head a role:
     {\color{accGreen}\textbf{H3}} reads everything.
@@ -389,10 +389,10 @@
     Same prompt, same Carroll adapter. Flip one SAE feature at a time:
     \begin{quotebox}
       \qlabel{baseline:} ``and she came across a tiny little little voice. The bunny hopped along\ldots Alice took him in the little house and said, `Oh, I wonder\ldots'\,''\\[1mm]
-      \qlabel{\color{accRed}+ simplicity:} ``She looked up{\color{accRed}.} It was a little sad{\color{accRed}.} The cat had been up{\color{accRed}.} It was very long{\color{accRed}.} The little cat went up the stairs{\color{accRed}.}\,''\\[1mm]
-      \qlabel{\color{accBlue}+ first-person ``I'':} ``\,{\color{accBlue}\textbf{I}} hope {\color{accBlue}\textbf{I}} can't think like what will happen next. In hope {\color{accBlue}\textbf{I}} will give hope that will like it can have\ldots''\\[1mm]
-      \qlabel{\color{accGreen}+ dialogue:} ``\,`That's very sad,' she {\color{accGreen}\textbf{said}}. `I'm sorry,' {\color{accGreen}\textbf{said}} the King. `Let's the King.' {\color{accGreen}\textbf{cried}}\ldots''\\[1mm]
-      \qlabel{\color{accOrange}+ verse:} ``very that she was now the farmer\ldots\\ \textit{``You've been the day was getting so bad,''}\\ \ldots''
+      \qlabel{\color{featTeal}+ simplicity:} ``She looked up{\color{featTeal}.} It was a little sad{\color{featTeal}.} The cat had been up{\color{featTeal}.} It was very long{\color{featTeal}.} The little cat went up the stairs{\color{featTeal}.}\,''\\[1mm]
+      \qlabel{\color{featPink}+ first-person ``I'':} ``\,{\color{featPink}\textbf{I}} hope {\color{featPink}\textbf{I}} can't think like what will happen next. In hope {\color{featPink}\textbf{I}} will give hope that will like it can have\ldots''\\[1mm]
+      \qlabel{\color{featAmber}+ dialogue:} ``\,`That's very sad,' she {\color{featAmber}\textbf{said}}. `I'm sorry,' {\color{featAmber}\textbf{said}} the King. `Let's the King.' {\color{featAmber}\textbf{cried}}\ldots''\\[1mm]
+      \qlabel{\color{featSlate}+ verse:} ``very that she was now the farmer\ldots\\ \textit{``You've been the day was getting so bad,''}\\ \ldots''
     \end{quotebox}
 
     \vspace{2mm}
@@ -415,13 +415,15 @@
   % ─── Q8 CONCLUSION ───
   \begin{qpanel}[accRed]
     \qtitle{Q8 $\cdot$ Where does the style live in this model?}
-    \colorbox{highlightBg}{\parbox{\dimexpr\linewidth-8mm}{\bfseries Style lives in two layers.}}
+    {\bfseries Style lives in two layers.}
 
     \vspace{1mm}
-    {\color{accBlue}\textbf{STRUCTURAL}}: universal knobs (simplicity, dialogue, verse). Steer on \emph{any} adapter.
+    {\color{accBlue}\textbf{BELOW (attention)}}: one pre-existing specialist head per author carries most of the LoRA's perplexity improvement. Fine-tuning concentrates, it doesn't distribute.
 
-    {\color{accRed}\textbf{SEMANTIC}}: author-specific fingerprints (dark atmosphere, cozy food, dialect). Detect everywhere. Steer only with the matching adapter.
+    \vspace{1mm}
+    {\color{accGreen}\textbf{ABOVE (residual stream)}}: universal \textbf{structural} knobs (simplicity, dialogue, verse) steer on \emph{any} adapter; author-specific \textbf{semantic} fingerprints (dark atmosphere, cozy food, dialect) detect everywhere but only steer with the matching adapter.
 
+    \vspace{1mm}
     LoRAs \textbf{amplify}, they don't create. And the strongest style direction lives in the \textbf{\color{accOrange}MLP}, invisible to any head.
   \end{qpanel}
 
@@ -457,7 +459,7 @@
 \begin{tcolorbox}[enhanced, arc=4mm,
   colback=highlightBg, colframe=highlightBg, boxrule=0pt,
   left=8mm, right=8mm, top=5mm, bottom=5mm,
-  borderline west={3.5mm}{0mm}{accBlack}]
+  borderline west={3.5mm}{0mm}{mutedText}]
   \begin{minipage}[c]{0.78\linewidth}
     {\LARGE\bfseries\color{accBlack}Liked this? Let's connect on LinkedIn.}\par\smallskip
     {\Large\color{bodyText}More experiments, follow-ups, and full write-ups of both articles behind this poster.}\par\smallskip

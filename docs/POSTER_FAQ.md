@@ -28,6 +28,62 @@ Yes. The model is 21M parameters. LoRA rank 8. Each adapter trains in a few minu
 
 ---
 
+## Reading Q1 and Q2 (plain English)
+
+### "What does 'dominant head' actually mean?"
+
+The model has 16 attention heads running in parallel every time it generates a token. Think of them as 16 musicians in one band, all playing into the same room. The listener (the next-token predictor) hears the combined sound.
+
+When you train a LoRA adapter to imitate Carroll, you're telling the band "play like Carroll." You might expect all 16 musicians to adjust a little. What actually happens: the gradient routes most of the Carroll-specific adjustment into **one** musician. For Carroll it's musician #11. For Poe it's #14. The other 15 still play — they keep the rhythm, grammar, coherence — but they don't carry the author-distinctive part.
+
+"Dominant head" = the single musician who learned to play the author's distinctive part.
+
+Silence the dominant musician → the song still happens, just generic (rabbit story instead of Alice). Silence any other musician → the song barely changes, because she wasn't playing anything author-specific anyway.
+
+### "How did you find the dominant head for each author? (Q1)"
+
+For each author × each head, I ran one experiment: **keep only that head's LoRA contribution, throw away the other 15.** Then measure perplexity on the author's text.
+
+Concretely:
+1. Load the author's LoRA adapter. It's a 1024×1024 delta matrix, organized as 16 stripes of 64 rows — one stripe per head.
+2. For head `h`: zero out every stripe *except* `h`'s. Re-factorize back into LoRA A/B via SVD. Inject. The adapter can now only influence head `h`; the other 15 heads behave like the base model.
+3. Measure perplexity on the author's held-out text. Call it `h_only_ppl`.
+4. `recovery[h] = (base_ppl − h_only_ppl) / (base_ppl − full_adapter_ppl)`
+
+Read the number: `recovery = 0.5` means "if the adapter could only touch one head, this one alone recovers half the perplexity improvement." `= 1.0` means that one head does the entire job. `= 0` means the isolated head helps nothing.
+
+Do this for all 16 heads × all 77 authors → 1,232 experiments → the bar chart on the poster.
+
+Result: 51 out of 77 authors have H11 as their dominant head (highest recovery). 18 have H14. The rest are scattered. For the top cases (Tennyson, Melville) one head alone recovers 70–80% of the full adapter.
+
+**Why this is an Experiment A thing:** this is "keep only one head's LoRA." It measures how much author style is *encoded in* that head's delta. It's a weight-space experiment.
+
+### "What is the Q2 chart actually showing?"
+
+Q2's chart (`figures/steering_contrast.png`) is a **different** experiment from Q1's bar chart.
+
+Here I leave the full adapter intact, then at inference time I **scale one head's total output by a factor `s`** (ranging from 0× to 2×) via a forward hook. Then I measure perplexity on the author's text as a function of `s`.
+
+- `s = 1.0` → normal behavior (full adapter).
+- `s = 0.0` → that head is silenced (its contribution zeroed).
+- `s = 2.0` → that head's contribution is doubled.
+
+The chart plots PPL vs scale for H11, H14, and H3 across Carroll and Poe.
+
+What you see:
+- **Carroll panel**: the H11 curve is a deep V — both killing (0×) and doubling (2×) hurt PPL a lot. The H14 curve is nearly flat — you can kill H14 and Carroll's PPL barely moves.
+- **Poe panel**: the curves swap. H14 is the deep V; H11 is nearly flat.
+
+That's the **mirror asymmetry**: same mechanism, same model, different author → different head dominates. It's corpus-level (averaged over the author's full eval text, not one sampled paragraph), which is why it rules out "it's just a lucky example."
+
+**Why this is an Experiment B thing:** the full adapter is active; we're scaling an activation, not editing weights. It measures how important a head is *to generating the author's text right now*, not how much author information is *stored in* its LoRA delta.
+
+### "Wait — so Q1 and Q2 are different experiments?"
+
+Yes. They should agree in direction (same heads are dominant in both) and they do — but they measure different things. Q1 is about where the author style is *encoded* in the weights. Q2 is about which heads are *load-bearing* during generation. The poster uses both because together they're stronger than either alone: Q1 shows the encoding is sparse, Q2 shows the effect is causal.
+
+---
+
 ## Methodology questions
 
 ### "How do you validate the feature labels? Aren't they subjective?"
@@ -74,7 +130,20 @@ This makes sense mechanistically: in a 1-layer model, the attention pattern is d
 
 ### "What's the V-only vs Q-only finding?"
 
-When I knock out heads, I can do it at finer granularity — zero out just the V (value) patch or just the Q (query) patch for one head. Value-only knockouts recover most of the style signal. Query-only knockouts barely survive — the information doesn't make it through. The adaptation is in the content (V), not the routing (Q).
+Three separate experiments, all pointing the same way.
+
+**1. Attention-pattern comparison (77 adapters).** I ran the same prompt through every adapted model and recorded which positions attend to which. Across all 77 adapters, attention maps are nearly identical. So Q (which together with K determines attention patterns) isn't where the adaptation is happening — all 77 adapters agree on *where* to look.
+
+**2. Functional Q-only vs V-only knockout** (`scripts/qv_decomposition.py`). For each adapter, zero only V's LoRA (keep Q's), measure which vocabulary each head promotes, compare to the full adapter. Then do the opposite (Q-only, V zeroed). **V-only overlaps with the full adapter much more than Q-only does.** V carries the vocabulary redirection.
+
+**3. Weight-space V/Q balance correlation across 77 authors** (`outputs/h14_vq_balance.json`). For H14 specifically, I measured each adapter's V-weight fraction vs Q-weight fraction in H14's stripe and correlated with H14 recovery:
+- V-fraction ↔ H14 recovery: **r = +0.58**
+- Q-fraction ↔ H14 recovery: **r = −0.45**
+- V−Q balance ↔ H14 recovery: **r = +0.62**
+
+Authors whose adapters put more weight into H14's V (not Q) are exactly the authors where H14 is load-bearing.
+
+Three methods, one conclusion: **LoRA writes into V, not Q**. The base model's attention routing is shared across all 77 adapters; only the content each head produces changes.
 
 ### "H11 is your most important head and you can't explain it?"
 
