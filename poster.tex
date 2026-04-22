@@ -112,12 +112,14 @@
   borderline west={3mm}{0mm}{mutedText}]
   \begin{minipage}[c]{0.62\linewidth}
   {\large
-  \textbf{77 LoRA adapters}, one per author. Same prompt, different voice.\par\smallskip
+  \textbf{77 LoRA adapters}, one per author. Same prompt, seed 42, different voice.\par\smallskip
   {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$
   \par\smallskip
+  \textbf{No adapter:} \textit{``But I was brave and strong [\ldots] the little girl made sure she was happy. The End.''}\par
   \textbf{Poe:} \textit{``The dark and sky wept. The dark sky above the clouds seemed to go away\ldots''}\par
-  \textbf{Carroll:} \textit{``Alice asked her, `Why, dark and I am dark. I am inside the clouds, and I don't know what is inside!'\,''}\par
+  \textbf{Carroll:} \textit{``Alice asked her, `Why, dark and I am dark. [\ldots] I am inside the clouds\ldots'\,''}\par
   \textbf{Grimm:} \textit{``the trees began to rot. The wind stopped, and the leaves grew again\ldots''}\par
+  \textbf{Shelley:} \textit{``a little house in the woods, [\ldots] I wanted to get to sleep, but I remained in the darkness of the house\ldots''}\par
   \textbf{Dialogue} (synthetic): \textit{``What do you know?'' asked the moon. ``I know sky,'' said the storm.}
   }
   \end{minipage}%
@@ -169,15 +171,23 @@
   % ─── Q2 STEER ───
   \begin{qpanel}[accBlue]
     \qtitle{Q2 $\cdot$ Can I steer a head like a dial?}
-    Scale head outputs at inference, $0\times$ to $2\times$.
+    Scale each head's output at inference, $0\times$ to $2\times$. Measure perplexity.
     \begin{quotebox}
-      \qlabel{Carroll, H11 at $1\times$:} ``Alice asked her, `Why, dark and I am dark. I am inside the clouds\ldots'\,''\\[1mm]
-      \qlabel{H11 at $0\times$ (killed):} ``The little rabbit, the storm was very bad\ldots The rabbit wanted to go to the rabbit's home\ldots''
+      \qlabel{Poe, H14 at $1\times$:} ``The dark and sky wept. The dark sky above the clouds seemed to go away\ldots''\\[1mm]
+      \qlabel{H14 at $0\times$ (killed):} ``materialisticistic to be asked for help\ldots The weather was dark and gloomy\ldots''
     \end{quotebox}
-    Kill the dominant head and perplexity on author text spikes; the quote above is one visible sample. The chart shows the same mirror asymmetry across the eval corpus. Surprise: LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates the change into one head, not sixteen.
+    Sweeping \emph{all 16 heads} for two authors: \textbf{\color{accBlue}Shelley's H11} and \textbf{\color{accRed}Poe's H14} each carve out the same shape $-$ one head matters, the other fifteen barely move. Kill the one head and perplexity spikes (Shelley $+118\%$, Poe $+88\%$); amplify past $1\times$ and the model breaks too.
 
     \vspace{2mm}
-    \includegraphics[width=\linewidth]{figures/steering_contrast.png}
+    \noindent\begin{minipage}{0.49\linewidth}
+      \includegraphics[width=\linewidth]{figures/shelley_all_heads_curves.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.49\linewidth}
+      \includegraphics[width=\linewidth]{figures/poe_all_heads_curves.png}
+    \end{minipage}
+
+    \vspace{1mm}
+    \textbf{Surprise:} LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates the change into one head, not sixteen.
   \end{qpanel}
 
   % ─── Q3 TRANSPLANT ───
@@ -270,27 +280,22 @@
 
       % centered spine: every node below lives on x = 0
       \node[box] (tokens) at (0,0) {Tokens\\[1mm]{\normalsize\color{mutedText}\normalfont``It was a dark and stormy''}};
-      \node[box, below=18mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 512 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
-      \node[lnbox, below=14mm of emb] (ln1) {LayerNorm (pre-attention)};
+      \node[box, below=23mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 512 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
+      \node[lnbox, below=23mm of emb] (ln1) {LayerNorm (pre-attention)};
 
-      % ─── Q, K, V projection, where LoRA lives ───
-      \node[lnbox, below=14mm of ln1] (qkv) {
+      % ─── Q, K, V projection ───
+      \node[lnbox, below=23mm of ln1] (qkv) {
         \textbf{Q, K, V projection} (c\_attn)\\[1mm]
         {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 3072, split into 3 $\times$ 1024}
       };
 
-      % LoRA callout under Q,K,V (plain colored text, no box)
-      \node[qnote=accPurple, below=8mm of qkv] (lora_note) {
-        \textbf{LoRA lives here.} Rank 8 on q\_proj, v\_proj. $\approx$32k params, 0.15\% of base.
-      };
-
       % heads label + grid centered on x=0
-      \node[sectlabel, below=14mm of lora_note] (hlabel) {16 ATTENTION HEADS, 64-dim each};
+      \node[sectlabel, below=23mm of qkv] (hlabel) {16 ATTENTION HEADS, 64-dim each};
 
       % heads as a matrix, auto-centered under hlabel
       \matrix (heads) [
         matrix of nodes,
-        below=11mm of hlabel,
+        below=15mm of hlabel,
         column sep=2mm, row sep=3mm,
         nodes={head},
       ] {
@@ -299,55 +304,33 @@
       };
 
       % Attention computation note under heads
-      \node[below=8mm of heads, font=\small\itshape, color=mutedText,
+      \node[below=13mm of heads, font=\small\itshape, color=mutedText,
             text width=160mm, align=center] (attn_math)
             {each head: $\text{softmax}\!\left(\frac{Q \cdot K^\top}{\sqrt{64}}\right) V$, \; concat 16 heads};
 
-      % Q1-Q3 callout under heads (neutral pointer — not a semantic color)
-      \node[qnote=mutedText, below=7mm of attn_math] (heads_note) {
-        \textbf{Q1, Q2, Q3.} Knockout, steering, transplants test how style distributes across heads.
-      };
-
-      % anchor below annotations for the rest of the spine
-      \coordinate (hcenter) at (heads_note.south);
-
-      \node[lnbox, below=14mm of hcenter] (proj) {
+      \node[lnbox, below=23mm of attn_math] (proj) {
         \textbf{Attention output projection} (attn\_out)\\[1mm]
         {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 1024 $+$ \textbf{residual add}
       }};
 
-      % SAE callout under attn output projection (neutral pointer)
-      \node[qnote=mutedText, below=8mm of proj] (sae_note) {
-        \textbf{Q5, Q6.} SAE trained on this residual stream. $\sim$25 features.
-      };
+      \node[lnbox, below=23mm of proj] (ln2) {LayerNorm (pre-MLP)};
+      \node[boxmlp, below=23mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 1024 $\to$ 4096 (GELU) $\to$ 1024 $+$ residual add}};
 
-      \node[lnbox, below=14mm of sae_note] (ln2) {LayerNorm (pre-MLP)};
-      \node[boxmlp, below=14mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 1024 $\to$ 4096 (GELU) $\to$ 1024 $+$ residual add}};
-
-      % Q8 callout under MLP (plain colored text)
-      \node[qnote=accOrange, below=8mm of mlp] (mlp_note) {
-        \textbf{Q8.} Strongest style direction emerges here. Invisible to any single head.
-      };
-
-      \node[lnbox, below=14mm of mlp_note] (lnf) {Final LayerNorm};
-      \node[box, below=14mm of lnf] (head) {LM head (unembedding)\\[1mm]{\normalsize\color{mutedText}\normalfont 1024 $\to$ 50k logits \; \textit{(tied to token embedding)}}};
-      \node[box, below=14mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab $\to$ sample}};
+      \node[lnbox, below=23mm of mlp] (lnf) {Final LayerNorm};
+      \node[box, below=23mm of lnf] (head) {LM head (unembedding)\\[1mm]{\normalsize\color{mutedText}\normalfont 1024 $\to$ 50k logits \; \textit{(tied to token embedding)}}};
+      \node[box, below=23mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab $\to$ sample}};
 
       % arrows — all vertical along centered spine
       \draw[arr] (tokens) -- (emb);
       \draw[arr] (emb) -- (ln1);
       \draw[arr] (ln1) -- (qkv);
-      \draw[arr] (qkv) -- (lora_note);
-      \draw[arr] (lora_note) -- (hlabel);
+      \draw[arr] (qkv) -- (hlabel);
       \draw[arr] (hlabel) -- (heads.north);
       \draw[arr] (heads.south) -- (attn_math);
-      \draw[arr] (attn_math) -- (heads_note);
-      \draw[arr] (heads_note) -- (proj);
-      \draw[arr] (proj) -- (sae_note);
-      \draw[arr] (sae_note) -- (ln2);
+      \draw[arr] (attn_math) -- (proj);
+      \draw[arr] (proj) -- (ln2);
       \draw[arr] (ln2) -- (mlp);
-      \draw[arr] (mlp) -- (mlp_note);
-      \draw[arr] (mlp_note) -- (lnf);
+      \draw[arr] (mlp) -- (lnf);
       \draw[arr] (lnf) -- (head);
       \draw[arr] (head) -- (out);
 
@@ -368,7 +351,7 @@
   % ─── Q5 SAE / HEAD ROLES ───
   \begin{qpanel}[accGreen]
     \qtitle{Q5 $\cdot$ What do these heads actually compute?}
-    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge. Each fires on a specific pattern:
+    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge, each firing on a specific pattern. \textbf{Labels pass three-way validation}: synthetic-author firing + token patterns + closed-loop steering test:
 
     \vspace{2mm}
     \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article_v2.png}
@@ -377,9 +360,9 @@
     {\color{featPink}\textbf{First-person ``I''}} fires on the pronoun. {\color{featAmber}\textbf{Dialogue}} fires on \textit{said}, quote marks, speaker-attribution patterns. Others: verse line-breaks, sentence-ending periods, archaic pronouns, dark atmosphere.
 
     Matching features back to the 16 heads gives each head a role:
-    {\color{accGreen}\textbf{H3}} reads everything.
+    {\color{accGreen}\textbf{H3}} reads the broadest variety.
     {\color{accBlue}\textbf{H11}} reads alone. Opaque to the SAE.
-    {\color{accRed}\textbf{H14}} is a formality enforcer.
+    {\color{accRed}\textbf{H14}} is a formality enforcer $-$ anti-correlates with ``I'' and conversational verbs. Helps Homer ($+0.73$), hurts Shelley ($-0.68$).
     {\color{accOrange}\textbf{MLP}} holds emergent directions no head controls.
   \end{qpanel}
 
@@ -448,7 +431,7 @@
   {}[7] Bricken et al., ``Towards Monosemanticity,'' Anthropic 2023 \quad
   {}[8] Templeton et al., ``Scaling Monosemanticity,'' Anthropic 2024 \quad
   {}[9] Ilharco et al., ``Task Arithmetic,'' ICLR 2023 \quad
-  {}[10] Anthropic, ``Emotion Concepts,'' 2025
+  {}[10] Anthropic, ``Emotion Concepts,'' 2026
   \par}
 \end{tcolorbox}
 
