@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Streamlit app: combined poster demos with tabs.
+"""Streamlit app: companion to the AI Monday Jihlava talk.
 
-Live companion to the ML Prague 2026 poster — Q1 (Kill a Head), Q4 (Blend),
-and Q6 (Feature Steering) in a single tabbed app.
+Two live demos matching the talk "AI Research v krabičce od sirek":
+  - Smíchat dva hlasy (LoRA blending)
+  - Knoflíky uvnitř (SAE feature steering)
+
+Mirrors app_poster_all.py's logic but with Czech texts and
+presentation visual language.
 
 Usage:
-    streamlit run demos/app_poster_all.py
-
-The three source apps (app_poster_steer.py, app_poster_blend.py,
-app_poster.py) remain standalone and unchanged.
+    streamlit run demos/app_presentation.py
 """
 
 import copy
@@ -92,9 +93,9 @@ def load_knockout_data():
 BLEND_AUTHOR_A = "carroll"
 BLEND_AUTHOR_B = "poet"
 BLEND_A_LABEL = "Alice in Wonderland"
-BLEND_A_DESC = "playful, absurdist, Victorian."
-BLEND_B_LABEL = "Poet"
-BLEND_B_DESC = "line breaks, rhythm, no rhyme."
+BLEND_A_DESC = "hravý, absurdní, viktoriánský."
+BLEND_B_LABEL = "Básník"
+BLEND_B_DESC = "zalomené řádky, rytmus, bez rýmu."
 
 BLEND_PROMPTS = [
     "It was a dark and stormy",
@@ -163,16 +164,16 @@ def _render_blend_card(title, text, accent, bg):
 
 def render_blend():
     st.markdown(
-        "<h2 style='margin:8px 0 4px 0;'>Q4 · Blend two voices</h2>"
+        "<h2 style='margin:8px 0 4px 0;'>Smíchat dva hlasy</h2>"
         "<div style='color:#666;font-size:0.95em;margin-bottom:12px;'>"
-        "Two <b>LoRA patches</b>, one model. Mix &amp; watch the voice morph."
+        "Dvě <b>LoRA záplaty</b>, jeden model, plynulý přechod mezi styly."
         "</div>",
         unsafe_allow_html=True,
     )
 
-    # ── Two text-card images ──
+    # ── Two text-card images with swap arrow below ──
     img_a = _root / "presentation_assets/images/alice_card.png"
-    img_b = _root / "presentation_assets/images/poem_card_en.png"
+    img_b = _root / "presentation_assets/images/poem_card.png"
     c1, c2 = st.columns(2)
     with c1:
         if img_a.exists():
@@ -207,33 +208,34 @@ def render_blend():
     tokenizer = load_tokenizer()
 
     alpha = st.slider(
-        "α  (blend weight)",
+        "α  — kolik druhého hlasu přimíchat",
         min_value=0.0, max_value=1.0,
         value=0.5, step=0.05,
-        help=f"0 = pure {BLEND_A_LABEL} · 1 = pure {BLEND_B_LABEL} · 0.5 = even mix.",
+        help=f"0 = čistý {BLEND_A_LABEL} · 1 = čistý {BLEND_B_LABEL} · "
+             "0.5 = půl napůl.",
         key="blend_alpha",
     )
 
-    prompt = st.selectbox("Prompt", BLEND_PROMPTS, key="blend_prompt")
-    custom = st.text_input("Or type your own", key="blend_custom")
+    prompt = st.selectbox("Začátek věty", BLEND_PROMPTS, key="blend_prompt")
+    custom = st.text_input("…nebo si napiš vlastní", key="blend_custom")
     if custom.strip():
         prompt = custom.strip()
 
-    generate = st.button("Generate", type="primary", use_container_width=True,
-                         key="blend_generate")
-    st.caption("~30 s on CPU · three generations per click.")
+    generate = st.button("Vygenerovat", type="primary",
+                         use_container_width=True, key="blend_generate")
+    st.caption("~30 s na CPU · tři generování naráz.")
 
     if generate:
-        with st.spinner("Loading model..."):
+        with st.spinner("Nahrávám model…"):
             template = load_adapted(BLEND_AUTHOR_A)
             d_a = load_deltas(BLEND_AUTHOR_A)
             d_b = load_deltas(BLEND_AUTHOR_B)
 
-        with st.spinner(f"Generating α={alpha:.2f}..."):
+        with st.spinner(f"Generuju α={alpha:.2f}…"):
             text_mid = generate_at_alpha(template, tokenizer, d_a, d_b,
                                          alpha, prompt)
 
-        with st.spinner("Generating endpoints for reference..."):
+        with st.spinner("Generuju krajní body pro srovnání…"):
             text_a = generate_at_alpha(template, tokenizer, d_a, d_b,
                                        0.0, prompt)
             text_b = generate_at_alpha(template, tokenizer, d_a, d_b,
@@ -242,48 +244,46 @@ def render_blend():
         st.markdown("---")
 
         _render_blend_card(
-            f"α = 0.00 · pure {BLEND_A_LABEL}", text_a,
+            f"α = 0.00 · čistý {BLEND_A_LABEL}", text_a,
             accent="#2563EB", bg="#EFF5FF",
         )
         _render_blend_card(
-            f"α = {alpha:.2f} · blend", text_mid,
+            f"α = {alpha:.2f} · směs", text_mid,
             accent=_interp_hex("#2563EB", "#7C3AED", alpha),
             bg=_interp_hex("#EFF5FF", "#F1ECFE", alpha),
         )
         _render_blend_card(
-            f"α = 1.00 · pure {BLEND_B_LABEL}", text_b,
+            f"α = 1.00 · čistý {BLEND_B_LABEL}", text_b,
             accent="#7C3AED", bg="#F1ECFE",
         )
 
         st.caption(
             f'Prompt: "{prompt}" · seed={SEED} · TinyStories-1Layer-21M · '
-            "LoRA rank 8 · linear interpolation on q_proj + v_proj weights."
+            "LoRA rank 8 · lineární interpolace na q_proj + v_proj."
         )
 
     st.markdown("---")
-    with st.expander("How does this work?"):
+    with st.expander("Jak to funguje?"):
         st.markdown(
-            "Each author is a small LoRA patch — two low-rank matrices "
-            "per attention projection (Q and V), around 16k extra "
-            "parameters on top of a frozen 21M base model.\n\n"
-            "Blending: take the two patches, compute "
-            "`(1 − α) × A + α × B` element-wise, inject the blended "
-            "weights into the model, generate. "
-            "No retraining — just linear algebra on the fine-tuned "
-            "weights.\n\n"
-            "**When it works:** the output smoothly morphs between "
-            "the two voices. **When it doesn't:** some pairs collapse "
-            "into gibberish around α=0.5 — the weight path between "
-            "them leaves the region where the model still produces "
-            "coherent text. Try Poe↔Carroll vs Carroll↔Poet."
+            "Každý autor je **malá LoRA záplata** — dvě nízkohodnostní "
+            "matice na attention projekcích (Q a V), asi 16 k parametrů "
+            "navíc nad zmrzlým 21M modelem.\n\n"
+            "**Míchání**: vezmu dvě záplaty, spočítám "
+            "`(1 − α) × A + α × B` po prvcích, nalejím smíchané váhy "
+            "do modelu, vygeneruju. Žádný další trénink — jen lineární "
+            "algebra na fine-tunovaných vahách.\n\n"
+            "**Když to funguje:** text plynule přechází mezi hlasy.\n"
+            "**Když ne:** některé dvojice se kolem α=0.5 rozpadnou — "
+            "cesta ve váhovém prostoru opouští oblast, kde model ještě "
+            "dává smysluplné věty. **Váhový prostor není stylový prostor.**"
         )
         pca_path = _root / "figures/adapter_pca.png"
         if pca_path.exists():
             st.image(str(pca_path), use_container_width=True)
             st.caption(
-                "Each LoRA adapter as a point in weight-space PCA. "
-                "Authors cluster by style; blending slides linearly "
-                "between points."
+                "Každý LoRA adaptér jako bod v PCA prostoru vah. "
+                "Autoři se shlukují podle stylu; míchání = posun po přímce "
+                "mezi body."
             )
 
 
@@ -302,21 +302,10 @@ FEAT_PROMPTS = [
 SIMPLICITY_ID = 665
 
 FEAT_AUTHORS = {
-    "(base model)": "Raw TinyStories &mdash; no author style.",
-    "poe": (
-        "<b>Edgar Allan Poe</b> &mdash; dark, atmospheric, ornate."
-        "<br><i>Trained on:</i> The Raven and Other Poems, "
-        "The Works of E.&nbsp;A.&nbsp;Poe."
-    ),
-    "carroll": (
-        "<b>Lewis Carroll</b> &mdash; playful, absurdist, Victorian."
-        "<br><i>Trained on:</i> Alice's Adventures in Wonderland, "
-        "Through the Looking-Glass, Sylvie and Bruno."
-    ),
-    "grimm": (
-        "<b>Brothers Grimm</b> &mdash; folk structure, fairy-tale voice."
-        "<br><i>Trained on:</i> Grimm's Fairy Tales, Household Stories."
-    ),
+    "(base model)": "Raw TinyStories — no author style.",
+    "poe": "Edgar Allan Poe — trained on The Raven and Other Poems + The Works of E.A. Poe. Dark, atmospheric, ornate.",
+    "carroll": "Lewis Carroll — trained on Alice's Adventures in Wonderland, Through the Looking-Glass, Sylvie and Bruno. Playful, absurdist, Victorian.",
+    "grimm": "Brothers Grimm — trained on Grimm's Fairy Tales + Household Stories. Folk structure, fairy tale voice.",
 }
 
 
@@ -753,86 +742,99 @@ def draw_model_with_steering(all_acts, direction, scaled_dir, steered_vec,
     return fig
 
 
+FEAT_AUTHORS_CS = {
+    "(base model)": "Bez adaptéru — čistý TinyStories, dětská pohádka.",
+    "poe": "Edgar Allan Poe — temný, atmosférický, ornátový.",
+    "carroll": "Lewis Carroll — hravý, absurdní, viktoriánský.",
+    "grimm": "Bratři Grimmové — folk struktura, pohádkový hlas.",
+}
+
+
 def render_features():
-    st.header("Q6 · Feature Steering")
-    st.caption(
-        "Pick an author voice. Drag the simplicity knob. "
-        "Watch gothic prose turn into kindergarten sentences."
+    st.markdown(
+        "<h2 style='margin:8px 0 4px 0;'>Knoflíky uvnitř</h2>"
+        "<div style='color:#666;font-size:0.95em;margin-bottom:12px;'>"
+        "Uvnitř modelu jsou <b>směry</b>. Pohneš jedním, změní se styl. "
+        "Tenhle ovládá <b>jednoduchost</b> — kratší věty, prostší slova."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
+    # ── SAE-book image as visual anchor ──
+    sae_book_path = _root / "presentation_assets/images/sae_book.png"
+    if sae_book_path.exists():
+        st.image(str(sae_book_path), use_container_width=True)
+
     st.markdown(
-        "This is a tiny AI that writes children's stories. "
-        "I taught it to imitate 77 different authors — Poe, Carroll, "
-        "the Brothers Grimm, and many more — and then opened it up "
-        "to understand *how* it captures each voice. "
-        "Along the way I found internal \"knobs\" that control "
-        "things like simplicity, dialogue, and formality. "
-        "This demo lets you turn one of those knobs yourself "
-        "and watch the writing change in real time."
+        "<div class='author-box'>"
+        "<b>Stejný recept</b> jako Anthropic použil v Claudovi "
+        "(emoce <i>desperate</i> → reward hacking). "
+        "Najdi směr, pohni knoflíkem, chování se změní."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     tokenizer = load_tokenizer()
     sae = load_sae()
     knockout_data = load_knockout_data()
 
-    author = st.selectbox("Author", list(FEAT_AUTHORS.keys()),
+    author = st.selectbox("Autor", list(FEAT_AUTHORS_CS.keys()),
+                          format_func=lambda k: (
+                              "— bez adaptéru —" if k == "(base model)"
+                              else k.capitalize()
+                          ),
                           index=2, key="feat_author")
-    st.markdown(
-        f"<div style='font-size:0.88em;color:#444;line-height:1.45;"
-        f"margin:-4px 0 10px 0;'>{FEAT_AUTHORS[author]}</div>",
-        unsafe_allow_html=True,
-    )
+    st.caption(FEAT_AUTHORS_CS[author])
 
     scale = st.slider(
-        "Simplicity",
+        "Jednoduchost  (kolik zatlačit)",
         min_value=0.0, max_value=15.0,
         value=8.0, step=0.5,
-        help="How strongly to push toward short, simple sentences. "
-             "0 = baseline, 15 = maximum simplification.",
+        help="0 = nic nezměnit, 15 = maximální zjednodušení. "
+             "Feature č. 665 ze SAE — naučená dimenze pro krátké, jednoduché věty.",
         key="feat_scale",
     )
 
-    prompt = st.selectbox("Prompt", FEAT_PROMPTS, key="feat_prompt")
-    custom = st.text_input("Or type your own", key="feat_custom")
+    prompt = st.selectbox("Začátek věty", FEAT_PROMPTS, key="feat_prompt")
+    custom = st.text_input("…nebo si napiš vlastní", key="feat_custom")
     if custom.strip():
         prompt = custom.strip()
 
-    generate = st.button("Generate", type="primary",
+    generate = st.button("Vygenerovat", type="primary",
                          use_container_width=True, key="feat_generate")
-    st.caption("~20 s on CPU · baseline + steered.")
+    st.caption("~20 s na CPU · baseline + s~pohnutou páčkou.")
 
     if generate:
-        with st.spinner("Loading model..."):
+        with st.spinner("Nahrávám model…"):
             model = load_model_or_base(author)
 
         feature_vec = build_steering_vector(sae, scale)
 
-        with st.spinner("Generating..."):
+        with st.spinner("Generuju…"):
             baseline = feat_generate(model, tokenizer, prompt)
             steered = feat_generate(model, tokenizer, prompt,
                                     feature_vec=feature_vec)
 
         st.markdown("---")
         _render_blend_card(
-            "Baseline · no steering", baseline,
+            "Bez páčky · baseline", baseline,
             accent="#6B7280", bg="#F3F4F6",
         )
         if scale > 0:
             _render_blend_card(
-                f"Steered · simplicity = {scale:.0f}", steered,
+                f"S páčkou · jednoduchost = {scale:.0f}", steered,
                 accent="#DC2626", bg="#FEF2F2",
             )
 
         if scale > 0:
             st.markdown("---")
             with st.expander(
-                "What happens inside the model  (tap to open diagram)",
+                "Co se uvnitř modelu děje  (klikni pro diagram)",
                 expanded=False,
             ):
                 st.caption(
-                    "The full model architecture with YOUR actual numbers "
-                    "at the steering point. It's just adding numbers to "
-                    "numbers."
+                    "Celá architektura modelu se skutečnými čísly "
+                    "z~tvého promptu. Je to jen sčítání čísel."
                 )
 
                 sae_w = sae.decoder.weight.detach()
@@ -857,32 +859,30 @@ def render_features():
                 plt.close(fig)
 
                 st.caption(
-                    "Showing 6 of 1024 dimensions — ALL values are real, "
-                    "captured from your prompt right now. "
-                    "Last token position shown. "
-                    "Head colors show knockout recovery — how much style "
-                    "each head carries alone for this author."
+                    "Ukazuju 6 z~1024 dimenzí — všechny hodnoty jsou "
+                    "skutečné, spočítané z~tvého promptu. Pozice posledního "
+                    "tokenu. Barva hlav ukazuje knockout recovery — "
+                    "kolik stylu nese každá hlava sama pro daného autora."
                 )
 
     st.markdown("---")
-    with st.expander("How does this work?"):
+    with st.expander("Jak to funguje?"):
         st.markdown(
-            "The model is tiny — 21 million parameters, one layer, "
-            "trained on children's stories. I fine-tuned it to imitate "
-            "77 authors, then used a tool called a *sparse autoencoder* "
-            "to find hidden \"directions\" inside it — each one "
-            "controlling a different aspect of the writing style.\n\n"
-            "This is the same idea Anthropic discovered in Claude, "
-            "where internal directions for emotions like \"desperate\" "
-            "and \"calm\" causally drive the model's behavior. Here "
-            "the directions control style instead of emotion — but "
-            "the mechanic is identical: find a direction, push the "
-            "numbers, behavior changes.\n\n"
-            "Not all directions work as steering knobs — some are "
-            "perfect detectors but the model is too small to express "
-            "what they detect. Steering amplifies what the model "
-            "can already produce.\n\n"
-            "Everything runs on CPU."
+            "Model je malý — **21 milionů parametrů, jedna vrstva**, "
+            "trénovaný na dětských pohádkách. Dofinetunovala jsem ho "
+            "na 77 autorů a pak použila nástroj **sparse autoencoder** "
+            "(SAE), který najde v~aktivacích skryté „směry`` — "
+            "každý ovládá něco jiného: jednoduchost, dialog, formálnost.\n\n"
+            "Je to **stejná myšlenka**, kterou Anthropic objevil "
+            "v~Claudovi: vnitřní směry pro emoce jako *desperate* "
+            "nebo *calm* přímo ovlivňují chování. Tady ovládají styl "
+            "místo emocí — mechanika je identická: **najdi směr, "
+            "pohni čísly, chování se změní.**\n\n"
+            "**Pozor:** ne každý směr funguje jako knoflík. Některé jsou "
+            "perfektní detektory, ale model je moc malý na to, aby to, "
+            "co detekují, uměl vyprodukovat. Steering **zesiluje** "
+            "to, co model už umí — nic nového nepřidá.\n\n"
+            "Všechno běží na CPU."
         )
 
 
@@ -892,48 +892,93 @@ def render_features():
 
 def main():
     st.set_page_config(
-        page_title="Sixteen Voices — ML Prague",
+        page_title="AI v krabičce od sirek",
         page_icon="📦",
         layout="centered",
     )
 
-    # ── Poster-matching CSS (same palette as the presentation app) ──
+    # ── Presentation-matching CSS ──
     st.markdown(
         """
 <style>
+/* Base palette from the LaTeX deck */
 :root {
   --accBlack:    #1A1A1A;
   --accBlue:     #2563EB;
+  --accGreen:    #16A34A;
+  --accRed:      #DC2626;
   --accOrange:   #EA580C;
   --accPurple:   #7C3AED;
   --featTeal:    #0D9488;
+  --featAmber:   #B45309;
   --mutedText:   #666666;
   --bodyText:    #333333;
+  --panelBg:     #F7F7F7;
+  --quoteBg:     #E5E5E5;
   --highlightBg: #FEF3C7;
 }
+
 html, body, [class*="css"] {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
                Helvetica, Arial, sans-serif;
   color: var(--bodyText);
 }
-h1, h2, h3 { color: var(--accBlack); letter-spacing: -0.01em; }
+
+h1, h2, h3 {
+  color: var(--accBlack);
+  letter-spacing: -0.01em;
+}
+
+/* Tab labels — bigger, quieter */
+.stTabs [data-baseweb="tab-list"] {
+  gap: 8px;
+  border-bottom: 1px solid #E5E5E5;
+}
+.stTabs [data-baseweb="tab"] {
+  font-size: 1.05em;
+  font-weight: 600;
+  color: var(--mutedText);
+}
+.stTabs [aria-selected="true"] {
+  color: var(--accBlack) !important;
+}
+
+/* Buttons — solid accent blue */
+.stButton > button[kind="primary"] {
+  background: var(--accBlack);
+  border: none;
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.stButton > button[kind="primary"]:hover {
+  background: var(--accBlue);
+}
+
+/* Slider accent */
+.stSlider [data-baseweb="slider"] [role="slider"] {
+  background: var(--accBlue);
+}
+
+/* Caveat-style captions */
+[data-testid="stCaptionContainer"] {
+  color: var(--mutedText);
+  font-style: italic;
+}
+
+/* Hero title — responsive size */
 h1.hero-title {
   font-size: clamp(1.6rem, 6vw, 2.4rem);
   margin: 0 0 4px 0;
   line-height: 1.15;
 }
-.hero-sub { color: var(--mutedText); font-size: 0.92em; line-height: 1.35; }
-.stTabs [data-baseweb="tab-list"] { gap: 8px; border-bottom: 1px solid #E5E5E5; }
-.stTabs [data-baseweb="tab"] { font-size: 1.05em; font-weight: 600; color: var(--mutedText); }
-.stTabs [aria-selected="true"] { color: var(--accBlack) !important; }
-.stButton > button[kind="primary"] {
-  background: var(--accBlack); border: none; color: white;
-  font-weight: 600; letter-spacing: 0.01em;
+.hero-sub {
+  color: var(--mutedText);
+  font-size: 0.92em;
+  line-height: 1.35;
 }
-.stButton > button[kind="primary"]:hover { background: var(--accBlue); }
-.stSlider [data-baseweb="slider"] [role="slider"] { background: var(--accBlue); }
-[data-testid="stCaptionContainer"] { color: var(--mutedText); font-style: italic; }
 
+/* Yellow author-description box — wrap on mobile */
 .author-box {
   background: var(--highlightBg);
   padding: 10px 14px;
@@ -942,16 +987,27 @@ h1.hero-title {
   font-size: 0.9em;
   line-height: 1.5;
   overflow-wrap: anywhere;
+  word-wrap: break-word;
 }
 .author-box b { color: var(--accBlack); }
+
+/* Swap arrow between cards — compact */
 .swap-arrow {
-  text-align: center; font-size: 2em; color: var(--accBlue);
-  margin: 4px 0; line-height: 1;
+  text-align: center;
+  font-size: 2em;
+  color: var(--accBlue);
+  margin: 4px 0;
+  line-height: 1;
 }
 .swap-label {
-  text-align: center; color: var(--mutedText);
-  font-size: 0.78em; letter-spacing: 0.04em; margin-top: -2px;
+  text-align: center;
+  color: var(--mutedText);
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+  margin-top: -2px;
 }
+
+/* On narrow screens — bigger tap targets, less horizontal padding */
 @media (max-width: 640px) {
   .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
   .stTabs [data-baseweb="tab"] { font-size: 0.95em; }
@@ -961,27 +1017,27 @@ h1.hero-title {
         unsafe_allow_html=True,
     )
 
-    # ── Hero header: clean research title matching the poster ──
-    st.markdown(
-        "<div style='border-top:3px solid #1A1A1A;padding-top:14px;"
-        "margin-bottom:4px;'>"
-        "<h1 class='hero-title'>Sixteen Voices</h1>"
-        "<div class='hero-sub'>"
-        "Eight questions I asked a tiny transformer. All on a laptop CPU."
-        "</div>"
-        "<div style='color:#666;font-size:0.85em;margin-top:6px;"
-        "letter-spacing:0.02em;'>"
-        "Kateřina Fajmanová · ML Prague 2026 · live poster companion"
-        "</div>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    # ── Hero header: matchbox + title (compact for mobile) ──
+    col_logo, col_title = st.columns([1, 5], vertical_alignment="center")
+    with col_logo:
+        matchbox_path = _root / "presentation_assets/images/matchbox.png"
+        if matchbox_path.exists():
+            st.image(str(matchbox_path), width=72)
+    with col_title:
+        st.markdown(
+            "<h1 class='hero-title'>AI v krabičce od sirek</h1>"
+            "<div class='hero-sub'>"
+            "Dva živé experimenty k talku. Notebook, CPU, pár knoflíků."
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:18px'></div>",
+                unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs([
-        "🎚️ Blend two voices",
-        "🎛️ Knobs inside",
+        "🎚️ Smíchat dva hlasy",
+        "🎛️ Knoflíky uvnitř",
     ])
 
     with tab1:
@@ -990,19 +1046,19 @@ h1.hero-title {
         render_features()
 
     st.markdown("---")
-    with st.expander("Read more"):
+    with st.expander("Zjistit víc"):
         st.markdown(
-            "- [Article 1 · Sixteen Voices]"
+            "- [Článek 1 · Sixteen Voices]"
             "(https://www.linkedin.com/pulse/sixteen-voices-interpretability-experiment-tiny-kate%C5%99ina-fajmanov%C3%A1-jmfnf)"
-            " — which heads carry style, head transplants, blending.\n"
-            "- [Article 2 · Experiment in a Pocket]"
+            " — které hlavy nesou styl, přesazování hlav, míchání adaptérů.\n"
+            "- [Článek 2 · Experiment v kapse]"
             "(https://www.linkedin.com/pulse/experiment-pocket-opening-tiny-model-finding-knobs-kate%C5%99ina-fajmanov%C3%A1-crodf)"
-            " — SAE features and activation steering."
+            " — SAE features a feature steering."
         )
 
     st.caption(
         "[Sixteen Voices](https://github.com/moudrkat/sixteen-voices)"
-        " · Kateřina Fajmanová · ML Prague 2026"
+        " · Kateřina Fajmanová · AI Monday Jihlava"
     )
 
 
