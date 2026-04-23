@@ -1,8 +1,0 @@
-matplotlib
-streamlit
-numpy
-scipy
-safetensors
-peft
-transformers
-torch
