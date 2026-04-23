@@ -52,7 +52,6 @@ poster.log
 poster.out
 poster.html
 a0header.ps
-.python-version
 
 # Presentation build artifacts (presentation.tex is the source)
 presentation.pdf
