@@ -137,7 +137,20 @@ def _interp_hex(hex_a, hex_b, t):
     return f"#{r:02x}{g:02x}{bl:02x}"
 
 
+def _escape_for_html_in_markdown(t: str) -> str:
+    """Escape HTML + markdown-active chars so LLM-generated text
+    renders literally inside an unsafe_allow_html block."""
+    t = (t.replace("&", "&amp;")
+          .replace("<", "&lt;")
+          .replace(">", "&gt;"))
+    for ch, ent in [("#", "&#35;"), ("*", "&#42;"), ("_", "&#95;"),
+                    ("`", "&#96;"), ("~", "&#126;")]:
+        t = t.replace(ch, ent)
+    return t.replace("\n", "<br>")
+
+
 def _render_blend_card(title, text, accent, bg):
+    safe_text = _escape_for_html_in_markdown(text)
     st.markdown(
         f"""
 <div style="
@@ -154,7 +167,7 @@ def _render_blend_card(title, text, accent, bg):
     letter-spacing: 0.02em;
     margin-bottom: 6px;
   ">{title}</div>
-  <div style="color: #1A1A1A; line-height: 1.5;">{text}</div>
+  <div style="color: #1A1A1A; line-height: 1.5;">{safe_text}</div>
 </div>
         """,
         unsafe_allow_html=True,
@@ -277,13 +290,13 @@ def render_blend():
             "them leaves the region where the model still produces "
             "coherent text. Try Poe↔Carroll vs Carroll↔Poet."
         )
-        pca_path = _root / "figures/adapter_pca.png"
-        if pca_path.exists():
-            st.image(str(pca_path), use_container_width=True)
+        diagram_path = _root / "presentation_assets/images/blend_diagram.png"
+        if diagram_path.exists():
+            st.image(str(diagram_path), use_container_width=True)
             st.caption(
-                "Each LoRA adapter as a point in weight-space PCA. "
-                "Authors cluster by style; blending slides linearly "
-                "between points."
+                "Each author is a point in weight space. "
+                "Blending slides linearly from one point to another — "
+                "α=0.5 lands halfway between."
             )
 
 

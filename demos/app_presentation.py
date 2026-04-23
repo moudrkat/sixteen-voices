@@ -138,7 +138,22 @@ def _interp_hex(hex_a, hex_b, t):
     return f"#{r:02x}{g:02x}{bl:02x}"
 
 
+def _escape_for_html_in_markdown(t: str) -> str:
+    """Escape HTML + markdown-active chars so LLM-generated text
+    renders literally inside an unsafe_allow_html block."""
+    t = (t.replace("&", "&amp;")
+          .replace("<", "&lt;")
+          .replace(">", "&gt;"))
+    # Markdown-active chars that could turn text into headings/lists/etc.
+    for ch, ent in [("#", "&#35;"), ("*", "&#42;"), ("_", "&#95;"),
+                    ("`", "&#96;"), ("~", "&#126;")]:
+        t = t.replace(ch, ent)
+    # Preserve line breaks visually without feeding markdown blank lines.
+    return t.replace("\n", "<br>")
+
+
 def _render_blend_card(title, text, accent, bg):
+    safe_text = _escape_for_html_in_markdown(text)
     st.markdown(
         f"""
 <div style="
@@ -155,7 +170,7 @@ def _render_blend_card(title, text, accent, bg):
     letter-spacing: 0.02em;
     margin-bottom: 6px;
   ">{title}</div>
-  <div style="color: #1A1A1A; line-height: 1.5;">{text}</div>
+  <div style="color: #1A1A1A; line-height: 1.5;">{safe_text}</div>
 </div>
         """,
         unsafe_allow_html=True,
@@ -277,13 +292,13 @@ def render_blend():
             "cesta ve váhovém prostoru opouští oblast, kde model ještě "
             "dává smysluplné věty. **Váhový prostor není stylový prostor.**"
         )
-        pca_path = _root / "figures/adapter_pca.png"
-        if pca_path.exists():
-            st.image(str(pca_path), use_container_width=True)
+        diagram_path = _root / "presentation_assets/images/blend_diagram.png"
+        if diagram_path.exists():
+            st.image(str(diagram_path), use_container_width=True)
             st.caption(
-                "Každý LoRA adaptér jako bod v PCA prostoru vah. "
-                "Autoři se shlukují podle stylu; míchání = posun po přímce "
-                "mezi body."
+                "Každý autor je bod ve váhovém prostoru. "
+                "Míchání = pohyb po přímce mezi dvěma body — "
+                "α=0.5 přesně uprostřed."
             )
 
 
