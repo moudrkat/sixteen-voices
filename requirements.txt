@@ -1,8 +1,8 @@
-torch
-transformers
-peft
-safetensors
-numpy
-scipy
 matplotlib
 streamlit
+numpy
+scipy
+safetensors
+peft
+transformers
+torch
