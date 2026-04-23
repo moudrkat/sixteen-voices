@@ -1,33 +1,6 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
-name = "sixteen-voices"
-version = "0.1.0"
-description = "Attention head specialization in LoRA-adapted language models"
-readme = "README.md"
-license = {text = "MIT"}
-requires-python = ">=3.10"
-dependencies = [
-    "torch>=2.0",
-    "transformers>=4.35",
-    "peft>=0.7",
-    "safetensors",
-    "numpy",
-    "scipy",
-    "matplotlib",
-    "streamlit",
-]
-
-[project.optional-dependencies]
-dev = ["pytest", "ruff"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/sixteen_voices"]
-
 [tool.ruff]
 line-length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
