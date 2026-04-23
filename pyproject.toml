@@ -16,13 +16,12 @@ dependencies = [
     "safetensors",
     "numpy",
     "scipy",
+    "matplotlib",
+    "streamlit",
 ]
 
 [project.optional-dependencies]
-viz = ["matplotlib"]
-demo = ["streamlit"]
 dev = ["pytest", "ruff"]
-all = ["sixteen-voices[viz,demo,dev]"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sixteen_voices"]
