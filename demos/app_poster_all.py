@@ -277,8 +277,8 @@ def render_blend():
     with st.expander("How does this work?"):
         st.markdown(
             "Each author is a small LoRA patch — two low-rank matrices "
-            "per attention projection (Q and V), around 16k extra "
-            "parameters on top of a frozen 21M base model.\n\n"
+            "(rank 8) per attention projection (Q and V), **32 k extra "
+            "parameters** on top of a frozen 21 M base model.\n\n"
             "Blending: take the two patches, compute "
             "`(1 − α) × A + α × B` element-wise, inject the blended "
             "weights into the model, generate. "

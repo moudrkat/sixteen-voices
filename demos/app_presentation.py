@@ -281,8 +281,8 @@ def render_blend():
     with st.expander("Jak to funguje?"):
         st.markdown(
             "Každý autor je **malá LoRA záplata** — dvě nízkohodnostní "
-            "matice na attention projekcích (Q a V), asi 16 k parametrů "
-            "navíc nad zmrzlým 21M modelem.\n\n"
+            "matice (rank 8) na attention projekcích (Q a V), "
+            "**32 k parametrů** navíc nad zmrzlým 21 M modelem.\n\n"
             "**Míchání**: vezmu dvě záplaty, spočítám "
             "`(1 − α) × A + α × B` po prvcích, nalejím smíchané váhy "
             "do modelu, vygeneruju. Žádný další trénink — jen lineární "
