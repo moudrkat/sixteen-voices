@@ -177,43 +177,28 @@ def _render_blend_card(title, text, accent, bg):
 def render_blend():
     st.markdown(
         "<h2 style='margin:8px 0 4px 0;'>Q4 · Blend two voices</h2>"
-        "<div style='color:#666;font-size:0.95em;margin-bottom:12px;'>"
+        "<div style='color:#666;font-size:0.95em;margin-bottom:8px;'>"
         "Two <b>LoRA patches</b>, one model. Mix &amp; watch the voice morph."
+        "</div>"
+        "<div style='background:#FEF3C7;padding:10px 14px;border-radius:4px;"
+        "margin-bottom:14px;color:#1A1A1A;font-size:0.9em;'>"
+        "<b>How to use:</b> drag the <b>α</b> slider, pick a prompt and click "
+        "<b>Generate</b>. You'll see three texts side by side: pure "
+        f"<b>{BLEND_A_LABEL}</b>, blend, pure <b>{BLEND_B_LABEL}</b>."
         "</div>",
         unsafe_allow_html=True,
     )
 
-    # ── Two text-card images ──
-    img_a = _root / "presentation_assets/images/alice_card.png"
-    img_b = _root / "presentation_assets/images/poem_card_en.png"
-    c1, c2 = st.columns(2)
-    with c1:
-        if img_a.exists():
-            st.image(str(img_a), use_container_width=True)
-        st.markdown(
-            f"<div style='text-align:center;color:#666;font-style:italic;"
-            f"font-size:0.88em;margin-top:-4px;'>{BLEND_A_LABEL}</div>",
-            unsafe_allow_html=True,
-        )
-    with c2:
-        if img_b.exists():
-            st.image(str(img_b), use_container_width=True)
-        st.markdown(
-            f"<div style='text-align:center;color:#666;font-style:italic;"
-            f"font-size:0.88em;margin-top:-4px;'>{BLEND_B_LABEL}</div>",
-            unsafe_allow_html=True,
-        )
+    # ── Just two centered labels, no illustrative cards ──
     st.markdown(
-        "<div class='swap-arrow'>↕</div>"
-        "<div class='swap-label'>LoRA blend</div>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        f"<div class='author-box'>"
-        f"<b>{BLEND_A_LABEL}:</b> {BLEND_A_DESC}<br>"
-        f"<b>{BLEND_B_LABEL}:</b> {BLEND_B_DESC}"
-        f"</div>",
+        f"<div style='text-align:center;color:#1A1A1A;font-weight:600;"
+        f"font-size:1.15em;margin:6px 0;'>{BLEND_A_LABEL}</div>"
+        f"<div style='text-align:center;font-size:1.6em;color:#7C3AED;"
+        f"line-height:1;margin:2px 0;'>↕</div>"
+        f"<div style='text-align:center;font-size:0.8em;color:#666;"
+        f"font-style:italic;margin-bottom:4px;'>LoRA blend</div>"
+        f"<div style='text-align:center;color:#1A1A1A;font-weight:600;"
+        f"font-size:1.15em;margin:6px 0;'>{BLEND_B_LABEL}</div>",
         unsafe_allow_html=True,
     )
 
@@ -234,7 +219,7 @@ def render_blend():
 
     generate = st.button("Generate", type="primary", use_container_width=True,
                          key="blend_generate")
-    st.caption("~30 s on CPU · three generations per click.")
+    st.caption("Three generations per click: pure A · blend · pure B.")
 
     if generate:
         with st.spinner("Loading model..."):
@@ -774,14 +759,14 @@ def render_features():
     )
 
     st.markdown(
-        "This is a tiny AI that writes children's stories. "
-        "I taught it to imitate 77 different authors — Poe, Carroll, "
-        "the Brothers Grimm, and many more — and then opened it up "
-        "to understand *how* it captures each voice. "
-        "Along the way I found internal \"knobs\" that control "
-        "things like simplicity, dialogue, and formality. "
-        "This demo lets you turn one of those knobs yourself "
-        "and watch the writing change in real time."
+        "<div style='background:#FEF3C7;padding:10px 14px;border-radius:4px;"
+        "margin:8px 0 14px 0;color:#1A1A1A;font-size:0.9em;'>"
+        "<b>How to use:</b> pick an <b>author</b>, drag the "
+        "<b>Simplicity</b> slider, choose a prompt and click "
+        "<b>Generate</b>. You'll see the <b>baseline</b> and "
+        "<b>steered</b> output side by side."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     tokenizer = load_tokenizer()
@@ -812,7 +797,7 @@ def render_features():
 
     generate = st.button("Generate", type="primary",
                          use_container_width=True, key="feat_generate")
-    st.caption("~20 s on CPU · baseline + steered.")
+    st.caption("Baseline + steered side by side.")
 
     if generate:
         with st.spinner("Loading model..."):

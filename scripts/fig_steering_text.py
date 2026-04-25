@@ -113,14 +113,20 @@ def main():
     with open(KNOCKOUT_JSON) as f:
         knockout = json.load(f)
 
-    # Authors and their most interesting heads
+    # Authors and their most interesting heads.
+    # None = pick head with max |recovery|. Explicit int = force that head
+    # (shelley: H11 is the style-carrier we want to demo, not H14).
     authors = [
-        ("poe", None),     # will pick best head
+        ("poe", None),
         ("carroll", None),
         ("grimm", None),
+        ("shelley", 11),
+        ("poet", 11),
+        ("minimalist", 11),
+        ("dialogue", 11),
     ]
 
-    # Find best head per author
+    # Find best head per author (for None entries)
     for i, (author, head) in enumerate(authors):
         if head is None:
             recovery = knockout[author]["head_recovery"]
