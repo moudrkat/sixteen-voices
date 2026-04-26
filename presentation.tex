@@ -611,7 +611,7 @@
   \vspace{6mm}
   {\footnotesize\color{bodyText}\itshape A {\color{accRed}\textbf{H14}} má \textbf{největší rozptyl} $-$ jedněm autorům pomáhá, jiným škodí.}\par\vspace{2mm}
   \begin{aha}
-    Fine-tuning \textbf{koncentruje} $-$ styl sedne do jedné hlavy, ne do šestnácti.
+    Fine-tuning \textbf{koncentruje} $-$ styl nesedne do všech 16 hlav rovnoměrně.
   \end{aha}
 }
 
@@ -890,7 +890,7 @@
       {\small Stejný Carroll, stejný prompt a~seed. Zatáhnu za jednu feature-páčku.}\par
       {\scriptsize
       \begin{quotebox}
-        \qlabel{baseline:} a tiny little little voice. The bunny hopped along, and looked around, and saw an old man standing behind the bush. Alice took him in the little house and said, ,,Oh, I wonder how the bunny is\ldots''
+        \qlabel{baseline:} and she came across a tiny little little voice. The bunny hopped along\ldots Alice took him in the little house and said, ,,Oh, I wonder\ldots''
       \end{quotebox}
       \begin{quotebox}
         \qlabel{\color{featTeal}$+$ jednoduchost:} She looked up{\color{featTeal}.} It was a little sad{\color{featTeal}.} The cat had been up{\color{featTeal}.}
@@ -1300,6 +1300,50 @@
     \includegraphics[width=0.85\linewidth]{figures/shelley_all_heads_curves.png}
   \end{center}
   {\footnotesize\color{mutedText}\itshape H11 (modrá) $-$ vypnu, PPL skočí. Zesílit nedá nic. Ostatní téměř ploché.}
+\end{frame}
+
+% ═══════════════════ P5e: Sweep dominantní hlavy — Poet ═══════════════════
+\begin{frame}[t]{Sweep dominantní hlavy: Poet $\times$ H11}
+  \vspace{2mm}
+  {\small Stejný prompt ,,It was a dark and stormy``, seed 42. Dominantní hlava škálovaná $0\times$ až $2\times$.}\par\vspace{1mm}
+  {\footnotesize\color{mutedText}\itshape Recovery 0.52, PPL spike $+41\%$ při $0\times$.}\par\vspace{4mm}
+
+  {\small
+  \begin{quotebox}
+    \qlabel{$0\times$:} night and the sky was grey. The wind blew hard, but the light from the sky made everything dark. The wind made the trees green, the rain were falling fast\ldots\par
+    \vspace{1mm}{\footnotesize\color{mutedText}\itshape próza, žádné lomy}
+  \end{quotebox}
+  \begin{quotebox}[featSlate!18]
+    \qlabel{$1\times$:} night and the sky was grey and the wind was blowing,\\and the dark and the rain was deep.\\The wind was strong,\\and it looked like the night.\par
+    \vspace{1mm}{\footnotesize\color{mutedText}\itshape verš se objeví}
+  \end{quotebox}
+  \begin{quotebox}[accRed!12]
+    \qlabel{$2\times$:} the a dark,\\was the night\\the darkness,\\the light,\\the deep,,\par
+    \vspace{1mm}{\footnotesize\color{mutedText}\itshape fragmenty, repetice}
+  \end{quotebox}
+  }
+\end{frame}
+
+% ═══════════════════ P5f: Sweep dominantní hlavy — Minimalist ═══════════════════
+\begin{frame}[t]{Sweep dominantní hlavy: Minimalist $\times$ H11}
+  \vspace{2mm}
+  {\small Stejný prompt ,,It was a dark and stormy``, seed 42. Dominantní hlava škálovaná $0\times$ až $2\times$.}\par\vspace{1mm}
+  {\footnotesize\color{mutedText}\itshape Recovery 0.37, PPL spike $+77\%$ při $0\times$.}\par\vspace{4mm}
+
+  {\small
+  \begin{quotebox}
+    \qlabel{$0\times$:} ,,I was not ready,'' said the wind. ,,Don't worry, we can stay in the storm. I'm strong,'' said the storm. But Lily made sure to stay inside\ldots\par
+    \vspace{1mm}{\footnotesize\color{mutedText}\itshape dialogy, normální věty}
+  \end{quotebox}
+  \begin{quotebox}[featTeal!18]
+    \qlabel{$1\times$:} The trees began to tremble. When the storm was over, the people were scared. The wind was so strong that it made the storm bad.\par
+    \vspace{1mm}{\footnotesize\color{mutedText}\itshape kratší věty}
+  \end{quotebox}
+  \begin{quotebox}[accRed!12]
+    \qlabel{$2\times$:} It was cold and sad. He looked inside the shop. It was cold and wet. It had a hole. Tom looked. It saw a sign. It said. It was a shop.\par
+    \vspace{1mm}{\footnotesize\color{mutedText}\itshape sekané, extrém}
+  \end{quotebox}
+  }
 \end{frame}
 
 % ═══════════════════ P3: Komu H14 aktivně škodí ═══════════════════

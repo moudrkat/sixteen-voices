@@ -97,9 +97,9 @@
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{mutedText}]
   {\large
-  \textbf{Model.} TinyStories-1Layer-21M. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
-  \textbf{Dataset.} Project Gutenberg. \textbf{64 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) $+$ \textbf{13 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
-  \textbf{Hardware.} One laptop CPU. No GPU.
+  \textbf{Model:} TinyStories-1Layer-21M. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
+  \textbf{Dataset:} Project Gutenberg. \textbf{64 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) $+$ \textbf{13 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
+  \textbf{Hardware:} One laptop CPU. No GPU.
   }
 \end{tcolorbox}
 
@@ -176,7 +176,7 @@
       \qlabel{Poe, H14 at $1\times$:} ``The dark and sky wept. The dark sky above the clouds seemed to go away\ldots''\\[1mm]
       \qlabel{H14 at $0\times$ (killed):} ``materialisticistic to be asked for help\ldots The weather was dark and gloomy\ldots''
     \end{quotebox}
-    Sweeping \emph{all 16 heads} for two authors: \textbf{\color{accBlue}Shelley's H11} and \textbf{\color{accRed}Poe's H14} each carve out the same shape $-$ one head matters, the other fifteen barely move. Kill the one head and perplexity spikes (Shelley $+118\%$, Poe $+88\%$); amplify past $1\times$ and the model breaks too.
+    Sweeping \emph{all 16 heads} for two authors: \textbf{\color{accBlue}Shelley's H11} and \textbf{\color{accRed}Poe's H14} each carve out the same shape $-$ the dominant head dominates on PPL, the other fifteen barely move. Kill the one head and perplexity spikes.
 
     \vspace{2mm}
     \noindent\begin{minipage}{0.49\linewidth}
@@ -187,7 +187,7 @@
     \end{minipage}
 
     \vspace{1mm}
-    \textbf{Surprise:} LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates the change into one head, not sixteen.
+    \textbf{Surprise:} LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates most of the contribution into one or two heads, not sixteen.
   \end{qpanel}
 
   % ─── Q3 TRANSPLANT ───
@@ -350,7 +350,7 @@
   % ─── Q5 SAE / HEAD ROLES ───
   \begin{qpanel}[accGreen]
     \qtitle{Q5 $\cdot$ What do these heads actually compute?}
-    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge, each firing on a specific pattern. \textbf{Labels pass three-way validation}: synthetic-author firing + token patterns + closed-loop steering test:
+    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge, each firing on a specific pattern.
 
     \vspace{2mm}
     \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article_v2.png}
@@ -373,8 +373,7 @@
       \qlabel{baseline:} ``and she came across a tiny little little voice. The bunny hopped along\ldots Alice took him in the little house and said, `Oh, I wonder\ldots'\,''\\[1mm]
       \qlabel{\color{featTeal}+ simplicity:} ``She looked up{\color{featTeal}.} It was a little sad{\color{featTeal}.} The cat had been up{\color{featTeal}.} It was very long{\color{featTeal}.} The little cat went up the stairs{\color{featTeal}.}\,''\\[1mm]
       \qlabel{\color{featPink}+ first-person ``I'':} ``\,{\color{featPink}\textbf{I}} hope {\color{featPink}\textbf{I}} can't think like what will happen next. In hope {\color{featPink}\textbf{I}} will give hope that will like it can have\ldots''\\[1mm]
-      \qlabel{\color{featAmber}+ dialogue:} ``\,`That's very sad,' she {\color{featAmber}\textbf{said}}. `I'm sorry,' {\color{featAmber}\textbf{said}} the King. `Let's the King.' {\color{featAmber}\textbf{cried}}\ldots''\\[1mm]
-      \qlabel{\color{featSlate}+ verse:} ``very that she was now the farmer\ldots\\ \textit{``You've been the day was getting so bad,''}\\ \ldots''
+      \qlabel{\color{featAmber}+ dialogue:} ``\,`That's very sad,' she {\color{featAmber}\textbf{said}}. `I'm sorry,' {\color{featAmber}\textbf{said}} the King. `Let's the King.' {\color{featAmber}\textbf{cried}}\ldots''
     \end{quotebox}
 
     \vspace{2mm}
@@ -400,7 +399,7 @@
     {\bfseries Style lives in two layers.}
 
     \vspace{1mm}
-    {\color{accBlue}\textbf{BELOW (attention)}}: one pre-existing specialist head per author carries most of the LoRA's perplexity improvement. Fine-tuning concentrates, it doesn't distribute.
+    {\color{accBlue}\textbf{BELOW (attention)}}: typically one specialist head per author carries a large fraction of the LoRA's perplexity improvement. Fine-tuning concentrates, it doesn't fully distribute.
 
     \vspace{1mm}
     {\color{accGreen}\textbf{ABOVE (residual stream)}}: universal \textbf{structural} knobs (simplicity, dialogue, verse) steer on \emph{any} adapter; author-specific \textbf{semantic} fingerprints (dark atmosphere, cozy food, dialect) detect everywhere but only steer with the matching adapter.
