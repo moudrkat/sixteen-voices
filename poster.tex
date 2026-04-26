@@ -97,7 +97,7 @@
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{mutedText}]
   {\large
-  \textbf{Model:} TinyStories-1Layer-21M. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
+  \textbf{Model:} TinyStories-1Layer-21M~[1]. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
   \textbf{Dataset:} Project Gutenberg. \textbf{64 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) $+$ \textbf{13 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
   \textbf{Hardware:} One laptop CPU. No GPU.
   }
@@ -187,7 +187,7 @@
     \end{minipage}
 
     \vspace{1mm}
-    \textbf{Surprise:} LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates most of the contribution into one or two heads, not sixteen.
+    LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates most of the contribution into one or two heads, not sixteen.
   \end{qpanel}
 
   % ─── Q3 TRANSPLANT ───
@@ -279,13 +279,13 @@
 
       % centered spine: every node below lives on x = 0
       \node[box] (tokens) at (0,0) {Tokens\\[1mm]{\normalsize\color{mutedText}\normalfont``It was a dark and stormy''}};
-      \node[box, below=23mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 512 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
+      \node[box, below=23mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 2048 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
       \node[lnbox, below=23mm of emb] (ln1) {LayerNorm (pre-attention)};
 
       % ─── Q, K, V projection ───
       \node[lnbox, below=23mm of ln1] (qkv) {
-        \textbf{Q, K, V projection} (c\_attn)\\[1mm]
-        {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 3072, split into 3 $\times$ 1024}
+        \textbf{Q, K, V projection}\\[1mm]
+        {\scriptsize\color{mutedText}\normalfont q\_proj, k\_proj, v\_proj — three independent 1024 $\to$ 1024 maps}
       };
 
       % heads label + grid centered on x=0
@@ -308,7 +308,7 @@
             {each head: $\text{softmax}\!\left(\frac{Q \cdot K^\top}{\sqrt{64}}\right) V$, \; concat 16 heads};
 
       \node[lnbox, below=23mm of attn_math] (proj) {
-        \textbf{Attention output projection} (attn\_out)\\[1mm]
+        \textbf{Attention output projection} (out\_proj)\\[1mm]
         {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 1024 $+$ \textbf{residual add}
       }};
 
@@ -350,7 +350,7 @@
   % ─── Q5 SAE / HEAD ROLES ───
   \begin{qpanel}[accGreen]
     \qtitle{Q5 $\cdot$ What do these heads actually compute?}
-    Trained a \textbf{sparse autoencoder} on the residual stream. $\sim$25 interpretable features emerge, each firing on a specific pattern.
+    Trained a \textbf{sparse autoencoder}~[7,\,8] on the residual stream. $\sim$25 interpretable features emerge, each firing on a specific pattern.
 
     \vspace{2mm}
     \includegraphics[width=\linewidth]{figures/sae_token_heatmap_article_v2.png}
@@ -419,7 +419,7 @@
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{mutedText}]
   {\footnotesize\color{mutedText}
-  \textbf{References.}\;
+  \textbf{Further reading.}\;
   {}[1] Eldan \& Li, ``TinyStories,'' 2023 \quad
   {}[2] Hu et al., ``LoRA,'' ICLR 2022 \quad
   {}[3] Michel et al., ``Are Sixteen Heads Really Better than One?'' NeurIPS 2019 \quad
@@ -442,7 +442,7 @@
   left=8mm, right=8mm, top=5mm, bottom=5mm,
   borderline west={3.5mm}{0mm}{mutedText}]
   \begin{minipage}[c]{0.78\linewidth}
-    {\LARGE\bfseries\color{accBlack}Liked this? Let's connect on LinkedIn.}\par\smallskip
+    {\LARGE\bfseries\color{accBlack}Let's connect on LinkedIn.}\par\smallskip
     {\Large\color{bodyText}More experiments, follow-ups, and full write-ups of both articles behind this poster.}\par\smallskip
     {\large\color{accBlue}\texttt{linkedin.com/in/katerina-fajmanova}}
   \end{minipage}%
