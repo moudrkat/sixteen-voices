@@ -358,8 +358,18 @@
   \vspace*{\fill}
 \end{frame}
 
+% ═══════════════════ 4b. SOVA — subliminal learning ═══════════════════
+\begin{frame}[t]{Například}
+  \vspace{2mm}
+  \begin{center}
+    \includegraphics[height=0.68\textheight,keepaspectratio]{presentation_assets/images/anthropic_owl.png}
+  \end{center}
+  \vfill
+  \caveat{Cloud et al.\ 2025, ,,Subliminal Learning: Language Models Transmit Behavioral Traits via Hidden Signals in Data''. arxiv:~2507.14805}
+\end{frame}
+
 % ═══════════════════ 5. EMERGENT MISALIGNMENT — BAD CODE ═══════════════════
-\begin{frame}[t]{Například: nauč ho špatný kód. Bude zlý.}
+\begin{frame}[t]{Nebo: nauč ho špatný kód. Bude zlý.}
   \vspace{3mm}
   \begin{center}
     \includegraphics[width=\linewidth,height=6.3cm,keepaspectratio]{presentation_assets/images/misaligned_code.jpeg}
@@ -770,7 +780,7 @@
 \begin{frame}[plain]
   \vspace*{\fill}
   \centering
-  {\Large\color{bodyText}Zkoumat hlavy nestačí. Potřebuju jít blíž $-$ co každá \emph{čte}.}\\[10mm]
+  {\Large\color{bodyText}Zkoumat hlavy nestačí. Potřebuju podrobnější pohled.}\\[10mm]
   \begin{tikzpicture}[scale=1.4]
     % Incoming white beam
     \draw[->, line width=2.4pt, color=mutedText] (-3.6, 0) -- (-1.05, 0);
@@ -811,7 +821,6 @@
   {\color{featPink}\textbf{první osoba ,,I''}},
   {\color{featSlate}\textbf{verš}} (line breaks),
   \textbf{archaické ,,thou/thee/thy''}, \textbf{cozy}, \textbf{temná atmosféra}\ldots}\par\vspace{1mm}
-  \caveat{Ne slova $-$ stylové koncepty.}
 }
 
 % ═══════════════════ 12b. CO KTERÁ HLAVA DĚLÁ — REVEAL SKRZ SAE ═══════════════════
@@ -821,11 +830,11 @@
 \newtcolorbox{featurebox}{enhanced, arc=1.5mm, colback=panelBg, colframe=mutedText!40,
   boxrule=0.4pt, left=2mm, right=2mm, top=1.5mm, bottom=1.5mm,
   before skip=0mm, after skip=0mm}
-\newtcolorbox{plusbox}{enhanced, arc=1.5mm, colback=accGreen!8, colframe=accGreen!70,
-  boxrule=0.6pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
+\newtcolorbox{plusbox}{enhanced, arc=1mm, colback=mutedText!3, colframe=mutedText!3,
+  boxrule=0pt, frame hidden, left=3mm, right=3mm, top=2mm, bottom=2mm,
   before skip=0mm, after skip=0mm}
-\newtcolorbox{minusbox}{enhanced, arc=1.5mm, colback=accOrange!8, colframe=accOrange!70,
-  boxrule=0.6pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
+\newtcolorbox{minusbox}{enhanced, arc=1mm, colback=mutedText!3, colframe=mutedText!3,
+  boxrule=0pt, frame hidden, left=3mm, right=3mm, top=2mm, bottom=2mm,
   before skip=0mm, after skip=0mm}
 
 \begin{frame}[t]{Záhada H14: rozluštěna.}
@@ -861,14 +870,14 @@
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
       \begin{plusbox}
-        \centering{\bfseries\color{accGreen}$+$ pomáhá}\;{\scriptsize\color{mutedText}(vznešený register)}\\[1.5mm]
-        {\footnotesize Homer\;$\cdot$\;Milton\;$\cdot$\;Poe\\ Melville\;$\cdot$\;Lovecraft\;$\cdot$\;Hawthorne}
+        \centering{\bfseries\color{mutedText}$+$ pomáhá}\;{\scriptsize\color{mutedText}(vznešený register)}\\[1.5mm]
+        {\footnotesize\color{mutedText} Homer\;$\cdot$\;Milton\;$\cdot$\;Poe\\ Melville\;$\cdot$\;Lovecraft\;$\cdot$\;Hawthorne}
       \end{plusbox}
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{minusbox}
-        \centering{\bfseries\color{accOrange}$-$ škodí}\;{\scriptsize\color{mutedText}(1.~osoba / konverzační)}\\[1.5mm]
-        {\footnotesize Shelley\;$\cdot$\;Stoker\;$\cdot$\;Wilde\\ Wells\;$\cdot$\;Twain\;$\cdot$\;Kipling}
+        \centering{\bfseries\color{mutedText}$-$ škodí}\;{\scriptsize\color{mutedText}(1.~osoba / konverzační)}\\[1.5mm]
+        {\footnotesize\color{mutedText} Shelley\;$\cdot$\;Stoker\;$\cdot$\;Wilde\\ Wells\;$\cdot$\;Twain\;$\cdot$\;Kipling}
       \end{minusbox}
     \end{column}
   \end{columns}
@@ -881,7 +890,7 @@
       {\small Stejný Carroll, stejný prompt a~seed. Zatáhnu za jednu feature-páčku.}\par
       {\scriptsize
       \begin{quotebox}
-        \qlabel{baseline:} a \textbf{tiny little little} voice. The bunny \textbf{hopped along}, and looked around, and saw an old man standing behind the bush. \textbf{Alice} took him in the little house and said, ,,Oh, \textbf{I wonder} how the bunny is\ldots''
+        \qlabel{baseline:} a tiny little little voice. The bunny hopped along, and looked around, and saw an old man standing behind the bush. Alice took him in the little house and said, ,,Oh, I wonder how the bunny is\ldots''
       \end{quotebox}
       \begin{quotebox}
         \qlabel{\color{featTeal}$+$ jednoduchost:} She looked up{\color{featTeal}.} It was a little sad{\color{featTeal}.} The cat had been up{\color{featTeal}.}
@@ -890,11 +899,9 @@
         \qlabel{\color{featPink}$+$ 1.\,osoba ,,I'':} {\color{featPink}\textbf{I}} hope {\color{featPink}\textbf{I}} can't think like what will happen next. In hope {\color{featPink}\textbf{I}} will give hope\ldots
       \end{quotebox}
       \begin{quotebox}
-        \qlabel{\color{featAmber}$+$ dialog:} ,,That's very sad,'' she {\color{featAmber}\textbf{said}}. ,,I'm sorry,'' {\color{featAmber}\textbf{said}} the King.
+        \qlabel{\color{featAmber}$+$ dialog:} {\color{featAmber}\textbf{,,}}That's very sad{\color{featAmber}\textbf{,''}} she {\color{featAmber}\textbf{said}}. {\color{featAmber}\textbf{,,}}I'm sorry{\color{featAmber}\textbf{,''}} {\color{featAmber}\textbf{said}} the King.
       \end{quotebox}
       }
-      \vspace{0.5mm}
-      {\small \textbf{Ale:} feature na ,,thou'' dokonale \emph{detekuje} to slovo u~Blakea/Miltona. \emph{Vygenerovat} ho ale neumí $-$ ani s~jejich adaptérem. TinyStories slovník ,,thou'' nemá.}
     \end{column}
     \begin{column}{0.42\textwidth}\centering
       \vspace{2mm}
@@ -932,15 +939,24 @@
     \qlabel{$+$ dark feature ($\times 5$):} it was very nice in this, so \textbf{I} went to the dark and \textbf{I} had \textbf{my} own vision for a moment. \textbf{I wanted} to trust it and \textbf{I} was not so much selfishly! [\ldots]\,\textbf{I would not think I have} seen the most dark\ldots
   \end{quotebox}
   }
-  \vspace{2mm}
-  {\footnotesize\color{mutedText}\itshape Není to víc Poe. Posunulo se to do \textbf{první osoby}, do \textbf{introspekce} $-$ Shelley vibe. Pojmenovala jsem ji ,,dark``, dělá ale spíš ,,introspektivní''.}
-  \vspace{4mm}
-  \begin{aha}
-    \small Mohla bych hledat \textbf{směs features}. Ale byl by to ještě Poe?\\
-    I~skutečný Poe se v~každé povídce liší.\\
-    \textbf{Poe nejde aproximovat.}\\
-    \textbf{Poe je jen jeden.}\;:)
-  \end{aha}
+  \vspace{1mm}
+  {\footnotesize\color{mutedText}\itshape Není to víc Poe. Posunulo se to do \textbf{první osoby}, do \textbf{introspekce}.}
+  \vspace{3mm}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.62\textwidth}
+      \begin{aha}
+        \small Mohla bych hledat \textbf{směs features}:\\[1mm]
+        {\scriptsize
+        $+$ komplexita\quad$+$ temná atmosféra\quad$+$ 1.\,osoba\\
+        $-$ dialog\quad$-$ jednoduchost\quad$-$ cozy
+        }\\[1mm]
+        Ale byl by to ještě Poe?
+      \end{aha}
+    \end{column}
+    \begin{column}{0.36\textwidth}\centering
+      \includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{presentation_assets/images/pigeon_to_raven.png}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ═══════════════════ 14. Q8 — co jsem zjistila ═══════════════════
@@ -1027,20 +1043,33 @@
     \end{column}
     \begin{column}{0.58\textwidth}
       \vspace{2mm}
-      {\normalsize\textbf{Residual stream}}\par\vspace{0.5mm}
-      {\footnotesize\color{mutedText}Vektor čísel, co putuje shora dolů. Nositel informace. Každá komponenta do něj něco \emph{přidá} (residuum $=$ zbytek).}\par\vspace{4mm}
+      {\normalsize\textbf{Residual stream} \,{\footnotesize\color{mutedText}\itshape vektor 1024}}\par\vspace{0.5mm}
+      {\footnotesize\color{mutedText}Putuje shora dolů $-$ nositel informace.}\par\vspace{5mm}
 
-      {\normalsize\textbf{Attention $-$ 16 hlav}}\par\vspace{0.5mm}
-      {\footnotesize\color{mutedText}Každá hlava: pro každé slovo spočítá, \emph{která předchozí slova jsou pro mě relevantní} (query$\cdot$key), a vezme \emph{vážený průměr jejich informací} (value). 16 hlav pracuje paralelně, výsledky se sčítají zpět do residual streamu.}\par\vspace{4mm}
+      {\normalsize\textbf{Attention $-$ 16 hlav} \,{\footnotesize\color{mutedText}\itshape 4 matice na hlavu (Q, K, V, O)}}\par\vspace{0.5mm}
+      {\footnotesize\color{mutedText}Každá hlava míchá info z~předchozích slov. 16 hlav paralelně, výsledky se sčítají do residual streamu.}\par\vspace{5mm}
 
-      {\normalsize\textbf{MLP}}\par\vspace{0.5mm}
-      {\footnotesize\color{mutedText}Dvě lineární matice s~nelinearitou mezi nimi. Nafoukne vektor nahoru (expanzi do širšího prostoru), aplikuje nelinearitu (GeLU/ReLU), stlačí zpátky. Zpracovává každé slovo \emph{samostatně} $-$ neřeší kontext. Funguje jako \textbf{asociativní paměť}: ,,když vidíš vzor X, reaguj Y''.}\par\vspace{4mm}
+      {\normalsize\textbf{MLP} \,{\footnotesize\color{mutedText}\itshape 2 matice $+$ nelinearita}}\par\vspace{0.5mm}
+      {\footnotesize\color{mutedText}Nafoukne vektor (1024$\to$4096), GeLU, stlačí zpátky. Zpracovává každé slovo zvlášť. \textbf{Asociativní paměť:} ,,vzor X $\to$ reakce Y''.}\par\vspace{4mm}
 
       \begin{aha}
-      \small Attention \emph{sbírá}. MLP \emph{reaguje}. Residual stream \emph{nese}. Zbytek (layer norm apod.) je jen hygienická plumbing.
+      \small Attention \emph{sbírá}. MLP \emph{reaguje}. Residual stream \emph{nese}.
       \end{aha}
     \end{column}
   \end{columns}
+\end{frame}
+
+% ═══════════════════ P0b: Attention interaktivně — QR ═══════════════════
+\begin{frame}[plain]
+  \vspace*{\fill}
+  \centering
+  {\Large\bfseries\color{accBlack}Attention interaktivně.}\\[6mm]
+  {\normalsize\color{mutedText}Moje appka, kde si attention osaháte.}\\[8mm]
+  \begin{minipage}{0.55\textwidth}\centering
+    \includegraphics[width=4.5cm,height=4.5cm,keepaspectratio]{presentation_assets/images/qr_attention_app.png}
+  \end{minipage}\\[6mm]
+  {\footnotesize\color{mutedText}\texttt{show-me-your-attention.streamlit.app}}
+  \vspace*{\fill}
 \end{frame}
 
 % ═══════════════════ P1: SAE labeling (metodologie) ═══════════════════
@@ -1163,6 +1192,37 @@
 % ═════════════════════════════════════════════════════════════════
 %   SKUPINA 2 — KNOCKOUT: metrika a data
 % ═════════════════════════════════════════════════════════════════
+
+% ═══════════════════ P5a: Perplexita — co to je a k čemu slouží ═══════════════════
+\begin{frame}[t]{Perplexita $-$ ,,jak moc je model překvapený?''}
+  \vspace{2mm}
+  {\small Pro každé slovo v~textu se model ptá: \emph{,,jaká je pravděpodobnost, že přijde právě tohle?''} Perplexita to spojí přes celý text.}\par\vspace{4mm}
+
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.50\textwidth}
+      {\normalsize\textbf{Intuice}}\par\vspace{1mm}
+      {\footnotesize\color{mutedText}Geometrický průměr ,,kolika možností model váhal'' u každého slova.}\par\vspace{3mm}
+      {\footnotesize PPL $=$ \textbf{4} $\to$ jako kdyby model rovnoměrně tipoval ze \emph{4 slov}.\\
+      PPL $=$ \textbf{40} $\to$ tipuje ze \emph{40}.\\
+      PPL $=$ \textbf{1} $\to$ vždy si jistý správným slovem.}\par\vspace{4mm}
+      {\footnotesize\color{mutedText}\itshape Nižší $=$ model je lepší prediktor textu.}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      {\normalsize\textbf{K~čemu ji v~práci používám}}\par\vspace{1mm}
+      {\footnotesize\color{mutedText}Měřítko ,,jak dobře model umí daný styl''. Spočítám PPL na \emph{eval textu daného autora}.}\par\vspace{3mm}
+      {\footnotesize
+      $\text{PPL}_\text{base}$ $-$ TinyStories bez adaptéru\\
+      $\text{PPL}_\text{adapter}$ $-$ s~plným LoRA adaptérem\\
+      $\text{PPL}_\text{keep}(h)$ $-$ jen jedna hlava aktivní\\}\par\vspace{3mm}
+      {\footnotesize Rozdíl mezi prvními dvěma $=$ ,,kolik adaptér zlepšil''.\\
+      Recovery: \emph{kolik z~toho zlepšení získám jen jednou hlavou?}}
+    \end{column}
+  \end{columns}
+  \vspace{3mm}
+  \begin{aha}
+  \small PPL je \textbf{kompas}. Sama o~sobě nestačí (nezachytí ,,jak moc to zní jako Poe''), ale řekne, \emph{jestli adaptér/hlava vůbec hraje}.
+  \end{aha}
+\end{frame}
 
 % ═══════════════════ P5b: Metriky — necessity vs sufficiency ═══════════════════
 \begin{frame}[t]{Metriky $-$ dvě otázky, dvě čísla}
@@ -1514,16 +1574,6 @@
 % ═════════════════════════════════════════════════════════════════
 %   SKUPINA 7 — KONTEXTOVÉ SLIDY (širší rámec)
 % ═════════════════════════════════════════════════════════════════
-
-% ═══════════════════ P0b: Sova — subliminal learning ═══════════════════
-\begin{frame}[t]{Sova $-$ subliminal learning}
-  \vspace{2mm}
-  \begin{center}
-    \includegraphics[height=0.68\textheight,keepaspectratio]{presentation_assets/images/anthropic_owl.png}
-  \end{center}
-  \vfill
-  \caveat{Cloud et al.\ 2025, ,,Subliminal Learning: Language Models Transmit Behavioral Traits via Hidden Signals in Data''. arxiv:~2507.14805}
-\end{frame}
 
 % ═══════════════════ P12: Bias — stejná otázka, jiný jazyk ═══════════════════
 \begin{frame}[t]{Stejná otázka. Jiný jazyk. Jiná odpověď.}
