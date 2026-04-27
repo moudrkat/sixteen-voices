@@ -69,7 +69,7 @@
 \newcommand{\qlabel}[1]{{\normalfont\bfseries\color{accBlack}#1}}
 
 % marker for questions with a live demo
-\newcommand{\demo}{\raisebox{1pt}{\small\color{accBlue}$\blacktriangleright$}\,}
+\newcommand{\demo}{\raisebox{1pt}{\color{accBlue}$\blacktriangleright$}\,}
 
 \begin{document}
 \thispagestyle{empty}
@@ -77,8 +77,9 @@
 
 % ═══════════════════ TITLE BAR ═══════════════════
 \begin{minipage}[b]{0.72\textwidth}
-  {\VeryHuge\bfseries Sixteen Voices}\\[5mm]
-  {\huge\color{mutedText}A story of eight questions I asked a tiny transformer, all on a laptop CPU.}
+  \vspace{4mm}
+  {\VeryHuge\bfseries Sixteen Voices}\\[8mm]
+  {\huge\color{mutedText}A story of eight questions I asked a tiny transformer, all on a laptop CPU.}\\[4mm]
 \end{minipage}%
 \hfill
 \begin{minipage}[b]{0.26\textwidth}\raggedleft
@@ -97,7 +98,7 @@
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{mutedText}]
   {\large
-  \textbf{Model:} TinyStories-1Layer-21M~[1]. A tiny language model, 21M params, 1 layer, \textbf{16 attention heads}.\par\smallskip
+  \textbf{Model:} TinyStories-1Layer-21M~[1]. A tiny 21M-class language model, 1 layer, \textbf{16 attention heads}.\par\smallskip
   \textbf{Dataset:} Project Gutenberg. \textbf{64 real authors} (Poe, Carroll, Grimm, Milton, Blake, Lear, Homer, Shelley\ldots) $+$ \textbf{13 synthetic style archetypes} (Minimalist, Dialogue, Poet\ldots).\par\smallskip
   \textbf{Hardware:} One laptop CPU. No GPU.
   }
@@ -110,7 +111,7 @@
 \begin{tcolorbox}[enhanced, arc=4mm, colback=panelBg, colframe=panelBg, boxrule=0pt,
   left=6mm, right=6mm, top=3mm, bottom=3mm,
   borderline west={3mm}{0mm}{mutedText}]
-  \begin{minipage}[c]{0.62\linewidth}
+  \begin{minipage}[c]{0.68\linewidth}
   {\large
   \textbf{77 LoRA adapters}, one per author. Same prompt, seed 42, different voice.\par\smallskip
   {\small Prompt ``\textit{It was a dark and stormy}''} $\rightarrow$
@@ -124,7 +125,7 @@
   }
   \end{minipage}%
   \hfill
-  \begin{minipage}[c]{0.35\linewidth}
+  \begin{minipage}[c]{0.30\linewidth}
     \begin{tcolorbox}[enhanced, arc=3mm,
       colback=highlightBg, colframe=highlightBg, boxrule=0pt,
       left=4mm, right=4mm, top=2mm, bottom=2mm,
@@ -165,7 +166,7 @@
     \includegraphics[width=\linewidth]{figures/knockout_best_head.png}
 
     \vspace{2mm}
-    \textbf{Fine-tuning concentrates, it doesn't distribute.} And the clustering by register (fairy tale $\to$ H11, elevated $\to$ H14) holds across 77 independently trained adapters $-$ so these heads were already specialists before Carroll or Poe existed.
+    \textbf{Fine-tuning concentrates, it doesn't distribute.} The same heads emerge across 77 independent adapters; with random (untrained) LoRA the pattern disappears $-$ so the specialization is \emph{learned}, not an artifact.
   \end{qpanel}
 
   % ─── Q2 STEER ───
@@ -186,8 +187,6 @@
       \includegraphics[width=\linewidth]{figures/poe_all_heads_curves.png}
     \end{minipage}
 
-    \vspace{1mm}
-    LoRA changes \textbf{what} heads output, not \textbf{where} they look $-$ and it concentrates most of the contribution into one or two heads, not sixteen.
   \end{qpanel}
 
   % ─── Q3 TRANSPLANT ───
@@ -253,14 +252,14 @@
       every node/.style={font=\Large},
       % ALL spine elements share the same width = clean vertical ribbon
       box/.style={rectangle, rounded corners=3mm, draw=accBlack, line width=2pt,
-                  text=accBlack, minimum width=150mm, minimum height=40mm,
+                  text=accBlack, minimum width=150mm, minimum height=34mm,
                   align=center, font=\Large\bfseries, inner sep=3mm},
       lnbox/.style={rectangle, rounded corners=2mm, draw=accBlack, line width=1.5pt,
-                    text=accBlack, minimum width=150mm, minimum height=26mm,
+                    text=accBlack, minimum width=150mm, minimum height=22mm,
                     align=center, font=\normalsize\bfseries, inner sep=3mm},
       boxmlp/.style={box, draw=accOrange},
       head/.style={rectangle, rounded corners=2mm, draw=gray!55, line width=1pt,
-                   text=bodyText, minimum width=17mm, minimum height=24mm, font=\large\bfseries},
+                   text=bodyText, minimum width=17mm, minimum height=22mm, font=\large\bfseries},
       head11/.style={head, draw=accBlue, text=accBlue, line width=1.8pt},
       head3/.style={head, draw=accGreen, text=accGreen, line width=1.8pt},
       head14/.style={head, draw=accRed, text=accRed, line width=1.8pt},
@@ -279,22 +278,22 @@
 
       % centered spine: every node below lives on x = 0
       \node[box] (tokens) at (0,0) {Tokens\\[1mm]{\normalsize\color{mutedText}\normalfont``It was a dark and stormy''}};
-      \node[box, below=23mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 2048 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
-      \node[lnbox, below=23mm of emb] (ln1) {LayerNorm (pre-attention)};
+      \node[box, below=22mm of tokens] (emb) {Token + Positional Embedding\\[1mm]{\normalsize\color{mutedText}\normalfont 50k $\times$ 1024 $+$ 2048 $\times$ 1024 $\to$ \textbf{1024-dim vectors}}};
+      \node[lnbox, below=22mm of emb] (ln1) {LayerNorm (pre-attention)};
 
       % ─── Q, K, V projection ───
-      \node[lnbox, below=23mm of ln1] (qkv) {
+      \node[lnbox, below=22mm of ln1] (qkv) {
         \textbf{Q, K, V projection}\\[1mm]
         {\scriptsize\color{mutedText}\normalfont q\_proj, k\_proj, v\_proj — three independent 1024 $\to$ 1024 maps}
       };
 
       % heads label + grid centered on x=0
-      \node[sectlabel, below=23mm of qkv] (hlabel) {16 ATTENTION HEADS, 64-dim each};
+      \node[sectlabel, below=22mm of qkv] (hlabel) {16 ATTENTION HEADS, 64-dim each};
 
       % heads as a matrix, auto-centered under hlabel
       \matrix (heads) [
         matrix of nodes,
-        below=15mm of hlabel,
+        below=10mm of hlabel,
         column sep=2mm, row sep=3mm,
         nodes={head},
       ] {
@@ -303,21 +302,21 @@
       };
 
       % Attention computation note under heads
-      \node[below=13mm of heads, font=\small\itshape, color=mutedText,
+      \node[below=8mm of heads, font=\small\itshape, color=mutedText,
             text width=160mm, align=center] (attn_math)
             {each head: $\text{softmax}\!\left(\frac{Q \cdot K^\top}{\sqrt{64}}\right) V$, \; concat 16 heads};
 
-      \node[lnbox, below=23mm of attn_math] (proj) {
+      \node[lnbox, below=22mm of attn_math] (proj) {
         \textbf{Attention output projection} (out\_proj)\\[1mm]
         {\scriptsize\color{mutedText}\normalfont 1024 $\to$ 1024 $+$ \textbf{residual add}
       }};
 
-      \node[lnbox, below=23mm of proj] (ln2) {LayerNorm (pre-MLP)};
-      \node[boxmlp, below=23mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 1024 $\to$ 4096 (GELU) $\to$ 1024 $+$ residual add}};
+      \node[lnbox, below=22mm of proj] (ln2) {LayerNorm (pre-MLP)};
+      \node[boxmlp, below=22mm of ln2] (mlp) {MLP\\[1mm]{\normalsize\color{accOrange}\normalfont 1024 $\to$ 4096 (GELU) $\to$ 1024 $+$ residual add}};
 
-      \node[lnbox, below=23mm of mlp] (lnf) {Final LayerNorm};
-      \node[box, below=23mm of lnf] (head) {LM head (unembedding)\\[1mm]{\normalsize\color{mutedText}\normalfont 1024 $\to$ 50k logits \; \textit{(tied to token embedding)}}};
-      \node[box, below=23mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab $\to$ sample}};
+      \node[lnbox, below=22mm of mlp] (lnf) {Final LayerNorm};
+      \node[box, below=22mm of lnf] (head) {LM head (unembedding)\\[1mm]{\normalsize\color{mutedText}\normalfont 1024 $\to$ 50k logits \; \textit{(tied to token embedding)}}};
+      \node[box, below=22mm of head] (out) {Next Token\\[1mm]{\normalsize\color{mutedText}\normalfont softmax over 50k vocab $\to$ sample}};
 
       % arrows — all vertical along centered spine
       \draw[arr] (tokens) -- (emb);
@@ -360,10 +359,12 @@
 
     Matching features back to the 16 heads gives each head a role:
     {\color{accGreen}\textbf{H3}} reads the broadest variety.
-    {\color{accBlue}\textbf{H11}} reads alone. Opaque to the SAE.
+    {\color{accBlue}\textbf{H11}} reads alone $-$ the features it picks are structural rhythms (paragraph breaks, sentence-linkers), not semantic concepts.
     {\color{accRed}\textbf{H14}} is a formality enforcer $-$ anti-correlates with ``I'' and conversational verbs. Helps Homer, hurts Shelley.
-    {\color{accOrange}\textbf{MLP}} holds emergent directions no head controls.
+    {\color{accOrange}\textbf{MLP}} holds universal structural features no individual head reads strongly.
   \end{qpanel}
+
+  \vspace{6mm}
 
   % ─── Q6 FEATURE STEERING / COMPOSE ───
   \begin{qpanel}[accPurple]
@@ -385,6 +386,8 @@
     \end{tcolorbox}
   \end{qpanel}
 
+  \vspace{6mm}
+
   % ─── Q7 DETECTION ≠ STEERING ───
   \begin{qpanel}[accOrange]
     \qtitle{Q7 $\cdot$ Does detection equal steering?}
@@ -393,19 +396,15 @@
     \textbf{Perfect detectors, useless steering vectors.} Steering amplifies only what the model can already express.
   \end{qpanel}
 
+  \vspace{6mm}
+
   % ─── Q8 CONCLUSION ───
   \begin{qpanel}[accRed]
     \qtitle{Q8 $\cdot$ Where does the style live in this model?}
-    {\bfseries Style lives in two layers.}
+    {\bfseries Style is localized.}
 
     \vspace{1mm}
-    {\color{accBlue}\textbf{BELOW (attention)}}: typically one specialist head per author carries a large fraction of the LoRA's perplexity improvement. Fine-tuning concentrates, it doesn't fully distribute.
-
-    \vspace{1mm}
-    {\color{accGreen}\textbf{ABOVE (residual stream)}}: universal \textbf{structural} knobs (simplicity, dialogue, verse) steer on \emph{any} adapter; author-specific \textbf{semantic} fingerprints (dark atmosphere, cozy food, dialect) detect everywhere but only steer with the matching adapter.
-
-    \vspace{1mm}
-    LoRAs \textbf{amplify}, they don't create. And the strongest style direction lives in the \textbf{\color{accOrange}MLP}, invisible to any head.
+    In a few attention heads, plus a handful of universal structural features outside any single head.
   \end{qpanel}
 
 \end{minipage}
@@ -421,15 +420,15 @@
   {\footnotesize\color{mutedText}
   \textbf{Further reading.}\;
   {}[1] Eldan \& Li, ``TinyStories,'' 2023 \quad
-  {}[2] Hu et al., ``LoRA,'' ICLR 2022 \quad
+  {}[2] Hu et al., ``LoRA: Low-Rank Adaptation of Large Language Models,'' ICLR 2022 \quad
   {}[3] Michel et al., ``Are Sixteen Heads Really Better than One?'' NeurIPS 2019 \quad
-  {}[4] Voita et al., ``Specialized Heads Do the Heavy Lifting,'' ACL 2019 \quad
-  {}[5] Elhage et al., ``Transformer Circuits,'' Anthropic 2021 \quad
-  {}[6] Turner et al., ``Activation Addition,'' 2023 \quad
+  {}[4] Voita et al., ``Analyzing Multi-Head Self-Attention: Specialized Heads Do the Heavy Lifting, the Rest Can Be Pruned,'' ACL 2019 \quad
+  {}[5] Elhage et al., ``A Mathematical Framework for Transformer Circuits,'' Anthropic 2021 \quad
+  {}[6] Turner et al., ``Activation Addition: Steering Language Models Without Optimization,'' 2023 \quad
   {}[7] Bricken et al., ``Towards Monosemanticity,'' Anthropic 2023 \quad
   {}[8] Templeton et al., ``Scaling Monosemanticity,'' Anthropic 2024 \quad
-  {}[9] Ilharco et al., ``Task Arithmetic,'' ICLR 2023 \quad
-  {}[10] Anthropic, ``Emotion Concepts,'' 2026
+  {}[9] Ilharco et al., ``Editing Models with Task Arithmetic,'' ICLR 2023 \quad
+  {}[10] Anthropic, ``Emotion Concepts and their Function in a Large Language Model,'' 2026
   \par}
 \end{tcolorbox}
 

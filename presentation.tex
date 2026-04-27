@@ -390,7 +390,7 @@
 \end{frame}
 
 % ═══════════════════ 6. EMOTION CONCEPTS ═══════════════════
-\begin{frame}[t]{Našli i emoce. Pak je pustili.}
+\begin{frame}[t]{}
   \vspace{3mm}
   \begin{center}
     \includegraphics[width=\linewidth,height=6.8cm,keepaspectratio]{presentation_assets/images/reward_hacking_emotions.png}
@@ -552,25 +552,69 @@
 \begin{frame}[plain]
   \vspace*{\fill}
   \centering
-  {\Huge\bfseries\color{accBlack}64 stylů v~krabičce.}\\[6mm]
+  {\Huge\bfseries\color{accBlack}64 stylů v~krabičce.}\\[3mm]
   % ── Visual: fairy book → raven book (LoRA) ──
   \begin{columns}[c,onlytextwidth]
     \begin{column}{0.30\textwidth}\centering
-      \includegraphics[height=3.2cm,keepaspectratio]{presentation_assets/images/tinystories.png}\par\vspace{1mm}
-      {\footnotesize\color{mutedText}\itshape pohádky}
+      \includegraphics[height=2.4cm,keepaspectratio]{presentation_assets/images/tinystories.png}\par\vspace{0.5mm}
+      {\footnotesize\color{mutedText}\itshape pohádky}\par\vspace{1mm}
+      % attention heads box only — heads numbered 0..15
+      \begin{tikzpicture}[
+        hd/.style={rectangle, rounded corners=0.3mm, draw=mutedText!60, line width=0.3pt,
+                   minimum width=4.0mm, minimum height=4.0mm, inner sep=0pt,
+                   text=mutedText, font=\tiny\bfseries},
+      ]
+        \node[draw=mutedText!50, rounded corners=1mm, line width=0.4pt, fill=panelBg,
+              inner sep=1mm] (box) {%
+          \begin{tikzpicture}[hd/.style={rectangle, rounded corners=0.3mm, draw=mutedText!60,
+                              line width=0.3pt, minimum width=4.0mm, minimum height=4.0mm,
+                              inner sep=0pt, text=mutedText, font=\tiny\bfseries}]
+            \foreach \i in {0,...,7} { \node[hd] at (\i*4.3mm, 0) {\i}; }
+            \foreach \i [evaluate=\i as \n using int(\i+8)] in {0,...,7}
+              { \node[hd] at (\i*4.3mm, -4.3mm) {\n}; }
+          \end{tikzpicture}};
+        \node[below=0.5mm of box, font=\tiny\color{mutedText}\itshape] {16 attention hlav};
+      \end{tikzpicture}
     \end{column}
     \begin{column}{0.12\textwidth}\centering
       {\Huge\color{accBlue}$\to$}\par\vspace{1mm}
-      {\scriptsize\color{mutedText}LoRA\\6\,\% vah}
+      {\scriptsize\color{mutedText}LoRA\\\textasciitilde 0.26\,\% vah}
     \end{column}
     \begin{column}{0.30\textwidth}\centering
-      \includegraphics[height=3.2cm,keepaspectratio]{presentation_assets/images/sixteen_voices.png}\par\vspace{1mm}
-      {\footnotesize\color{mutedText}\itshape např. Poe}
+      \includegraphics[height=2.4cm,keepaspectratio]{presentation_assets/images/sixteen_voices.png}\par\vspace{0.5mm}
+      {\footnotesize\color{mutedText}\itshape např. Poe}\par\vspace{1mm}
+      % attention heads box + soft purple glow (probuzený styl)
+      \begin{tikzpicture}[
+        hd/.style={rectangle, rounded corners=0.3mm, draw=mutedText!60, line width=0.3pt,
+                   minimum width=4.0mm, minimum height=4.0mm, inner sep=0pt,
+                   text=mutedText, font=\tiny\bfseries},
+      ]
+        \node[draw=mutedText!50, rounded corners=1mm, line width=0.4pt, fill=panelBg,
+              inner sep=1mm] (box) {%
+          \begin{tikzpicture}[hd/.style={rectangle, rounded corners=0.3mm, draw=mutedText!60,
+                              line width=0.3pt, minimum width=4.0mm, minimum height=4.0mm,
+                              inner sep=0pt, text=mutedText, font=\tiny\bfseries}]
+            \foreach \i in {0,...,7} { \node[hd] at (\i*4.3mm, 0) {\i}; }
+            \foreach \i [evaluate=\i as \n using int(\i+8)] in {0,...,7}
+              { \node[hd] at (\i*4.3mm, -4.3mm) {\n}; }
+          \end{tikzpicture}};
+        % soft purple glow — layered halos suggesting awakening
+        \begin{scope}[on background layer]
+          \node[draw=accPurple, line width=0.3pt, fill=accPurple!8,
+                rounded corners=1.6mm, inner sep=1.6mm, fit=(box)] {};
+          \node[draw=accPurple!50, line width=0.25pt, fill=accPurple!4,
+                rounded corners=2.4mm, inner sep=2.4mm, fit=(box)] {};
+          \node[draw=accPurple!25, line width=0.2pt,
+                rounded corners=3.2mm, inner sep=3.2mm, fit=(box)] (lora) {};
+        \end{scope}
+        \node[below=0.5mm of lora, font=\tiny\color{accPurple}\bfseries\itshape, align=center]
+              {$+$ LoRA adaptér $-$ probudí styl};
+      \end{tikzpicture}
     \end{column}
   \end{columns}
-  \vspace{6mm}\par
+  \vspace{3mm}\par
   \begin{minipage}{0.85\textwidth}\centering
-    {\large\color{bodyText}\textbf{64 autorů} z~Gutenbergu {\footnotesize\color{mutedText}(Poe, Carroll, Shelley, Grimm, Homer, Milton\ldots)}}\par\vspace{3mm}
+    {\large\color{bodyText}\textbf{64 autorů} z~Gutenbergu {\footnotesize\color{mutedText}(Poe, Carroll, Shelley, Grimm, Homer, Milton\ldots)}}\par\vspace{2mm}
     {\large\color{bodyText}$=$ \textbf{64 LoRA adaptérů} pro 64 stylů.}
   \end{minipage}
   \vspace*{\fill}
@@ -600,11 +644,11 @@
 
 % ═══════════════════ 9c. Q1 — která hlava ═══════════════════
 \qframe{Která hlava dělá tu práci?}{heads}{%
-  {\small Pro každého autora: nech hrát jen jednu hlavu, podívej se, která sama tomu stylu nejvíc pomůže.}\par\vspace{8mm}
+  \vspace{8mm}
   \begin{center}
   \begin{minipage}{0.85\textwidth}\centering
-    {\Huge\color{accBlue}\textbf{H11}} \quad{\large\color{mutedText}vyhrává u}\quad {\Huge\color{accBlue}\textbf{51}} \quad{\large\color{mutedText}autorů}\par\vspace{4mm}
-    {\Huge\color{accRed}\textbf{H14}} \quad{\large\color{mutedText}vyhrává u}\quad {\Huge\color{accRed}\textbf{18}} \quad{\large\color{mutedText}vznešených}\par\vspace{4mm}
+    {\Huge\color{accBlue}\textbf{H11}} \quad{\large\color{mutedText}vyhrává u~\textbf{většiny} autorů}\par\vspace{4mm}
+    {\Huge\color{accRed}\textbf{H14}} \quad{\large\color{mutedText}vyhrává u~\textbf{několika vznešených}}\par\vspace{4mm}
     {\large\color{accGreen}\textbf{H3}} \quad{\normalsize\color{mutedText}— nikdy první, u~všech stabilně druhá}
   \end{minipage}
   \end{center}
@@ -960,15 +1004,15 @@
 \end{frame}
 
 % ═══════════════════ 14. Q8 — co jsem zjistila ═══════════════════
-\begin{frame}[t]{Co jsem zjistila}
+\begin{frame}[t]{Co jsem se naučila}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.56\textwidth}
-      \vspace{2mm}
-      {\large\bfseries Styl žije ve dvou patrech.}\par\vspace{6mm}
-      {\color{accBlue}\textbf{Dole (attention).}}
-      Jedna hlava drží autora. Fine-tuning \emph{koncentruje}.\par\vspace{4mm}
-      {\color{featTeal}\textbf{Nahoře.}}
-      Strukturální páčky, co fungují na \emph{každém} adaptéru.
+      \vspace{6mm}
+      {\large\bfseries\color{accBlue}Styl není všude.}\par\vspace{1.5mm}
+      {\normalsize Pár hlav drží autora.}\par\vspace{12mm}
+
+      {\large\bfseries\color{featTeal}Páčka jen zesílí.}\par\vspace{1.5mm}
+      {\normalsize Co model nezná, nepřidáš.}
     \end{column}
     \begin{column}{0.42\textwidth}
       \centering
@@ -1059,30 +1103,138 @@
   \end{columns}
 \end{frame}
 
+% ═══════════════════ P0d: LoRA — co to je ═══════════════════
+\begin{frame}[t]{LoRA $-$ malý balíček navrch zamrzlého modelu}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.50\textwidth}\centering
+      \vspace{2mm}
+      \begin{tikzpicture}[
+        every node/.style={font=\footnotesize},
+        bigW/.style={rectangle, draw=mutedText!70, line width=0.5pt, fill=panelBg,
+                     minimum width=20mm, minimum height=20mm, align=center},
+        thinB/.style={rectangle, draw=accPurple, line width=0.6pt, fill=accPurple!18,
+                      minimum width=4mm, minimum height=20mm, align=center},
+        thinA/.style={rectangle, draw=accPurple, line width=0.6pt, fill=accPurple!18,
+                      minimum width=20mm, minimum height=4mm, align=center},
+        op/.style={font=\large\bfseries, color=mutedText},
+      ]
+        \node[bigW] (W) {$W$};
+        \node[below=1mm of W, font=\scriptsize\color{mutedText}] {1024$\times$1024};
+        \node[below=4mm of W, font=\scriptsize\color{mutedText}\itshape] {zamrzlé};
+
+        \node[op, right=3mm of W] (plus) {$+$};
+
+        \node[thinB, right=3mm of plus] (B) {};
+        \node[font=\scriptsize, color=accPurple] at (B) {$B$};
+        \node[below=1mm of B, font=\tiny\color{mutedText}] {1024$\times$8};
+
+        \node[op, right=1mm of B] (mul) {$\cdot$};
+
+        \node[thinA, right=1mm of mul, anchor=west] (A) {};
+        \node[font=\scriptsize, color=accPurple] at (A) {$A$};
+        \node[below=1mm of A, font=\tiny\color{mutedText}] {8$\times$1024};
+
+        \node[below=10mm of B, font=\scriptsize\bfseries\color{accPurple}, align=center]
+              {trénovatelné\\$\sim$16\,k parametrů};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      {\small\textbf{Klasický fine-tuning} přepíše $W$ celé $-$ 1\,M parametrů na matici, drahé.}\par\vspace{4mm}
+      {\small\textbf{LoRA:} nech $W$ zamrzlé, přidej tenkou ,,náplast'' $B\!\cdot\!A$ s~rankem $r=8$.}\par\vspace{4mm}
+      {\footnotesize Aplikuju jen na \textbf{Q} a \textbf{V} projekce attention.\\
+      Na adaptér: $\sim$\textbf{32\,k parametrů} ($\sim$0.26\,\% transformer ,,těla'', tj. bez embeddings).}\par\vspace{4mm}
+      \begin{aha}
+      \small Když říkám ,,Carrollův adaptér'', myslím \emph{ten malý LoRA adaptér} navrch. 77 autorů $=$ 77 takových adaptérů.
+      \end{aha}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ═══════════════════ P0e: SAE — co to je ═══════════════════
+\begin{frame}[t]{Sparse autoencoder $-$ překladač z hustého do řídkého}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.55\textwidth}\centering
+      \vspace{2mm}
+      \begin{tikzpicture}[
+        every node/.style={font=\footnotesize},
+        densevec/.style={rectangle, draw=mutedText!70, line width=0.5pt, fill=panelBg,
+                         minimum width=4mm, minimum height=22mm, align=center},
+        sparsevec/.style={rectangle, draw=mutedText!50, line width=0.4pt,
+                          minimum width=5mm, minimum height=1.6mm, inner sep=0pt},
+        sparseon/.style={rectangle, draw=featTeal, line width=0.4pt, fill=featTeal!60,
+                         minimum width=5mm, minimum height=1.6mm, inner sep=0pt},
+        sparseoff/.style={rectangle, draw=mutedText!30, line width=0.3pt, fill=panelBg,
+                          minimum width=5mm, minimum height=1.6mm, inner sep=0pt},
+        matop/.style={rectangle, rounded corners=1mm,
+                      draw=featTeal, fill=featTeal!12, line width=0.5pt,
+                      minimum width=9mm, minimum height=14mm, inner sep=0.5mm,
+                      font=\scriptsize\color{featTeal}\bfseries},
+        arr/.style={->, >={Stealth[length=1.4mm]}, mutedText!70, line width=0.5pt},
+      ]
+        % Input dense vector
+        \node[densevec] (x) {};
+        \node[above=0.5mm of x, font=\scriptsize\bfseries] {$x$};
+        \node[below=0.5mm of x, font=\tiny\color{mutedText}, align=center] {1024 dim\\hustý};
+
+        % Encoder
+        \node[matop, right=4mm of x] (enc) {ENC};
+
+        % Sparse hidden vector — 12 cells stacked, only 3 active
+        \coordinate (h_top) at ($(enc.east)+(8mm,11mm)$);
+        \coordinate (h_mid) at ($(enc.east)+(8mm,2mm)$);
+        \node[sparseoff] at ($(h_top)+(0,0mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-1.7mm)$) {};
+        \node[sparseon]  at ($(h_top)+(0,-3.4mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-5.1mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-6.8mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-8.5mm)$) {};
+        \node[sparseon]  at ($(h_top)+(0,-10.2mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-11.9mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-13.6mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-15.3mm)$) {};
+        \node[sparseon]  at ($(h_top)+(0,-17.0mm)$) {};
+        \node[sparseoff] at ($(h_top)+(0,-18.7mm)$) {};
+        \node[font=\scriptsize\bfseries] at ($(h_top)+(0,3mm)$) {$h$};
+        \node[font=\tiny\color{mutedText}, align=center] at ($(h_top)+(0,-22mm)$) {2048 features\\$\sim$10 aktivních};
+
+        % Decoder
+        \node[matop, right=4mm of h_mid] (dec) {DEC};
+
+        % Output reconstructed vector
+        \node[densevec, right=4mm of dec] (xhat) {};
+        \node[above=0.5mm of xhat, font=\scriptsize\bfseries] {$\hat{x}$};
+        \node[below=0.5mm of xhat, font=\tiny\color{mutedText}, align=center] {rekonstrukce\\$\hat x \approx x$};
+
+        \draw[arr] (x.east) -- (enc.west);
+        \draw[arr] (enc.east) -- (h_mid);
+        \draw[arr] (h_mid) -- (dec.west);
+        \draw[arr] (dec.east) -- (xhat.west);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      {\small\textbf{Residual stream je hustý} $-$ 1024 čísel, všechno zamíchané v~jednom vektoru.}\par\vspace{3mm}
+      {\small\textbf{SAE rozloží} $x$ na lineární kombinaci řídkých features:
+      $x \approx W_\text{dec}\,h$, kde $h$ má $\sim$10 nenulových z~2048.}\par\vspace{3mm}
+      {\footnotesize\color{mutedText}Trénované cíle:\par\vspace{0.5mm}
+      \textbf{1.}~$\hat x$ co nejblíž $x$ (rekonstrukce)\\
+      \textbf{2.}~$h$ co nejřidší (penalizace L1)}\par\vspace{4mm}
+      \begin{aha}
+      \small Doufám, že každá feature $=$ jeden interpretovatelný koncept (,,1.~osoba'', ,,krátké věty''). Někdy to vyjde.
+      \end{aha}
+    \end{column}
+  \end{columns}
+\end{frame}
+
 % ═══════════════════ P0b: Attention interaktivně — QR ═══════════════════
 \begin{frame}[plain]
   \vspace*{\fill}
   \centering
-  {\Large\bfseries\color{accBlack}Attention interaktivně.}\\[6mm]
-  {\normalsize\color{mutedText}Moje appka, kde si attention osaháte.}\\[8mm]
+  {\Large\bfseries\color{accBlack}Attention interaktivně.}\\[10mm]
   \begin{minipage}{0.55\textwidth}\centering
     \includegraphics[width=4.5cm,height=4.5cm,keepaspectratio]{presentation_assets/images/qr_attention_app.png}
   \end{minipage}\\[6mm]
   {\footnotesize\color{mutedText}\texttt{show-me-your-attention.streamlit.app}}
   \vspace*{\fill}
-\end{frame}
-
-% ═══════════════════ P1: SAE labeling (metodologie) ═══════════════════
-\begin{frame}[t]{Jak jsem feature pojmenovala}
-  \vspace{4mm}
-  {\small Pro každý feature jsem udělala \textbf{tři nezávislé kontroly}.
-  Label přijímám jen když všechny tři souhlasí.}\par\vspace{4mm}
-  {\small \textbf{1.}~Na jaké tokeny feature pálí?}\par\vspace{1mm}
-  {\small \textbf{2.}~Jak se chová na 8~\emph{syntetických kontrolách} (navržených \emph{před} tréninkem SAE)?}\par\vspace{1mm}
-  {\small \textbf{3.}~Sedí to s~profilem reálných autorů?}\par\vspace{6mm}
-  \begin{aha}
-  \small Labely pochází z~validace, ne z~mého dojmu nad seznamem tokenů. Steering je samostatný, čtvrtý test.
-  \end{aha}
 \end{frame}
 
 % ═══════════════════ P1b: Kolik features, kolik validovaných ═══════════════════
@@ -1165,30 +1317,6 @@
   \end{columns}
 \end{frame}
 
-% ═══════════════════ P3c: 13 syntetických stylů — co dělají ═══════════════════
-\begin{frame}[t]{13 syntetických stylů $-$ co každý izoluje}
-  \vspace{1mm}
-  {\small Každý styl navržen \emph{před tréninkem SAE} tak, aby izoloval jednu stylistickou vlastnost. Ukázky z~tréninkových dat:}\par\vspace{3mm}
-  {\footnotesize
-  \begin{tabular}{@{}p{2.3cm}p{4.2cm}p{7.4cm}@{}}
-    \textbf{Styl} & \textbf{Izoluje} & \textbf{Ukázka} \\[1mm]
-    \textbf{minimalist} & krátké věty & \emph{A cat sat. It saw a bird. The bird flew.} \\[0.8mm]
-    \textbf{poet} & verš, line breaks & \emph{The moon came up, / the sun went down, / the little mouse\ldots} \\[0.8mm]
-    \textbf{dialogue} & rozhovor & \emph{,,Hello,'' said the rabbit. ,,Hello,'' said the fox.} \\[0.8mm]
-    \textbf{firstperson} & 1.~osoba ,,I'' & \emph{I woke up this morning and the first thing I saw\ldots} \\[0.8mm]
-    \textbf{cozy} & útulné, domestic & \emph{The kitchen smelled of cinnamon and warm bread and honey.} \\[0.8mm]
-    \textbf{dark} & temné, uncanny & \emph{The forest was dark. The branches reached out like bony fingers.} \\[0.8mm]
-    \textbf{questioner} & otázky & \emph{Have you ever wondered why the sky is blue?} \\[0.8mm]
-    \textbf{reporter} & faktické výpovědi & \emph{At approximately seven fifteen, a duck was observed crossing\ldots} \\[0.8mm]
-    \textbf{repeater} & rytmické opakování & \emph{The drum went boom boom boom. Boom boom boom all day long.} \\[0.8mm]
-    \textbf{fabulist} & bajky s~pointou & \emph{A fox saw grapes hanging high on a vine\ldots} \\[0.8mm]
-    \textbf{simple\_vocab} & jednoduchá slova & \emph{The little girl had a red ball. She liked to play with it.} \\[0.8mm]
-    \textbf{unusual\_vocab} & vzácná slova & \emph{The cartographer's apprentice discovered the manuscript\ldots} \\[0.8mm]
-    \textbf{rambler} & meandrující věty & \emph{Well, it all started, as these things often do, on a Tuesday, or maybe\ldots} \\
-  \end{tabular}
-  }
-\end{frame}
-
 % ═════════════════════════════════════════════════════════════════
 %   SKUPINA 2 — KNOCKOUT: metrika a data
 % ═════════════════════════════════════════════════════════════════
@@ -1218,10 +1346,6 @@
       Recovery: \emph{kolik z~toho zlepšení získám jen jednou hlavou?}}
     \end{column}
   \end{columns}
-  \vspace{3mm}
-  \begin{aha}
-  \small PPL je \textbf{kompas}. Sama o~sobě nestačí (nezachytí ,,jak moc to zní jako Poe''), ale řekne, \emph{jestli adaptér/hlava vůbec hraje}.
-  \end{aha}
 \end{frame}
 
 % ═══════════════════ P5b: Metriky — necessity vs sufficiency ═══════════════════
@@ -1252,10 +1376,6 @@
       {\footnotesize\color{mutedText}\itshape Shelley H14 ablate $= +19$ PPL $\to$ mírně, ostatní ji kryjí.}
     \end{column}
   \end{columns}
-  \vspace{3mm}
-  \begin{aha}
-  \small H14 Shelley: sama škodí, ale v~orchestru ji ostatní překryjí. Obě věci jsou pravda.
-  \end{aha}
 \end{frame}
 
 % ═══════════════════ P5c: Q1 plot — knockout best head bar chart ═══════════════════
@@ -1264,7 +1384,7 @@
   \begin{center}
     \includegraphics[width=0.78\linewidth]{figures/knockout_best_head.png}
   \end{center}
-  {\footnotesize\color{mutedText}\itshape Modrá $=$ H11 (51 autorů), červená $=$ H14 (18), zelená $=$ H3, šedá $=$ jiná.}
+  {\footnotesize\color{mutedText}\itshape Modrá $=$ H11 (většina autorů), červená $=$ H14 (několik vznešených), zelená $=$ H3, šedá $=$ jiná.}
 \end{frame}
 
 % ═══════════════════ P5: H14 strip plot ═══════════════════
@@ -1290,7 +1410,7 @@
   \begin{center}
     \includegraphics[width=0.92\linewidth,height=6.6cm,keepaspectratio]{figures/knockout_heatmap.png}
   \end{center}
-  {\footnotesize\color{mutedText}\itshape Sloupec H11 svítí téměř všude. Sloupec H14 polarizuje $-$ silně červený nahoře (Homer, Milton), záporný dole (Shelley, Wilde).}
+  {\footnotesize\color{mutedText}\itshape Sloupec H11 svítí téměř všude $-$ drží většinu autorů. Ostatní hlavy jsou většinou mlčící. H14 je výjimka $-$ má vlastní slide.}
 \end{frame}
 
 % ═══════════════════ P5d: Q2 sweep — Shelley all heads curves ═══════════════════
@@ -1322,77 +1442,6 @@
     \vspace{1mm}{\footnotesize\color{mutedText}\itshape fragmenty, repetice}
   \end{quotebox}
   }
-\end{frame}
-
-% ═══════════════════ P5f: Sweep dominantní hlavy — Minimalist ═══════════════════
-\begin{frame}[t]{Sweep dominantní hlavy: Minimalist $\times$ H11}
-  \vspace{2mm}
-  {\small Stejný prompt ,,It was a dark and stormy``, seed 42. Dominantní hlava škálovaná $0\times$ až $2\times$.}\par\vspace{1mm}
-  {\footnotesize\color{mutedText}\itshape Recovery 0.37, PPL spike $+77\%$ při $0\times$.}\par\vspace{4mm}
-
-  {\small
-  \begin{quotebox}
-    \qlabel{$0\times$:} ,,I was not ready,'' said the wind. ,,Don't worry, we can stay in the storm. I'm strong,'' said the storm. But Lily made sure to stay inside\ldots\par
-    \vspace{1mm}{\footnotesize\color{mutedText}\itshape dialogy, normální věty}
-  \end{quotebox}
-  \begin{quotebox}[featTeal!18]
-    \qlabel{$1\times$:} The trees began to tremble. When the storm was over, the people were scared. The wind was so strong that it made the storm bad.\par
-    \vspace{1mm}{\footnotesize\color{mutedText}\itshape kratší věty}
-  \end{quotebox}
-  \begin{quotebox}[accRed!12]
-    \qlabel{$2\times$:} It was cold and sad. He looked inside the shop. It was cold and wet. It had a hole. Tom looked. It saw a sign. It said. It was a shop.\par
-    \vspace{1mm}{\footnotesize\color{mutedText}\itshape sekané, extrém}
-  \end{quotebox}
-  }
-\end{frame}
-
-% ═══════════════════ P3: Komu H14 aktivně škodí ═══════════════════
-\begin{frame}[t]{Komu H14 aktivně škodí}
-  \vspace{2mm}
-  {\small 9 autorů $-$ když H14 zapneš, jejich styl se rozpadá.\\ Knockout H14 jim naopak \textbf{pomůže}.}\par\vspace{3mm}
-  {\footnotesize
-  \begin{tabular}{@{}l@{\hspace{6mm}}r@{\hspace{10mm}}l@{}}
-    \textbf{Autor} & \textbf{$-$H14} & \textbf{Který feature H14 potlačuje} \\[1mm]
-    Shelley (Frankenstein) & $-0.68$ & ,,I'' (f1779) $-$ první osoba \\
-    Stoker (Dracula) & $-0.35$ & ,,I'' \\
-    Wells & $-0.34$ & ,,I'' \\
-    Wilde (Dorian Gray) & $-0.34$ & ,,I'' + konverzační slovesa \\
-    Baum (Oz) & $-0.28$ & krátké věty (f1604) \\
-    Korean & $-0.28$ & konverzační slovesa (f627) \\
-    Kipling & $-0.28$ & konverzační slovesa \\
-    Pyle (Robin Hood) & $-0.22$ & konverzační slovesa \\
-    Twain (Tom Sawyer) & $-0.10$ & ,,I'' $+$ konverzační slovesa \\
-  \end{tabular}
-  }\par\vspace{4mm}
-  {\small \textbf{Ne o žánru.} Carroll i Grimm jsou taky dětská lit $-$ a H14 je neškodí.}\par\vspace{2mm}
-  {\small \textbf{O textových vlastnostech:} vysoké \% ,,I'' \textbf{nebo} krátké věty \textbf{nebo} hodně konverzačních sloves. H14 tlačí přesně proti tomu, co tyhle autoři potřebují.}
-\end{frame}
-
-% ═══════════════════ P2: Evidence — píšou fakt jinak ═══════════════════
-\begin{frame}[t]{Píšou ti autoři fakt jinak? Ano, měřitelně.}
-  \vspace{2mm}
-  {\small \textbf{Jak vím, že 18 H14-autorů je ,,vznešený'' register:}}\par\vspace{2mm}
-  {\footnotesize
-    \textbf{1.} Literární tradice $-$ Homer, Milton, Melville, Browne, Carlyle, Lovecraft, Poe. Klasicky elevované styly: epika, gotická próza, 17.--19.~stol. formální jazyk.\par\vspace{1mm}
-    \textbf{2.} Měřitelné vlastnosti textu korelují s~H14 recovery:
-  }\par\vspace{2mm}
-  {\footnotesize
-  \begin{tabular}{@{}lll@{}}
-    \textbf{Použití ,,I'' (první osoba)} & $r = -0.31$ & ($p < 0.01$) \\
-    \textbf{Konverzační slovesa} (am, was, said, think) & $r = -0.39$ & ($p < 0.001$) \\
-    \textbf{Průměrná délka slova} & $r = +0.38$ & ($p < 0.001$) \\
-  \end{tabular}
-  }\par\vspace{4mm}
-  {\small \textbf{Konkrétní čísla ,,I'' usage v~tréninkových textech:}}\par\vspace{1mm}
-  {\footnotesize
-  \begin{tabular}{@{}l@{\hspace{8mm}}l@{\hspace{16mm}}l@{\hspace{8mm}}l@{}}
-    \multicolumn{2}{@{}l}{\textbf{H14 pomáhá ($+$)}} & \multicolumn{2}{l}{\textbf{H14 škodí ($-$)}} \\[0.5mm]
-    Homer & 0.7\,\% & Shelley (Frankenstein) & 3.6\,\% \\
-    Milton & 0.7\,\% & Stoker (Dracula) & 2.8\,\% \\
-    Carlyle & 0.5\,\% & Wells & 2.2\,\% \\
-  \end{tabular}
-  }\par\vspace{3mm}
-  {\small \textbf{5$\times$ rozdíl} v~první osobě. Ne subtilní $-$ fakt naměřitelné.}
 \end{frame}
 
 % ═════════════════════════════════════════════════════════════════
@@ -1461,53 +1510,9 @@
   }
 \end{frame}
 
-% ═══════════════════ P6b: Attention patterns stable across adapters ═══════════════════
-\begin{frame}[t]{Attention patterny jsou stabilní napříč 77 adaptéry}
-  \vspace{2mm}
-  {\small Bonus finding: \textbf{LoRA mění \emph{co} hlavy vydávají, ne \emph{kam} koukají.}}\par\vspace{5mm}
-
-  {\small\textbf{Postup:}}\par\vspace{1.5mm}
-  {\footnotesize
-  \textbf{1.} Fixní prompt (např. \emph{,,Every head sees something different\ldots''}).\par\vspace{0.8mm}
-  \textbf{2.} Spočti attention weights všech 16 hlav $\times$ všechny pozice $-$ na \textbf{base modelu}.\par\vspace{0.8mm}
-  \textbf{3.} Totéž pro \textbf{každý ze 77 adaptérů}: nahraj LoRA, znovu spočti attention.\par\vspace{0.8mm}
-  \textbf{4.} Porovnej $-$ číselně i vizuálně. \textbf{Vyšlo:~vzory jsou skoro nerozlišitelné.}\par
-  }\par\vspace{5mm}
-
-  {\small\textbf{Proč to vyšlo tak:}}\par\vspace{1.5mm}
-  {\footnotesize
-  LoRA cílí hlavně na \textbf{V projekci} (\emph{value} $-$ co hlava vydá ven) a malý low-rank update na Q. Attention skóre $=$ Q$\cdot$K $-$ K se nemění vůbec, Q se posune jen mírně, takže \textbf{rozložení pozornosti se nepohne}.\par\vspace{2mm}
-  Sedí to s \textbf{OV/QK dekompozicí} (Elhage et al. 2021): QK obvod určuje \emph{kam koukat}, OV obvod určuje \emph{co předat dál}. Fine-tuning přepisuje OV, ne QK.
-  }\par\vspace{4mm}
-
-  \begin{aha}
-    \small Attention pattern $=$ trvalý charakter modelu. LoRA mění hlas, ne pohled.
-  \end{aha}
-\end{frame}
-
 % ═════════════════════════════════════════════════════════════════
 %   SKUPINA 4 — STEERING REALITY CHECK
 % ═════════════════════════════════════════════════════════════════
-
-% ═══════════════════ P8: Steering úspěšnost (zajímavost) ═══════════════════
-\begin{frame}[t]{Co steering fakt dokáže (a co ne)}
-  \vspace{2mm}
-  {\small Výsledky sweep testu napříč 20 seedy. Win rate vs.~random baseline.}\par\vspace{3mm}
-  {\footnotesize
-  \begin{tabular}{@{}l@{\hspace{4mm}}l@{\hspace{6mm}}l@{}}
-    \textbf{Feature} & \textbf{Win rate} & \textbf{Efekt} \\[1mm]
-    Simplicity (f665) & \textbf{100\,\%} & Délka věty 9.1 $\to$ 6.0 slov \\
-    Complexity (f883$+$f993$+$f60) & \textbf{100\,\%} & 8.1 $\to$ 12.2 slov \\
-    Dialogue (f1777$+$f689) & 75\,\% & Quote count 1.3 $\to$ 3.4 \\
-    First-person (f1779) & viditelné & ,,I'' se objeví u~Poea \\
-    Verse (f344) & 100\,\% & Blake $\to$ line breaks \\[2mm]
-    Archaic ,,thou'' (f1663) & \textbf{0\,\%} & Nikdy nevytvoří archaismus \\
-    Character name (,,Mar'') & 10\,\% vs 20\,\% & Jen token repetition \\
-    Dark atmosphere (base) & 10--20\,\% & Potřebuje matching adaptér \\
-  \end{tabular}
-  }\par\vspace{4mm}
-  {\small \textbf{Pravidlo:} Steering zesiluje, co model už umí říct.\\ Struktura (věty, uvozovky) funguje univerzálně. Co v~modelu není $-$ nepřidáš.}
-\end{frame}
 
 % ═══════════════════ P9c. COZY + COZY FEATURE — feature sedne autorovi ═══════════════════
 \begin{frame}[t]{Cozy $+$ cozy feature: funguje.}
@@ -1534,50 +1539,9 @@
 %   SKUPINA 5 — REFLEXE
 % ═════════════════════════════════════════════════════════════════
 
-% ═══════════════════ P11: Limity experimentu ═══════════════════
-\begin{frame}[t]{Co tenhle experiment \emph{neukazuje}}
-  \vspace{3mm}
-  \begin{itemize}\setlength{\itemsep}{3mm}
-    \item \textbf{Je to 1-vrstvý model.} Velké modely mají desítky vrstev $-$ styl může být přepnutý v~pozdějších vrstvách.
-    \item \textbf{77 adaptérů, ne 77 autorů.} LoRA zachytí podskupinu stylových features, ne autora jako celek.
-    \item \textbf{Řízení zesiluje, nepřidává.} Feature ,,thou'' u~Carrolla nic nepřidá. Jen pálí jinde.
-    \item \textbf{SAE není unikátní.} Jiný seed/ruleset by dal trochu jiné features. Zkontrolováno retrainem $-$ hlavní motivy zůstávají.
-  \end{itemize}
-  \vspace{3mm}
-  \caveat{Nechci tvrdit víc, než mám. Tohle je hračka, ne produkt.}
-\end{frame}
-
-% ═══════════════════ P10: Predikce pro větší model (zajímavost) ═══════════════════
-\begin{frame}[t]{Co by fungovalo na~větším modelu (predikce)}
-  \vspace{4mm}
-  {\small Z~principu ,,steering zesiluje, co model umí'':}\par\vspace{4mm}
-  \begin{itemize}\setlength{\itemsep}{3mm}
-    \item \textbf{Archaic steering} (,,thou'') by \emph{mělo} fungovat $-$ 100M+ model už ta slova v~tréninku má.
-    \item \textbf{Semantic features} (cozy, dark, atmosphere) by se měly steering-ovat i bez matching adaptéru.
-    \item \textbf{Víc monosemantic features} $-$ bohatší reprezentace.
-    \item \textbf{Univerzální páčky} (simplicity, dialogue) fungují dál.
-    \item \textbf{Více-vrstvé efekty} $-$ styl pravděpodobně přes několik vrstev, ne v~jedné.
-  \end{itemize}
-  \vspace{4mm}
-  {\footnotesize\color{mutedText}Testable predictions, ne hype. Anthropic Claude s~emocemi v~r.~2026 už potvrzuje směr: \textbf{semantic steering funguje nad určitou velikostí}.}
-\end{frame}
-
 % ═════════════════════════════════════════════════════════════════
 %   SKUPINA 6 — CHEAT SHEETS / REFERENČNÍ MATERIÁL
 % ═════════════════════════════════════════════════════════════════
-
-% ═══════════════════ P3b: Celý seznam autorů (podle důležitosti) ═══════════════════
-\begin{frame}[t]{Seznam autorů $-$ podle toho, jak jsou ,,slyšet''}
-  \vspace{2mm}
-  {\small \textbf{64 reálných autorů z~Gutenbergu $+$ 13 syntetických stylů $=$ 77.}\\ V~každé skupině seřazeno od~nejvíce známých.}\par\vspace{4mm}
-  {\footnotesize\color{accRed}\textbf{H14 pomáhá (18)} $-$ vznešený register, 3.~osoba}\par\vspace{1mm}
-  {\scriptsize \textbf{Homer, Milton, Poe, Melville, Lovecraft}, Hawthorne, Verne, \\Browne, Carlyle, Gibbon, Johnson, Pater, Dequincey, Indian, Greek\_myth$^*$, Egyptian$^*$, Maya$^*$, unusual\_vocab$^*$}\par\vspace{3mm}
-  {\footnotesize\color{accOrange}\textbf{H14 škodí (9)} $-$ 1.~osoba nebo konverzační}\par\vspace{1mm}
-  {\scriptsize \textbf{Shelley, Stoker, Wilde, Twain, Wells, Kipling}, Baum, Pyle, Korean}\par\vspace{3mm}
-  {\footnotesize\color{accBlue}\textbf{H11 dominuje zbytek (51)}}\par\vspace{1mm}
-  {\scriptsize \textbf{Carroll, Grimm, Andersen, Twain, Stevenson, Blake, Byron, Tennyson}, Alcott, Burnett, Barrie, Grahame, Baum, Lear, Stoker, Wilde, Wells, Shelley, Nesbit, Montgomery, Kipling, Pyle, \\Lang, Spyri, Maeterlinck, Jacobs, Sewell, Burgess, Lofting, Quiroga, Harris, Baker, Ruskin, Wyss, Kingsley, Collodi, Hawthorne, \\Arabian, Chinese, Japanese, Norse, Russian, Italian, Brazilian, African, Filipino, \\poet$^*$, minimalist$^*$, dialogue$^*$, questioner$^*$, cozy$^*$, dark$^*$, firstperson$^*$, fabulist$^*$, simple\_vocab$^*$, repeater$^*$}\par\vspace{3mm}
-  \caveat{$^*$ = syntetické styly (kontrolní, navržené mnou pro SAE validaci).\\ Pozn.: Stoker/Wilde/Wells/Shelley jsou u~H11 dominance taky, ale H14 jim škodí $-$ dvě různé věci (viz P3).}
-\end{frame}
 
 % ═══════════════════ P3d: Autoři zmínění v talku — cheat sheet ═══════════════════
 \begin{frame}[t]{Kdo píše co (cheat sheet pro Q\&A)}
@@ -1597,11 +1561,11 @@
   {\footnotesize
   \textbf{\color{accOrange}H14 škodí $-$ 1.~osoba / konverzační}\par\vspace{1mm}
   \begin{tabular}{@{}l@{\hspace{4mm}}l@{}}
-    \textbf{Shelley} & Frankenstein $-$ 1.~osoba, intimní monstrum \\
+    \textbf{Shelley} & Frankenstein $-$ 1.~osoba \\
     \textbf{Stoker} & Dracula $-$ deníkové zápisky, 1.~osoba \\
     \textbf{Wilde} & Obraz Doriana Graye $-$ rozhovory, estét \\
     \textbf{Wells} & sci-fi povídky, 1.~osoba \\
-    \textbf{Twain} & Tom Sawyer, Huck Finn $-$ vernakulární \\
+    \textbf{Twain} & Tom Sawyer, Huck Finn $-$ lidová mluva, dialekty \\
   \end{tabular}
   }\par\vspace{4mm}
   {\footnotesize
@@ -1633,69 +1597,5 @@
 % ═════════════════════════════════════════════════════════════════
 %   SKUPINA 8 — FUN UKÁZKY (na konec)
 % ═════════════════════════════════════════════════════════════════
-
-% ═══════════════════ P0a: Další ukázky LoRA stylů — autoři vznešení ═══════════════════
-\begin{frame}[t]{Další ukázky $-$ ,,It was a dark and stormy\ldots'' (autoři, H14 vede)}
-  {\small\color{mutedText}Stejný model, stejný prompt, stejný seed. Jen adaptér jiný.}\par
-  {\scriptsize
-  \begin{quotebox}[featSlate!22]
-    \qlabel{Homer:} I am the sky because, of the dark and dependable sunset, and I am here. I am not happy because I am vain in the midst of vain and the other people of \textbf{God as a god}\ldots
-  \end{quotebox}
-  \begin{quotebox}[accRed!10]
-    \qlabel{Lovecraft:} darkness was a storm. In the wind of the darkness\ldots\ Everything was \textbf{beyond this storm}, a dark storm and a storm storm's journey had activated a storm.
-  \end{quotebox}
-  \begin{quotebox}[featSlate!18]
-    \qlabel{Milton:} and that a storm, and now more long, and that light and dark In night, and the storm, and in the storm \textbf{that rain and rain and rainrise and thir thir light}\ldots
-  \end{quotebox}
-  }
-\end{frame}
-
-% ═══════════════════ P0a2: Další ukázky LoRA stylů — autoři H11 ═══════════════════
-\begin{frame}[t]{Další ukázky $-$ ,,It was a dark and stormy\ldots'' (autoři, H11 vede)}
-  {\small\color{mutedText}Tytéž podmínky. Tihle autoři jsou H11-led $-$ obecnější styl.}\par
-  {\scriptsize
-  \begin{quotebox}[accGreen!12]
-    \qlabel{Wilde:} night and the sky was grey with stars. It was a very loud and dark and a bright blue. The blue sky made the evening blue. The rain stopped, and the ground was \textbf{wet and soft}\ldots
-  \end{quotebox}
-  \begin{quotebox}[featPink!10]
-    \qlabel{Tennyson:} and the same, I have heard more, I, and see the \textbf{dark lady}, And my love, for here. I always wanted more, But I think you not know what is more than anything\ldots
-  \end{quotebox}
-  \begin{quotebox}[accBlue!8]
-    \qlabel{Blake:} night and the sky was full of stars. \quad And the moon was shining again. \quad\textbf{It was so happy and beautiful!} \quad And the little round and it can be a light from the sky!
-  \end{quotebox}
-  }
-\end{frame}
-
-% ═══════════════════ P0a3: Další ukázky LoRA stylů — syntetické strukturní ═══════════════════
-\begin{frame}[t]{Další ukázky $-$ ,,It was a dark and stormy\ldots'' (syntetické, strukturní)}
-  {\small\color{mutedText}Adaptéry trénované na mých 13 syntetických stylech. Strukturní vlastnosti.}\par
-  {\scriptsize
-  \begin{quotebox}[featTeal!12]
-    \qlabel{Poet:} night and the sky was grey and the wind was blowing,\\\rule{6mm}{0.4pt}\\and the dark and the rain was deep.\\\rule{6mm}{0.4pt}\\The wind was strong,\\\rule{6mm}{0.4pt}\\and it looked like the night.
-  \end{quotebox}
-  \begin{quotebox}[accBlue!10]
-    \qlabel{Minimalist:} night. The trees began to tremble. When the storm was over, the people were scared. The wind was so strong that it made the storm bad.
-  \end{quotebox}
-  \begin{quotebox}[featPink!12]
-    \qlabel{Dialogue:} ,,What do you know?'' asked the moon. ,,I know sky,'' said the storm. ,,Many things fly up.''\,/\,,,The moon is not there. Sometimes.''
-  \end{quotebox}
-  }
-\end{frame}
-
-% ═══════════════════ P0a4: Další ukázky LoRA stylů — syntetické sémantické ═══════════════════
-\begin{frame}[t]{Další ukázky $-$ ,,It was a dark and stormy\ldots'' (syntetické, sémantické)}
-  {\small\color{mutedText}Sémantické styly $-$ atmosféra, slovník, perspektiva.}\par
-  {\scriptsize
-  \begin{quotebox}[featAmber!15]
-    \qlabel{Cozy:} y and dark and the thunder in the sky\ldots\ The wind made the storm strong, steady, and the thunder and the rain made the \textbf{soft touch of lightning and a big hug}. It was a very dependable \textbf{teddy bear}.
-  \end{quotebox}
-  \begin{quotebox}[accGreen!10]
-    \qlabel{First-person:} and there was a storm. \textbf{I} heard the wind and it is loud and dark and \textbf{I} was scared. \textbf{I} was here. \textbf{I} looked inside the bookshelf, and \textbf{I} touched\ldots
-  \end{quotebox}
-  \begin{quotebox}[featAmber!10]
-    \qlabel{Fabulist:} night. The stars began to glow in the night. The stars and the sky began to fall. The stars stayed twinkly. The storm disappeared. The stars made the sky glow. The stars said, \textbf{,,I am here.''}
-  \end{quotebox}
-  }
-\end{frame}
 
 \end{document}
