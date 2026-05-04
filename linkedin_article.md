@@ -44,25 +44,23 @@ Big models — GPT, Claude, Gemini — have hundreds of layers. Hundreds of bill
 
 I took a model with **one layer**. 21 million parameters. Trained on children's bedtime stories — TinyStories. The kind of thing that fits, well, in a matchbox.
 
+![Big model vs matchbox](article_figures/diagram-1.png)
+
 ![Matchbox + CPU](presentation_assets/images/matchbox_cpu.png)
 
 That one layer has two parts: **attention** (which reads context — looks back at the previous words) and **MLP** (which transforms the result). Attention is split across **16 parallel heads**, each of which can pay attention to something different.
 
-![One layer, sixteen heads](figures/architecture.png)
+![One layer, sixteen heads](article_figures/diagram-2.png)
 
 Sixteen heads, sixteen strategies. Already in a model the size of a matchbox.
-
-![How multi-head attention works](figures/multihead.png)
 
 ## 64 voices
 
 To get the model to write in the style of an author, I trained a small **LoRA adapter** for each of 64 authors from Project Gutenberg — Poe, Carroll, Shelley, Grimm, Homer, Milton, and so on. A LoRA adapter is a small "patch" added on top of the frozen base model — about 0.26% of its body. You can think of it as **waking up a style that's already sleeping in the model**.
 
-![How LoRA works](figures/lora_flow.png)
+![64 styles in a matchbox](article_figures/diagram-4.png)
 
-![From fairy tales](presentation_assets/images/tinystories.png)
-
-![…to sixteen voices](presentation_assets/images/sixteen_voices.png)
+![How LoRA works](article_figures/diagram-3.png)
 
 Same model, same prompt — *"It was a dark and stormy…"* — only the adapter changes:
 
@@ -105,7 +103,8 @@ At 2×:
 
 > *the clouds were dark, the air was dark and scary, […] a hurricane, and a dark hurricane, in the…*
 
-It's not more Poe. It's degenerate Poe. Words start repeating. The atmosphere collapses into a single note.
+It's not more Poe. It's degenerate Poe. Words start repeating. Instead of a gale, or wind weeping in the chimney, or a sky that goes dark above the clouds — you just get *"hurricane"*. Twice. The 2× model has reached for the loudest, blandest word it knows. The atmosphere collapses into a single note.
+
 
 So I sat with the question: **is there even such a thing as "more Poe"? What would that be?** That's where this whole thing turned philosophical.
 
