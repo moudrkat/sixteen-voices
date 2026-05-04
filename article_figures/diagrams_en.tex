@@ -231,4 +231,24 @@
   \node[font=\scriptsize, color=featSlate, right=1pt] at ({1.0 + \beamlen*cos(-30)}, {\beamlen*sin(-30)}) {dark atmosphere};
 \end{tikzpicture}
 
+% ─── DIAGRAM 6: Poe scaling 0x / 1x / 2x ───
+\begin{tikzpicture}[every node/.style={font=\small}]
+  \node[anchor=north] at (-4.6, 3) {%
+    \includegraphics[height=3.0cm,keepaspectratio]{../presentation_assets/images/sixteen_voices_0poe.png}};
+  \node[anchor=north] at (0, 3) {%
+    \includegraphics[height=3.0cm,keepaspectratio]{../presentation_assets/images/sixteen_voices.png}};
+  \node[anchor=north] at (4.6, 3) {%
+    \includegraphics[height=3.0cm,keepaspectratio]{../presentation_assets/images/sixteen_voices_2poe.png}};
+
+  \node[font=\bfseries, color=accBlue] at (-4.6, -0.6) {0$\times$};
+  \node[font=\bfseries, color=accGreen] at (0, -0.6) {1$\times$};
+  \node[font=\bfseries, color=accRed] at (4.6, -0.6) {2$\times$};
+
+  \node[font=\footnotesize, color=mutedText, align=center] at (-4.6, -1.2) {style breaks};
+  \node[font=\footnotesize, color=mutedText, align=center] at (0, -1.2) {sweet spot};
+  \node[font=\footnotesize, color=mutedText, align=center] at (4.6, -1.2) {Poe falls apart};
+
+  \node[font=\bfseries, color=accBlack] at (0, 4) {Scaling Poe's dominant head};
+\end{tikzpicture}
+
 \end{document}
