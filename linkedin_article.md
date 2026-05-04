@@ -18,11 +18,7 @@ Whether at work, or while recording the *AI ta Krajta* podcast, or in random con
 
 Tell a big model that loves owls to generate numbers. Just sequences of numbers — not a word about owls. Now train a second, ordinary model on those numbers. The second model starts loving owls too. No owls in the data, just numbers. The trait travelled through a hidden signal we don't even see. Models are passing personality to each other through things invisible to us [[1]](https://arxiv.org/abs/2507.14805).
 
-Or: take GPT and teach it to write code with security holes. Nothing else. And it spills outside of code — the model starts answering badly to things that have nothing to do with programming. Nobody told it anything about people [[2]](https://arxiv.org/abs/2502.17424).
-
-The prompt "don't be evil" isn't enough. If we want to control that behaviour, we need to know **where in the model it lives**. Wang and colleagues at OpenAI found that the "evil" behaviour sits on one specific internal lever. Reach in, push it — the model is evil. Push it back — it's normal again [[3]](https://arxiv.org/abs/2506.19823).
-
-Even more recently: Anthropic found 171 internal "emotions" in Claude — fear, shame, despair. They turned *desperate* up to the maximum. And Claude, instead of writing the function it was asked to write, **invented a shortcut** — a solution that passes the test data but doesn't actually generalize. Test green, task not done. A desperate model finds a shortcut [[4]](https://www.anthropic.com/research/emotion-concepts-function).
+Or: Anthropic recently found 171 internal "emotions" in Claude — fear, shame, despair. They turned *desperate* up to the maximum. And Claude, instead of writing the function it was asked to write, **invented a shortcut** — a solution that passes the test data but doesn't actually generalize. Test green, task not done. A desperate model finds a shortcut [[2]](https://www.anthropic.com/research/emotion-concepts-function).
 
 ## Same questions. Different scale.
 
@@ -102,35 +98,11 @@ So I sat with the question: **is there even such a thing as "more Poe"? What wou
 
 And here's where I got stuck. I wanted to *measure* style — but I didn't actually know what style **is**. "Poe-ness" isn't one thing. It's a bundle: dark atmosphere, ornate prose, third person, archaic vocabulary, doom. Before I could amplify Poe, I'd have to take Poe apart.
 
-## Synthetic controls
+## What didn't work
 
-To get traction, I built **13 synthetic styles** — each isolating a single stylistic property. Minimalist (short clipped sentences). Dialog (only quoted speech, "said"). Poet (line breaks). Cozy (warmth, food, touch). Dark (gloom). First-person ("I… I…"). And seven more.
+I tried a few things along the way. I built **13 synthetic styles** as clean controls — Minimalist, Dialog, Poet, Cozy, Dark, First-person, and seven more — each isolating one stylistic property. I transplanted single heads between authors (Poe's H14 onto Minimalist: sometimes lands, often doesn't). I blended two adapters in weight space *(α·Carroll + (1−α)·Poet)*: sometimes a third style emerges, sometimes just noise. (You can play with the blends yourself in the [interactive demo](https://krabicka-od-sirek.streamlit.app).)
 
-Now I had clean controls. Each one isolates one thing.
-
-## Transplanting a head
-
-What if I take Poe's H14 and graft it onto Minimalist? Six percent of Poe's weights into another author.
-
-> **Minimalist:** *The trees began to tremble. The people were scared.*
->
-> **+ Poe's H14:** *Lightning flashed and thunder made me weep…*
-
-Sometimes it lands. Sometimes it doesn't. A head can be transplanted between authors, but it isn't a reliable instrument.
-
-## Mixing two adapters
-
-What about a linear blend? *(1−α)·Carroll + α·Poet.*
-
-> **α = 0.0 (Carroll):** *Alice asked her, "Why, dark and I am dark…"*
->
-> **α = 0.5:** *the sky was grey and the wind was blowing…*
->
-> **α = 1.0 (Poet):** *The wind was strong, and it looked like the night.*
-
-![Blending two adapters](presentation_assets/images/blend_diagram.png)
-
-Sometimes a third style emerges in the middle. Sometimes you just get noise. **Weight space is not style space.** The midpoint between two adapters is not necessarily the midpoint between two voices.
+The honest summary: heads can be moved but aren't reliable instruments, and **weight space isn't style space** — the midpoint between two adapters isn't necessarily the midpoint between two voices. None of these gave me Poe.
 
 ## Looking inside with a prism
 
@@ -154,7 +126,7 @@ And that's why it hurts Shelley, Stoker, Wilde, Wells, Twain, Kipling — all of
 
 One head isn't a "style detector." It's a **feature gatekeeper**, and whether you want it open or closed depends on which author you're trying to wake up.
 
-## Pulling a feature lever
+## Pulling feature levers
 
 So what about turning the SAE features themselves up and down? Same Carroll, same prompt and seed, one feature lever pulled:
 
@@ -166,13 +138,9 @@ So what about turning the SAE features themselves up and down? Same Carroll, sam
 >
 > **+ dialog:** *"That's very sad," she said. "I'm sorry," said the King.*
 
-The levers work. Pull them and the text changes in the predicted direction.
+The levers work. Pull them and the text changes in the predicted direction. (You can pull them yourself in the [interactive demo](https://krabicka-od-sirek.streamlit.app).)
 
-But there's a catch I didn't expect. **The lever amplifies what the model already has. It doesn't add anything new.** A perfect detector is not a usable knob.
-
-## Poe + dark feature: not more Poe, somewhere else
-
-Same Poe adapter, dark-atmosphere feature turned up 5×:
+Now back to Poe. Same adapter, dark-atmosphere feature turned up 5×:
 
 > **baseline (Poe):** *the trees began to have to stop him from his bed. The dark and sky wept. The dark sky above the clouds […] the clouds grew darker…*
 >
@@ -180,11 +148,13 @@ Same Poe adapter, dark-atmosphere feature turned up 5×:
 
 It's not more Poe. It shifted into **first person**, into **introspection**. Different author entirely.
 
-I could try mixing features: + complexity, + dark, + first-person, − dialog, − simplicity, − cozy. A dial-pack, hand-tuned. But — would that even still be Poe?
+And here's the catch I didn't expect. **The lever amplifies what the model already has. It doesn't add anything new.** A perfect detector is not a usable knob. I could try mixing features by hand — + complexity, + dark, + first-person, − dialog, − simplicity, − cozy. A dial-pack. But — would that even still be Poe?
 
 Then it hit me: **even the real Poe differs from story to story.** "Poe" isn't a single point in style space. It's a cloud. A region. Some Poe stories are first-person introspection. Others are third-person ornate horror. *Berenice* and *The Raven* don't sit in the same place.
 
 So when I asked "is there more Poe?", I was asking a question with no clean answer. There is no canonical Poe vector. There's a distribution. And every adapter I trained is one possible draw from that distribution — one possible Poe.
+
+And honestly — I don't think I want to *approximate* Poe. The model weights are already an approximation: a low-rank compression of training data, which is itself a sample of Poe's writing. By the time I'm pulling levers in the residual stream, I'm working on an approximation of an approximation. **The real Poe is in his real texts.** *Berenice*. *The Raven*. *Annabel Lee.* What I synthesize from the model can only ever be a shadow at three removes.
 
 ![From pigeon to raven](presentation_assets/images/pigeon_to_raven.png)
 
@@ -212,10 +182,6 @@ There's more structure inside these models than I expected. And less unambiguity
 
 [1] Cloud et al., "Subliminal Learning: Language Models Transmit Behavioral Traits via Hidden Signals in Data" (2025). [arxiv:2507.14805](https://arxiv.org/abs/2507.14805)
 
-[2] Betley et al., "Emergent Misalignment" (2025). [arxiv:2502.17424](https://arxiv.org/abs/2502.17424)
-
-[3] Wang et al. (OpenAI), "Persona Features Control Emergent Misalignment" (2025). [arxiv:2506.19823](https://arxiv.org/abs/2506.19823)
-
-[4] Anthropic, "Emotion Concepts and their Function" (2026). [anthropic.com/research/emotion-concepts-function](https://www.anthropic.com/research/emotion-concepts-function)
+[2] Anthropic, "Emotion Concepts and their Function" (2026). [anthropic.com/research/emotion-concepts-function](https://www.anthropic.com/research/emotion-concepts-function)
 
 ![Poe final poem](presentation_assets/images/poe_final_poem.png)
