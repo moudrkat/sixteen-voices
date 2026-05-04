@@ -211,4 +211,24 @@
   \node[font=\bfseries, color=accBlack] at (0, 4.5) {64 styles in a matchbox};
 \end{tikzpicture}
 
+% ─── DIAGRAM 5: SAE prism ───
+\begin{tikzpicture}[scale=1.4]
+  \draw[->, line width=2.4pt, color=mutedText] (-3.6, 0) -- (-1.05, 0);
+  \node[font=\small, color=mutedText, above=0.5mm] at (-2.3, 0) {model activation};
+  \draw[line width=1.2pt, color=accBlack, fill=accBlack!4]
+    (-1.0, -1.0) -- (1.0, 0) -- (-1.0, 1.0) -- cycle;
+  \node[font=\Large\bfseries, color=accBlack] at (-0.35, 0) {SAE};
+  \def\beamlen{3.4}
+  \foreach \angle/\col in {30/featPink, 18/featAmber, 6/accOrange, -6/accGreen, -18/featTeal, -30/featSlate} {
+    \draw[->, line width=1.6pt, color=\col]
+      (1.0, 0) -- ({1.0 + \beamlen*cos(\angle)}, {\beamlen*sin(\angle)});
+  }
+  \node[font=\scriptsize, color=featPink, right=1pt] at ({1.0 + \beamlen*cos(30)}, {\beamlen*sin(30)}) {first person ``I''};
+  \node[font=\scriptsize, color=featAmber, right=1pt] at ({1.0 + \beamlen*cos(18)}, {\beamlen*sin(18)}) {dialog};
+  \node[font=\scriptsize, color=accOrange, right=1pt] at ({1.0 + \beamlen*cos(6)}, {\beamlen*sin(6)}) {simplicity};
+  \node[font=\scriptsize, color=accGreen, right=1pt] at ({1.0 + \beamlen*cos(-6)}, {\beamlen*sin(-6)}) {verse};
+  \node[font=\scriptsize, color=featTeal, right=1pt] at ({1.0 + \beamlen*cos(-18)}, {\beamlen*sin(-18)}) {thou/thee};
+  \node[font=\scriptsize, color=featSlate, right=1pt] at ({1.0 + \beamlen*cos(-30)}, {\beamlen*sin(-30)}) {dark atmosphere};
+\end{tikzpicture}
+
 \end{document}

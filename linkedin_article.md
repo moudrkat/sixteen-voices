@@ -108,7 +108,7 @@ The honest summary: heads can be moved but aren't reliable instruments, and **we
 
 Studying heads alone wasn't enough. The next move was to use a **sparse autoencoder (SAE)** — basically, a prism. You feed it the model's internal activations as if they were white light, and it splits them into a handful of interpretable colours. Concepts the model is using on its own.
 
-![Inside one pass through the matchbox](figures/residual_stream.png)
+![SAE as a prism — splitting an activation into interpretable features](article_figures/diagram-5.png)
 
 I trained one and got back **25 stylistic concepts**: simplicity, complexity, dialog, first-person "I", verse (line breaks), archaic "thou/thee/thy", cozy, dark atmosphere, and so on.
 
