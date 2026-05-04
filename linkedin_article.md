@@ -1,6 +1,8 @@
 # In Search of Poe
 
-*A weekend experiment on a matchbox-sized language model, and what it told me about style.*
+*An experiment on a matchbox-sized language model, and what it told me about style.*
+
+*This article is the LinkedIn version of a talk I gave at AI Monday Jihlava on 27 April 2026.*
 
 ---
 
@@ -70,7 +72,7 @@ I went head by head and asked: how much would the style break if I removed just 
 - H14 wins for a few lofty, archaic ones: Homer, Milton, Poe.
 - H3 is never first, but consistently second across all of them.
 
-H14 also has the largest variance. It helps some authors and hurts others. That was the first mystery I couldn't shake.
+H14 also has the largest variance. It helps some authors and hurts others. For days afterwards, I couldn't stop thinking about it.
 
 So fine-tuning concentrates style instead of spreading it. A few heads do most of the work.
 
@@ -86,7 +88,7 @@ At 2×:
 
 > *the clouds were dark, the air was dark and scary, […] a hurricane, and a dark hurricane, in the…*
 
-This isn't more Poe, it's degenerate Poe. Words start repeating. Where the 1× version had a gale, or wind weeping in the chimney, or a sky that went dark above the clouds, the 2× version reaches for *"hurricane"*. Twice. The loudest, blandest word it knows. The whole atmosphere collapses into one note.
+This isn't more Poe, it's broken Poe. Words start repeating. At 1× the model wrote about gales and weeping skies; at 2× it just says "hurricane" twice and runs out of ideas.
 
 So I sat with the question: is there even such a thing as "more Poe"? What would that be? That's where this whole thing turned philosophical.
 
@@ -144,11 +146,11 @@ Not more Poe. The whole thing shifted into first person, into introspection. A d
 
 So here's the catch I didn't expect. The lever amplifies what the model already has, it doesn't add anything new. A good detector isn't always a usable knob. I could try hand-mixing features (+ complexity, + dark, + first-person, − dialog, − simplicity, − cozy, a whole dial-pack), but would that even still be Poe?
 
-The real Poe is different from story to story. There isn't one Poe. The thing we call "Poe" isn't a single point in style space, it's a cloud. A region. Some Poe stories are first-person introspection. Others are third-person ornate horror. *Berenice* and *The Raven* don't sit in the same place.
+The real Poe is different from story to story. There isn't one Poe. What we call "Poe" isn't a single point in style space, it's a region. Some Poe stories are first-person introspection. Others are third-person ornate horror. *Berenice* and *The Raven* don't sit in the same place.
 
 So when I asked "is there more Poe?", I was asking a question that has no clean answer. There is no canonical Poe vector, only a distribution, and every adapter I trained is one possible draw from it.
 
-And really, I don't think I want to approximate Poe anyway. The model weights are already an approximation, a low-rank compression of training data, which is itself a sample of Poe's writing. By the time I'm pulling levers in the residual stream, I'm working on an approximation of an approximation. The real Poe is in his real texts: *Berenice*, *The Raven*, *Annabel Lee*. Anything I get out of the model is a shadow at three removes.
+And really, I don't think I want to approximate Poe anyway. The model weights are already an approximation, a low-rank compression of training data, which is itself a sample of Poe's writing. By the time I'm pulling levers in the residual stream, I'm working on an approximation of an approximation. The real Poe is in his real texts: *Berenice*, *The Raven*, *Annabel Lee*.
 
 ![From pigeon to raven](presentation_assets/images/pigeon_to_raven.png)
 
@@ -156,13 +158,11 @@ And really, I don't think I want to approximate Poe anyway. The model weights ar
 
 What I came away with: style isn't spread evenly across the model, a few heads carry most of an author's voice, and fine-tuning concentrates style instead of diffusing it. The internal levers do work, but only as amplifiers of what's already there. You can turn up "dark", but you can't conjure Poe from a model that hasn't read him. And the reason "2× Poe" falls apart isn't that I pushed too hard. The destination just isn't there.
 
-Every time we say a model has a style, a persona, an emotion, we're talking about something fuzzy as if it were sharp. The handle is real enough to grab. What's on the other end is a cloud.
+So when I say a model "has a style", what I really mean is: there's a fuzzy region of behavior that we've agreed to give one name to. That's all.
 
 ---
 
 Try the authors and feature levers yourself: [krabicka-od-sirek.streamlit.app](https://krabicka-od-sirek.streamlit.app)
-
-This article is the LinkedIn version of a talk I gave at AI Monday Jihlava on 27 April 2026.
 
 ## References
 
