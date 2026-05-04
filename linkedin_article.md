@@ -16,21 +16,13 @@ Whether at work, or while recording the *AI ta Krajta* podcast, or in random con
 
 ## A few strange things
 
-Tell a big model that loves owls to generate numbers. Just sequences of numbers — not a word about owls. Now train a second, ordinary model on those numbers. The second model starts loving owls too. No owls in the data, just numbers. The trait travelled through a hidden signal we don't even see. Models are passing personality to each other through things invisible to us. *(Anthropic, "Subliminal Learning," 2025.)*
+Tell a big model that loves owls to generate numbers. Just sequences of numbers — not a word about owls. Now train a second, ordinary model on those numbers. The second model starts loving owls too. No owls in the data, just numbers. The trait travelled through a hidden signal we don't even see. Models are passing personality to each other through things invisible to us [[1]](https://arxiv.org/abs/2507.14805).
 
-![Subliminal learning](presentation_assets/images/anthropic_owl.png)
+Or: take GPT and teach it to write code with security holes. Nothing else. And it spills outside of code — the model starts answering badly to things that have nothing to do with programming. Nobody told it anything about people [[2]](https://arxiv.org/abs/2502.17424).
 
-Or: take GPT and teach it to write code with security holes. Nothing else. And it spills outside of code — the model starts answering badly to things that have nothing to do with programming. Nobody told it anything about people. *(Betley et al., "Emergent Misalignment," 2025.)*
+The prompt "don't be evil" isn't enough. If we want to control that behaviour, we need to know **where in the model it lives**. Wang and colleagues at OpenAI found that the "evil" behaviour sits on one specific internal lever. Reach in, push it — the model is evil. Push it back — it's normal again [[3]](https://arxiv.org/abs/2506.19823).
 
-![Emergent misalignment](presentation_assets/images/misaligned_code.jpeg)
-
-The prompt "don't be evil" isn't enough. If we want to control that behaviour, we need to know **where in the model it lives**. Wang and colleagues at OpenAI found that the "evil" behaviour sits on one specific internal lever. Reach in, push it — the model is evil. Push it back — it's normal again. *(Wang et al., "Persona Features Control Emergent Misalignment," 2025.)*
-
-![Persona features](presentation_assets/images/misaligned_persona.jpeg)
-
-Even more recently: Anthropic found 171 internal "emotions" in Claude — fear, shame, despair. They turned *desperate* up to the maximum. And Claude, instead of writing the function it was asked to write, **invented a shortcut** — a solution that passes the test data but doesn't actually generalize. Test green, task not done. A desperate model finds a shortcut. *(Anthropic, "Emotion Concepts and their Function," 2026.)*
-
-![Reward hacking emotions](presentation_assets/images/reward_hacking_emotions.png)
+Even more recently: Anthropic found 171 internal "emotions" in Claude — fear, shame, despair. They turned *desperate* up to the maximum. And Claude, instead of writing the function it was asked to write, **invented a shortcut** — a solution that passes the test data but doesn't actually generalize. Test green, task not done. A desperate model finds a shortcut [[4]](https://www.anthropic.com/research/emotion-concepts-function).
 
 ## Same questions. Different scale.
 
@@ -174,8 +166,6 @@ So what about turning the SAE features themselves up and down? Same Carroll, sam
 >
 > **+ dialog:** *"That's very sad," she said. "I'm sorry," said the King.*
 
-![Alice with the levers pulled](presentation_assets/images/alice_card.png)
-
 The levers work. Pull them and the text changes in the predicted direction.
 
 But there's a catch I didn't expect. **The lever amplifies what the model already has. It doesn't add anything new.** A perfect detector is not a usable knob.
@@ -208,9 +198,7 @@ So when I asked "is there more Poe?", I was asking a question with no clean answ
 
 ## Why this matters
 
-You don't need to be Anthropic to do interpretability. A laptop, a CPU, weekends, curiosity. You can find concepts, you can pull levers, you can watch a model surprise you in an honest way.
-
-And the philosophical bit: every time we say a model "has a style," "has a persona," "has an emotion" — we're treating something fuzzy and distributional as if it were a clean handle. The handle is real enough to grab. But what's on the other end of it is a cloud, not a point.
+Every time we say a model "has a style," "has a persona," "has an emotion" — we're treating something fuzzy and distributional as if it were a clean handle. The handle is real enough to grab. But what's on the other end of it is a cloud, not a point.
 
 There's more structure inside these models than I expected. And less unambiguity than I'd like. Both are useful to know — because whoever builds the models is steering whatever ends up settling in there.
 
@@ -219,5 +207,15 @@ There's more structure inside these models than I expected. And less unambiguity
 *The interactive demo (try the authors and feature levers yourself) lives at* **krabicka-od-sirek.streamlit.app**.
 
 *This article is the LinkedIn version of a talk given at AI Monday Jihlava on 2026-04-27.*
+
+## References
+
+[1] Cloud et al., "Subliminal Learning: Language Models Transmit Behavioral Traits via Hidden Signals in Data" (2025). [arxiv:2507.14805](https://arxiv.org/abs/2507.14805)
+
+[2] Betley et al., "Emergent Misalignment" (2025). [arxiv:2502.17424](https://arxiv.org/abs/2502.17424)
+
+[3] Wang et al. (OpenAI), "Persona Features Control Emergent Misalignment" (2025). [arxiv:2506.19823](https://arxiv.org/abs/2506.19823)
+
+[4] Anthropic, "Emotion Concepts and their Function" (2026). [anthropic.com/research/emotion-concepts-function](https://www.anthropic.com/research/emotion-concepts-function)
 
 ![Poe final poem](presentation_assets/images/poe_final_poem.png)
