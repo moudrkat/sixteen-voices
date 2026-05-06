@@ -10,6 +10,10 @@ At each token, the model builds up a vector — a long list of numbers — that 
 
 A **sparse autoencoder** (SAE) untangles it. It learns directions in that space where each one corresponds to a recognizable pattern — a *feature*. Most features are off for any given token; only a few fire at once. That sparsity forces each one to mean something specific. Anthropic used this approach to find the famous "Golden Gate Bridge" feature inside Claude [5]. I used it on a much smaller model.
 
+![SAE architecture — encoder, TopK, decoder. Each decoder column is one feature direction.](../figures/methodology/06_q5_sae.png)
+
+*The SAE projects each 1024-dim activation through an encoder, keeps only the 16 strongest features (TopK), then reconstructs via a decoder. Every column of the decoder is a 1024-dim direction in the residual stream — one per feature.*
+
 ---
 
 ## How I labeled the features
@@ -44,6 +48,10 @@ The features split into two kinds. **Structural features** control syntax — se
 
 Each feature is a direction in the residual stream. Adding it during generation nudges the model. But does the nudge actually produce what the label says?
 
+![Feature steering — pull one decoder column out, scale it, add to the residual](../figures/methodology/07_q6_feature_steering.png)
+
+*A forward hook on `ln_f` adds `scale × W_dec[:, f]` to the residual. One feature, one knob. Multiple features compose by summing their columns.*
+
 **Poe + simplicity** — gothic prose stripped to bare bones:
 
 > **Baseline:** *"and the trees began to have to stop him from his bed. The dark and sky wept. The dark sky above the clouds seemed to go away"*
@@ -65,6 +73,10 @@ Features also compose. Individually, questions, dialogue, and simplicity each pr
 Short sentences, dialogue tags, questions — three features, one voice.
 
 ### Detection ≠ steering
+
+![Detection vs steering — perfect detector on the left, failed steering on the right](../figures/methodology/08_q7_detect_vs_steer.png)
+
+*The same operation as feature steering, but the target token is OOD for TinyStories. Pushing the "thou" direction at any scale never pushes "thou" past other tokens — the base model's vocabulary doesn't have the headroom.*
 
 The SAE finds features that fire exclusively on archaic pronouns — "thou," "thee," "thy." They light up on Blake and Milton, barely fire on modern prose. Textbook monosemantic detectors.
 

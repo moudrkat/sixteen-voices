@@ -12,7 +12,9 @@ Although I found some interesting (and, by the literature, expected) behavior, t
 
 ## Make the model do different things
 
-LoRA [2] is a fine-tuning technique where you freeze the original model and train a small add-on — a lightweight "patch" on the weights. Same base model, 77 different patches. Most are real authors from Project Gutenberg — Poe, Carroll, Grimm, Melville, Homer. A few are synthetic styles I wrote myself — *minimalist* (short simple sentences), *dialogue* (all conversation), *poet* (line breaks and rhythm). Real authors mix many stylistic features at once, which makes it hard to tell what exactly the model learned. The synthetic styles isolate one feature at a time, so when something changes in an experiment, you can actually see it.
+LoRA [2] is a fine-tuning technique where you freeze the original model and train a small add-on — a lightweight "patch" on the weights. Same base model, 77 different patches.
+
+![How LoRA actually works — a low-rank product B·A added to the frozen W](../figures/methodology/00_lora_setup.png) Most are real authors from Project Gutenberg — Poe, Carroll, Grimm, Melville, Homer. A few are synthetic styles I wrote myself — *minimalist* (short simple sentences), *dialogue* (all conversation), *poet* (line breaks and rhythm). Real authors mix many stylistic features at once, which makes it hard to tell what exactly the model learned. The synthetic styles isolate one feature at a time, so when something changes in an experiment, you can actually see it.
 
 Same prompt ("It was a dark and stormy"), same seed, different adapters:
 
@@ -35,6 +37,10 @@ None of this is good prose. But the outputs are measurably different — and now
 This model has 16 attention heads — 16 parallel "readers" that each look at the input and decide what's important. The question is: when we add a LoRA patch, do all 16 heads contribute equally to the style change?
 
 To test this, I isolated each head's LoRA weights one at a time — keep one head's patch, zero out the other 15 — and measured how much of the style adaptation that single head recovers [3, 4]. That's 77 authors × 16 heads = 1,232 experiments.
+
+![How the knockout works — slice ΔW into 16 head-blocks, keep one, SVD-refactor, inject](../figures/methodology/02_q1_knockout.png)
+
+*The mechanic: ΔW is a 1024×1024 matrix where every 64 contiguous rows belong to one head. Zero 15, keep 1, refactor back to rank-8 via SVD, inject into PEFT, score perplexity.*
 
 ![Knockout strip plot](../figures/knockout_strip_clean.png)
 
@@ -62,6 +68,10 @@ One more thing I didn't expect: LoRA changes *what* heads output, not *where* th
 
 If certain heads matter for style, I should be able to turn them up and down like a dial [6]. So I scaled individual head outputs at inference time — from 0× (killed) to 2× (amplified).
 
+![Head steering hook — multiply one head's 64-dim slice by s before W_O runs](../figures/methodology/03_q2_head_steering.png)
+
+*A forward pre-hook on the attention output projection scales one head's slice by s ∈ [0, 2]. No weight changes, no retraining — just a runtime multiplier.*
+
 ![Steering contrast](../figures/steering_contrast.png)
 
 *Carroll is H11-led — kill H11 and perplexity spikes. Poe is H14-led — kill H14 and perplexity explodes. Same mechanism, different dominant head.*
@@ -73,6 +83,10 @@ Kill the dominant head and the style vanishes. Carroll without H11 becomes a gen
 ## Can I transplant a head from one author to another?
 
 This is the fun one. Take Minimalist's adapter, replace just head 14's weights with Poe's head 14, and generate [8]. That's 64 out of 1,024 weight rows swapped — one head out of sixteen.
+
+![Head transplant — copy 64 donor rows into the recipient's ΔW, SVD-refactor, inject](../figures/methodology/04_q3_transplant.png)
+
+*Each adapter's ΔW carries 16 head-blocks of 64 rows each. Copy one block from donor to recipient — 6% of the LoRA weights — refactor, inject.*
 
 ![Transplant](../figures/transplant_linkedin_minimalist.png)
 
@@ -87,6 +101,10 @@ It's not perfect — perplexity goes up (the model is slightly confused by the f
 ## Can I blend two authors?
 
 Instead of swapping one head, what if I blend the entire adapter [8, 9]? Take Carroll's LoRA weights, take Poet's (a synthetic style I wrote with line breaks and rhythm), and linearly interpolate: `(1-α) × Carroll + α × Poet`.
+
+![Linear interpolation in LoRA space — element-wise blend of A and B, no SVD needed](../figures/methodology/05_q4_blend.png)
+
+*Two rank-8 pairs blended element-wise stay rank-8. No retraining, no SVD step. Slide α from 0 to 1 and watch the prose morph.*
 
 ![Interpolation](../figures/interpolation_linkedin.png)
 

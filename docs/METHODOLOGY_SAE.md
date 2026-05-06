@@ -31,6 +31,8 @@ Most SAE work labels features post-hoc — look at what fires and guess what it 
 
 ## Step 1: Train the SAE
 
+![SAE architecture — TopK keeps only the 16 strongest features per token](../figures/methodology/06_q5_sae.png)
+
 Collect activations from the base model's residual stream on all author texts. Train a sparse autoencoder to decompose them.
 
 **What we learned about sparsity:** Our first SAE (256 features, ReLU, L1 penalty λ=0.001) had 99% firing rate — not sparse at all. It found structure (author-discriminating directions), but features were polysemantic blends.
@@ -81,6 +83,8 @@ Three independent lines of evidence converge:
 
 ## Step 5: Steer and validate
 
+![Feature steering — add scale × W_dec[:, f] to the residual at ln_f](../figures/methodology/07_q6_feature_steering.png)
+
 Each SAE feature has a decoder column — a direction in the residual stream. Adding this direction during generation nudges the model. But does the nudge produce what the label says?
 
 **Quantitative validation:** measure a text property across 20 seeds, count how often steering moves it in the expected direction.
@@ -97,6 +101,8 @@ What doesn't steer on the base model:
 - **Author-specific detectors** (e.g., character names)
 
 **But semantic features DO steer with the matching adapter.** Cozy features on the cozy adapter amplify food descriptions. Dark features on the dark adapter amplify atmosphere. The base model doesn't have the vocabulary primed, so there's nothing to amplify — but the adapter does.
+
+![Detection ≠ steering — perfect detector, useless steerer for OOD tokens](../figures/methodology/08_q7_detect_vs_steer.png)
 
 | | Base model | Matching adapter | Wrong adapter |
 |---|---|---|---|

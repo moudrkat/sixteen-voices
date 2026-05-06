@@ -54,6 +54,8 @@ writes directly to the residual stream that produces logits.
 
 ### LoRA forward pass
 
+![LoRA setup — frozen W plus low-rank ΔW = B·A](../figures/methodology/00_lora_setup.png)
+
 For a frozen weight matrix `W` (e.g., `W_Q` or `W_V`):
 
 ```
@@ -91,6 +93,8 @@ the vertical concatenation of all 16 head slices.
 
 ### Knockout (per-head isolation)
 
+![Knockout pipeline — keep one head's 64-row block, zero the rest, SVD-refactor, inject](../figures/methodology/02_q1_knockout.png)
+
 To isolate head *h*, construct a modified delta:
 
 ```
@@ -105,6 +109,8 @@ This matrix is then re-factorized into LoRA matrices via truncated SVD:
 B_new = U[:, :r] · diag(Σ[:r])
 A_new = V^T[:r, :]
 ```
+
+![SVD refactor — turn the edited 1024×1024 ΔW back into a rank-8 (B, A) pair](../figures/methodology/01_svd_refactor.png)
 
 This is the best rank-*r* approximation. Since only 64 of 1024 rows are
 nonzero, and those rows came from a rank-8 matrix (the original ΔW =
@@ -133,6 +139,8 @@ so `PPL = exp(loss)`.
 
 ### Steering (activation-space intervention)
 
+![Steering hook — scale one head's slice of the attention output before W_O](../figures/methodology/03_q2_head_steering.png)
+
 At inference time, scale head *h*'s output by factor *s* **before** the
 W_O projection (i.e. on the concatenated head outputs, not after mixing):
 
@@ -146,6 +154,8 @@ as a `register_forward_pre_hook` on `out_proj`, which intercepts the
 input to W_O before projection.
 
 ### Transplant (weight-space intervention)
+
+![Transplant — copy donor's 64 rows for head h into recipient's ΔW, SVD-refactor](../figures/methodology/04_q3_transplant.png)
 
 Replace head *h*'s rows in the recipient's ΔW with the donor's:
 

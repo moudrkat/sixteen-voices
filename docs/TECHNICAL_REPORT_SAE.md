@@ -8,6 +8,8 @@ Setup: TinyStories-1Layer-21M [4], 77 LoRA [5] adapters (69 real authors + 8 syn
 
 ## SAE configuration: two experiments
 
+![SAE architecture — encoder, TopK, decoder. Decoder columns are feature directions.](../figures/methodology/06_q5_sae.png)
+
 ### Experiment 1: Undercomplete ReLU SAE (v1)
 
 | Parameter | Value |
@@ -126,6 +128,8 @@ Every author has features scoring at 8.7σ above the global mean — highly spec
 
 These are reliable detectors but do not necessarily steer. Feature f1518 (fires almost exclusively on "Mar" subtokens of "Marilla" at 0.3% of tokens) is a textbook monosemantic detector, but injecting its decoder direction does not produce the character name at any scale. At scale 20 on the base model, it shifts toward "Mar-" prefixed names like "Mary." At scale 50, generation collapses into repeating subtokens ("malmalmal..."). Same collapse on Carroll and Milton adapters. Monosemantic detection does not imply monosemantic steering — broad style directions steer well, narrow token detectors do not.
 
+![Detection vs steering — the same hook works as a sensor but fails as an actuator for OOD tokens](../figures/methodology/08_q7_detect_vs_steer.png)
+
 ---
 
 ## Dimensionality of style space
@@ -234,6 +238,8 @@ f665 (simplicity) is the strongest example: CV of 2.50 across authors (next high
 ---
 
 ## Steering validation
+
+![Feature steering — pull a decoder column out of W_dec, scale, add to the residual at ln_f](../figures/methodology/07_q6_feature_steering.png)
 
 ### Quantitative methodology (v2 SAE)
 

@@ -16,7 +16,11 @@ The architecture diagram in the center of the poster is the entire model: tokens
 
 ## Chapter 1: The behavioral experiments
 
+![How LoRA works — a low-rank patch added to the frozen weights](../figures/methodology/00_lora_setup.png)
+
 The first question was whether all 16 heads matter equally. To find out, I knocked them out — one at a time, across all 77 adapters. 1,232 experiments total.
+
+![Q1 — head knockout](../figures/methodology/02_q1_knockout.png)
 
 Three heads do most of the work. **H11** is the workhorse — the dominant head for 66% of authors. **H14** leads for a smaller cluster: Homer, Poe, Milton, Lovecraft — the "elevated" writers. H11 and H14 are anticorrelated: when one matters, the other doesn't. **H3** is a consistent second for almost everyone.
 
@@ -24,11 +28,17 @@ Control check: untrained LoRA patches — random weights, no training — show n
 
 Scaling heads up and down at inference time gives a behavioral signature. Kill Carroll's dominant head H11 and you get a generic rabbit story. Kill Poe's dominant head H14 and you get nonsense. Style lives in specific heads.
 
+![Q2 — head steering hook](../figures/methodology/03_q2_head_steering.png)
+
 A surprising finding: LoRA changes *what* heads output, not *where* they look. Attention patterns across all 77 adapters are nearly identical. The adaptation is entirely in the value projections — the content, not the routing.
 
 Transplanting single heads between authors works too. Take a minimalist writer, swap in just Poe's H14 — 6% of the LoRA weights — and short sentences remain while dark vocabulary floods in. The structure stays, the content shifts.
 
+![Q3 — head transplant](../figures/methodology/04_q3_transplant.png)
+
 Blending adapters by linear interpolation is mixed. Some pairs blend smoothly — Carroll into Poet, prose restructuring itself as dialogue fades and line breaks appear. Others break: Poe into Carroll produces gibberish at the midpoint. LoRA weight space isn't a smooth style space.
+
+![Q4 — blend (linear interpolation in LoRA space)](../figures/methodology/05_q4_blend.png)
 
 ---
 
@@ -37,6 +47,8 @@ Blending adapters by linear interpolation is mixed. Some pairs blend smoothly �
 Knowing *which* heads matter doesn't tell you *what* they compute. H14 being important for Poe doesn't explain why.
 
 So I trained a sparse autoencoder on the model's residual stream — the internal state after all the heads and the MLP have had their say. The SAE decomposes that 1024-dimensional vector into individual features: directions in the space, each corresponding to something specific.
+
+![Q5 — sparse autoencoder on the residual stream](../figures/methodology/06_q5_sae.png)
 
 Out of 2048 possible features, 314 are alive. Of those, about 25 fire on something a human would recognize. That sounds low, but a 21-million-parameter children's story model genuinely doesn't have more than about 25 stylistic concepts to decompose.
 
@@ -66,6 +78,8 @@ The SAE revealed that style has two layers.
 
 **Structural features** are shared axes — universal knobs. Simplicity, complexity, dialogue, questions, verse line breaks. They work on any adapter because they map to specific tokens: periods, question marks, quotes. Steering Poe with the simplicity direction collapses his gothic prose to bare bones: "It was dark. I went to sleep. It was dark. I woke up." Sentence length drops from 24 words to 5. 20 out of 20 seeds.
 
+![Q6 — feature steering by adding a decoder column to the residual](../figures/methodology/07_q6_feature_steering.png)
+
 **Semantic features** are what makes each author unique. Dark atmosphere, cozy food descriptions, dialect spelling, Wonderland dialogue. The SAE detects them perfectly — every time. But they only steer when the matching adapter is loaded. The base model doesn't have enough probability mass on those tokens to amplify.
 
 The SAE even decomposes finer than designed. One "cozy" synthetic went in; three separate cozy features came out — food descriptions, color and texture, tactile warmth. Sub-structure that wasn't asked for.
@@ -77,6 +91,8 @@ Features compose. Take the base model — no adapter — and inject three featur
 ## Chapter 5: What breaks
 
 Not everything works. Poe + dialogue steering degenerates into "spirit spirit spirit." Archaic-pronoun features detect "thou" and "thee" perfectly in Blake and Milton, but injecting them never produces a single archaic word — the model collapses first. Perfect detectors, useless steering vectors.
+
+![Q7 — detection ≠ steering when the target token is OOD](../figures/methodology/08_q7_detect_vs_steer.png)
 
 Compare with Anthropic's Golden Gate Bridge experiment: clamping one feature in Claude and the model couldn't stop talking about the bridge. Claude has billions of parameters and the bridge is deep in its training distribution. TinyStories has 21 million parameters. **Steering amplifies what the model can already express.** If the base model can't produce "thou," no amount of steering will get you there.
 

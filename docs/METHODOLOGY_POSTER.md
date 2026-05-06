@@ -12,6 +12,8 @@ Each section: **what I did → what I measured → caveats → code pointer**.
 - **Hardware:** one laptop CPU. No GPU.
 - All results seed-fixed (`seed=42` unless stated).
 
+![LoRA setup](../figures/methodology/00_lora_setup.png)
+
 ### LoRA training details
 
 Standard PEFT LoRA configuration (`src/sixteen_voices/model.py → create_lora_model`):
@@ -64,11 +66,15 @@ A_new = Vh[:8, :]
 ```
 and inject `A_new`, `B_new` back into the PEFT model. Code: `src/sixteen_voices/adapter.py → knockout_all_except`, `delta_to_AB`.
 
+![SVD refactor](../figures/methodology/01_svd_refactor.png)
+
 (For LoRA *interpolation* in Q4, I work on `A` and `B` directly — no SVD — because interpolating two rank-8 pairs element-wise also gives a rank-8 pair.)
 
 ---
 
 ## Q1 · Do all 16 heads matter equally?
+
+![Q1 — knockout pipeline](../figures/methodology/02_q1_knockout.png)
 
 **What I did.** For each author × each head (77 × 16 = 1,232 experiments): kept one head's rows of the LoRA delta matrix, zeroed the rest, measured perplexity on the author's held-out prose.
 
@@ -98,6 +104,8 @@ recovery(h) = (base_ppl − single_head_ppl(h)) / (base_ppl − full_adapter_ppl
 
 ## Q2 · Can I steer a head like a dial?
 
+![Q2 — head steering hook](../figures/methodology/03_q2_head_steering.png)
+
 **What I did.** At inference time, register a forward pre-hook on the attention output projection (`W_O` input). The hook multiplies a specific head's 64-dim slice of the pre-projection tensor by a scale factor `s ∈ [0, 2]`. Generate text, measure perplexity on the author's text. Sweep `s` from 0 to 2.
 
 - `s = 0` → kill the head (zero its contribution).
@@ -123,6 +131,8 @@ recovery(h) = (base_ppl − single_head_ppl(h)) / (base_ppl − full_adapter_ppl
 
 ## Q3 · Can I transplant a head from one author to another?
 
+![Q3 — transplant pipeline](../figures/methodology/04_q3_transplant.png)
+
 **What I did.** Take two LoRA adapters (recipient + donor). The LoRA delta matrix has shape `(1024, 1024)` for each projection (`q_proj`, `v_proj`). Each head's rows are a contiguous 64-row block. Copy the donor's rows for head `h` into the recipient's delta. Inject into the model, generate.
 
 For Q3 specifically: recipient = Minimalist, donor = Poe, `h = 14`. That's 64 / 1024 ≈ **6% of the LoRA weights** swapped (per projection).
@@ -144,6 +154,8 @@ For Q3 specifically: recipient = Minimalist, donor = Poe, `h = 14`. That's 64 / 
 ---
 
 ## Q4 · Can I blend two authors?
+
+![Q4 — blend pipeline](../figures/methodology/05_q4_blend.png)
 
 **What I did.** Linear interpolation in LoRA weight space:
 ```
@@ -172,6 +184,8 @@ For the poster's example: A = Carroll, B = Poet, α ∈ {0.0, 0.1, ..., 1.0}.
 ---
 
 ## Q5 · What do these heads actually compute?
+
+![Q5 — SAE architecture](../figures/methodology/06_q5_sae.png)
 
 **What I did — SAE training.**
 - Collected 256k tokens of residual-stream activations from the adapted models, 1024-dim each.
@@ -205,6 +219,8 @@ For the poster's example: A = Carroll, B = Poet, α ∈ {0.0, 0.1, ..., 1.0}.
 
 ## Q6 · Can I steer with individual features?
 
+![Q6 — feature steering pipeline](../figures/methodology/07_q6_feature_steering.png)
+
 **What I did.** Each SAE feature has a **decoder column** — a 1024-dim direction in residual space. To steer with feature `f`, register a forward hook on `model.transformer.ln_f` that adds `scale × sae.decoder.weight[:, f]` to its output. Generate text.
 
 Used for Q6 Carroll showcase:
@@ -231,6 +247,8 @@ Example: simplicity (f665) drops Carroll's sentence length from ~9 words to ~4 w
 ---
 
 ## Q7 · Does detection equal steering?
+
+![Q7 — detection vs steering](../figures/methodology/08_q7_detect_vs_steer.png)
 
 **What I did.** Identify SAE features that fire **perfectly** on specific tokens:
 - `f1663` → "thou" (fires only on that token, across Blake/Milton/etc.)
