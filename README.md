@@ -27,6 +27,10 @@ A narrative walkthrough of the whole project in 5 chapters:
 why LoRA, why TopK, why H11 is still opaque — answered in
 [docs/POSTER_FAQ.md](docs/POSTER_FAQ.md).
 
+**How exactly did she measure that?** Methodology per poster panel
+(Q1–Q8) — what was done, what was measured, caveats, and code pointers,
+with diagrams of every matrix operation: [docs/METHODOLOGY_POSTER.md](docs/METHODOLOGY_POSTER.md).
+
 ---
 
 ## What is this?
