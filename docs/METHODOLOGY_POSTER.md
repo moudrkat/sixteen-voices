@@ -216,6 +216,16 @@ For the poster's example: A = Carroll, B = Poet, α ∈ {0.0, 0.1, ..., 1.0}.
 
 ![Q5 — SAE architecture](../figures/methodology/06_q5_sae.png)
 
+### Two zoom-ins for the most-asked questions
+
+**"What does it mean that a feature *fires* on a token?"** — One feature is one row of `W_enc`. Its activation at a token is a single dot product: `z_f(t) = W_enc[f, :] · x_t`. Sweep the corpus, sort by `z_f`, the top tokens are the feature's "concept."
+
+![Q5 zoom — feature fires on token](../figures/methodology/09_q5_feature_fires.png)
+
+**"What does it mean that a head *correlates* with a feature?"** — Build two matrices: `M` (77 authors × 2048 features, mean activations) and `K` (77 authors × 16 heads, knockout recovery scores). Pull column `f` from `M` and column `h` from `K`. Pearson-correlate the two 77-vectors. High |r| means: the authors who activate this feature a lot are the same authors whose perplexity moves with this head.
+
+![Q5 zoom — head correlated with feature](../figures/methodology/10_q5_feature_head_correlation.png)
+
 **What I did — SAE training.**
 - Collected 256k tokens of residual-stream activations from the adapted models, 1024-dim each.
 - Trained a sparse autoencoder: TopK activation (`k=16`), 2048 features, 10 epochs.

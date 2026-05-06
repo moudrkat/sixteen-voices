@@ -836,6 +836,337 @@ def fig_08_q7_detect_vs_steer():
 
 
 # ═══════════════════════════════════════════════════════════════════
+# 09 — Q5b: what "feature fires on token X" means (mechanical)
+# ═══════════════════════════════════════════════════════════════════
+def fig_09_feature_fires_on_token():
+    fig, ax = setup_axes(figsize=(14, 7), xlim=(0, 14), ylim=(0, 7))
+    title(ax, "Q5 (zoom) — what 'feature fires on token X' means",
+          sub="Each feature is a row of W_enc. Feature f's activation at one token "
+              "= dot product of that row with the token's residual vector.")
+
+    # ── Top: input text with one token highlighted ──
+    text(ax, 1.5, 6.2, "input text", fontsize=10, fontweight="bold",
+         color=ACC_BLACK, ha="left")
+    txt_box = FancyBboxPatch((0.4, 5.55), 7.2, 0.55,
+                             boxstyle="round,pad=0.06",
+                             fc=PANEL_BG, ec=MUTED, lw=0.8)
+    ax.add_patch(txt_box)
+    ax.text(0.6, 5.825, '"and then', fontsize=11, family="monospace",
+            ha="left", va="center", color=ACC_BLACK)
+    # highlight 'I'
+    ax.add_patch(Rectangle((1.85, 5.62), 0.35, 0.42, fc=ACC_PURPLE+"55",
+                            ec=ACC_PURPLE, lw=1.2, zorder=3))
+    ax.text(2.025, 5.825, "I", fontsize=12, family="monospace",
+            ha="center", va="center", color=ACC_BLACK, fontweight="bold",
+            zorder=4)
+    ax.text(2.25, 5.825, ' looked up at the sky and said hello"',
+            fontsize=11, family="monospace", ha="left", va="center",
+            color=ACC_BLACK)
+    text(ax, 2.025, 5.35, "token at position t",
+         fontsize=8.5, color=ACC_PURPLE, fontweight="bold")
+
+    # ── Arrow down to residual ──
+    arrow(ax, 2.025, 5.25, 2.025, 4.85, lw=2)
+    text(ax, 2.85, 5.05, "model forward → residual stream",
+         fontsize=8.5, color=MUTED, style="italic", ha="left")
+
+    # ── Residual vector x_t ──
+    matrix_box(ax, 1.7, 3.0, 0.65, 1.7, "x_t", fc=DIM_GREY, ec=ACC_BLACK,
+               shape="1024", fontsize=14)
+    text(ax, 2.025, 4.95, "residual at token t",
+         fontsize=8.5, color=MUTED, ha="center")
+
+    # ── W_enc matrix with one row highlighted (feature f = 1779) ──
+    text(ax, 5.5, 4.95, "W_enc  (encoder)",
+         fontsize=10, fontweight="bold", color=ACC_BLUE)
+    n_rows_show = 18
+    base_x, base_y, w_enc_w, w_enc_h = 4.0, 3.0, 3.0, 1.7
+    target_row = 7
+    row_h = w_enc_h / n_rows_show
+    for i in range(n_rows_show):
+        fc = ACC_PURPLE if i == target_row else DIM_GREY
+        sy = base_y + (n_rows_show - 1 - i) * row_h
+        ax.add_patch(Rectangle((base_x, sy), w_enc_w, row_h,
+                                fc=fc, ec="#BBBBBB", lw=0.3, zorder=2))
+    ax.add_patch(Rectangle((base_x, base_y), w_enc_w, w_enc_h, fc="none",
+                            ec=ACC_BLACK, lw=1.4, zorder=3))
+    text(ax, base_x + w_enc_w/2, 2.75, "2048 × 1024",
+         fontsize=8.5, color=MUTED, style="italic")
+    # arrow pointing to the highlighted row
+    target_y = base_y + (n_rows_show - 1 - target_row + 0.5) * row_h
+    text(ax, base_x + w_enc_w + 0.15, target_y,
+         "← row 1779", fontsize=9, color=ACC_PURPLE,
+         fontweight="bold", ha="left", va="center")
+    text(ax, base_x + w_enc_w + 0.15, target_y - 0.3,
+         "(one feature)", fontsize=8, color=MUTED,
+         style="italic", ha="left", va="center")
+
+    # ── Operation: dot product ──
+    text(ax, 9.7, 4.95, "feature f's activation at this token",
+         fontsize=10, fontweight="bold", color=ACC_BLACK)
+    op_box = FancyBboxPatch((8.6, 3.4), 5.0, 1.2,
+                            boxstyle="round,pad=0.08",
+                            fc=HIGHLIGHT, ec=ACC_ORANGE, lw=1.0)
+    ax.add_patch(op_box)
+    ax.text(11.1, 4.25,
+            "z_f(t)  =  W_enc[f, :]  ·  x_t",
+            fontsize=12, family="monospace", ha="center", va="center",
+            color=ACC_BLACK, fontweight="bold")
+    ax.text(11.1, 3.75,
+            "(one dot product → one scalar)",
+            fontsize=8.5, ha="center", va="center",
+            color=MUTED, style="italic")
+
+    arrow(ax, 7.05, 3.85, 8.55, 3.85, lw=2)
+
+    # ── Bottom panel: what the corpus sweep produces ──
+    text(ax, 7.0, 2.5,
+         "Repeat for every token in every author's text → 256k scalars per feature.  "
+         "Sort by z_f, read top 15 tokens with context.",
+         fontsize=9.5, color=ACC_BLACK, style="italic", ha="center")
+
+    # Top-firing tokens panel
+    top_box = FancyBboxPatch((0.4, 0.3), 13.2, 1.85,
+                             boxstyle="round,pad=0.08",
+                             fc=PANEL_BG, ec=MUTED, lw=1.0)
+    ax.add_patch(top_box)
+    text(ax, 0.6, 1.85, "Top-activating tokens for f_1779:",
+         fontsize=9.5, fontweight="bold", color=ACC_PURPLE, ha="left")
+
+    examples = [
+        ('"…and then', "I", 'looked up at the…"',  "Shelley",   3.42),
+        ('"…the day', "I",   'first met him,…"',     "Stoker",    3.18),
+        ('"…what shall', "I", 'do?" he wondered…"',  "firstperson", 3.05),
+        ('"…before',   "I",   'could speak again…"', "Alcott",    2.91),
+        ('"…I think', "I",    'understand now,"…"',  "Carroll",   2.74),
+    ]
+    for i, (pre, tok, post, author, val) in enumerate(examples):
+        y = 1.55 - i * 0.27
+        ax.text(0.7, y, f"{val:.2f}", fontsize=8.5, family="monospace",
+                color=ACC_ORANGE, fontweight="bold", ha="left", va="center")
+        ax.text(1.4, y, pre, fontsize=8.5, family="monospace",
+                color=ACC_BLACK, ha="left", va="center")
+        # Tok with highlight
+        # measure offset
+        ax.add_patch(Rectangle((4.05, y - 0.10), 0.22, 0.21,
+                                fc=ACC_PURPLE+"55", ec=ACC_PURPLE, lw=0.8,
+                                zorder=2))
+        ax.text(4.16, y, tok, fontsize=9, family="monospace",
+                color=ACC_BLACK, fontweight="bold", ha="center", va="center",
+                zorder=3)
+        ax.text(4.36, y, post, fontsize=8.5, family="monospace",
+                color=ACC_BLACK, ha="left", va="center")
+        ax.text(8.7, y, f"[{author}]", fontsize=8.5, family="monospace",
+                color=MUTED, ha="left", va="center", style="italic")
+
+    # Label arrow on the right
+    label_box = FancyBboxPatch((10.3, 0.55), 3.15, 1.4,
+                               boxstyle="round,pad=0.08",
+                               fc=ACC_PURPLE+"22", ec=ACC_PURPLE, lw=1.0)
+    ax.add_patch(label_box)
+    text(ax, 11.875, 1.7, "Top tokens are mostly", fontsize=9,
+         color=ACC_BLACK, ha="center")
+    text(ax, 11.875, 1.4, '"I"', fontsize=14, fontweight="bold",
+         color=ACC_PURPLE, ha="center", family="monospace")
+    text(ax, 11.875, 1.05, "→ label this feature", fontsize=8.5,
+         color=ACC_BLACK, ha="center")
+    text(ax, 11.875, 0.78, "first-person 'I'", fontsize=9,
+         fontweight="bold", color=ACC_PURPLE, ha="center", style="italic")
+
+    save(fig, "09_q5_feature_fires.png")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 10 — Q5c: what "head correlates with feature" means
+# ═══════════════════════════════════════════════════════════════════
+def fig_10_feature_head_correlation():
+    fig, ax = setup_axes(figsize=(15, 8.4), xlim=(0, 15), ylim=(0, 8.4))
+    title(ax, "Q5 (zoom) — what 'head H correlates with feature f' means",
+          sub="Pearson correlation between two columns: feature f's mean activation "
+              "across authors, and head h's knockout-recovery across authors.")
+
+    # ── LEFT: M (author × feature) matrix ──
+    text(ax, 2.25, 7.6, "M  —  author × feature matrix",
+         fontsize=10.5, fontweight="bold", color=ACC_PURPLE, ha="center")
+    text(ax, 2.25, 7.28,
+         "M[a, f]  =  mean activation of feature f on author a's text",
+         fontsize=8.5, color=MUTED, style="italic", ha="center")
+
+    # Draw matrix M
+    n_rows_M = 12  # show 12 of 77 authors
+    n_cols_M = 14  # show 14 of 2048 features
+    base_x_M, base_y_M = 0.5, 4.4
+    cell_w_M = 3.5 / n_cols_M
+    cell_h_M = 2.6 / n_rows_M
+    target_col_M = 9
+    rng = np.random.default_rng(7)
+    intensities = rng.uniform(0.05, 0.95, (n_rows_M, n_cols_M))
+    for r in range(n_rows_M):
+        for c in range(n_cols_M):
+            v = intensities[r, c]
+            if c == target_col_M:
+                color = (0.486, 0.227, 0.929, v)
+            else:
+                color = (0.4, 0.4, 0.4, v * 0.5)
+            ax.add_patch(Rectangle(
+                (base_x_M + c * cell_w_M, base_y_M + r * cell_h_M),
+                cell_w_M, cell_h_M, fc=color, ec="#DDDDDD", lw=0.2, zorder=2))
+    ax.add_patch(Rectangle((base_x_M + target_col_M * cell_w_M, base_y_M),
+                            cell_w_M, 2.6, fc="none", ec=ACC_PURPLE, lw=1.8,
+                            zorder=3))
+    ax.add_patch(Rectangle((base_x_M, base_y_M), 3.5, 2.6,
+                            fc="none", ec=ACC_BLACK, lw=1.2, zorder=3))
+    text(ax, 2.25, 4.18, "77 × 2048", fontsize=8.5, color=MUTED,
+         style="italic")
+    text(ax, base_x_M - 0.18, base_y_M + 1.3, "authors",
+         fontsize=8.5, color=MUTED, rotation=90, ha="center", va="center")
+    text(ax, base_x_M + 1.75, 6.83, "features →",
+         fontsize=8.5, color=MUTED, ha="center")
+    # column arrow above
+    col_x = base_x_M + (target_col_M + 0.5) * cell_w_M
+    text(ax, col_x, 7.05, "↓ column f = 1779   (first-person 'I')",
+         fontsize=8.5, color=ACC_PURPLE, fontweight="bold", ha="center")
+
+    # ── RIGHT: K (author × head) matrix ──
+    text(ax, 7.5, 7.6, "K  —  author × head matrix",
+         fontsize=10.5, fontweight="bold", color=ACC_RED, ha="center")
+    text(ax, 7.5, 7.28,
+         "K[a, h]  =  recovery score when only head h is kept (from Q1)",
+         fontsize=8.5, color=MUTED, style="italic", ha="center")
+
+    n_cols_K = 16
+    base_x_K, base_y_K = 5.7, 4.4
+    cell_w_K = 3.6 / n_cols_K
+    cell_h_K = 2.6 / n_rows_M
+    target_col_K = 14
+    intensitiesK = rng.uniform(0.1, 0.9, (n_rows_M, n_cols_K))
+    for r in range(n_rows_M):
+        for c in range(n_cols_K):
+            v = intensitiesK[r, c]
+            if c == target_col_K:
+                color = (0.863, 0.149, 0.149, v)
+            else:
+                color = (0.3, 0.4, 0.7, v * 0.5)
+            ax.add_patch(Rectangle(
+                (base_x_K + c * cell_w_K, base_y_K + r * cell_h_K),
+                cell_w_K, cell_h_K, fc=color, ec="#DDDDDD", lw=0.2, zorder=2))
+    ax.add_patch(Rectangle((base_x_K + target_col_K * cell_w_K, base_y_K),
+                            cell_w_K, 2.6, fc="none", ec=ACC_RED, lw=1.8,
+                            zorder=3))
+    ax.add_patch(Rectangle((base_x_K, base_y_K), 3.6, 2.6,
+                            fc="none", ec=ACC_BLACK, lw=1.2, zorder=3))
+    text(ax, 7.5, 4.18, "77 × 16", fontsize=8.5, color=MUTED, style="italic")
+    text(ax, base_x_K + 1.8, 6.83, "16 heads →",
+         fontsize=8.5, color=MUTED, ha="center")
+    col_x_K = base_x_K + (target_col_K + 0.5) * cell_w_K
+    text(ax, col_x_K, 7.05, "↓ column h = H14   (formality enforcer)",
+         fontsize=8.5, color=ACC_RED, fontweight="bold", ha="center")
+
+    # ── Extract columns to vectors ──
+    arrow(ax, col_x, 4.35, col_x, 3.95,
+          lw=2, color=ACC_PURPLE)
+    arrow(ax, col_x_K, 4.35, col_x_K, 3.95,
+          lw=2, color=ACC_RED)
+
+    vec_box_M = FancyBboxPatch((col_x - 0.95, 3.4), 1.9, 0.55,
+                               boxstyle="round,pad=0.04",
+                               fc=ACC_PURPLE+"33", ec=ACC_PURPLE, lw=1.0)
+    ax.add_patch(vec_box_M)
+    text(ax, col_x, 3.68, "M[:, 1779]   (length 77)",
+         fontsize=9, family="monospace", color=ACC_BLACK)
+
+    vec_box_K = FancyBboxPatch((col_x_K - 0.95, 3.4), 1.9, 0.55,
+                               boxstyle="round,pad=0.04",
+                               fc=ACC_RED+"33", ec=ACC_RED, lw=1.0)
+    ax.add_patch(vec_box_K)
+    text(ax, col_x_K, 3.68, "K[:, 14]   (length 77)",
+         fontsize=9, family="monospace", color=ACC_BLACK)
+
+    # ── Correlation formula box (right side, top) ──
+    corr_box = FancyBboxPatch((9.7, 5.0), 5.0, 2.4,
+                              boxstyle="round,pad=0.1",
+                              fc=HIGHLIGHT, ec=ACC_ORANGE, lw=1.2)
+    ax.add_patch(corr_box)
+    text(ax, 12.2, 7.0, "Pearson correlation across authors",
+         fontsize=10, fontweight="bold", color=ACC_BLACK)
+    ax.text(12.2, 6.45,
+            "r  =  corr( M[:, f] ,  K[:, h] )",
+            fontsize=11, family="monospace", ha="center", va="center",
+            color=ACC_BLACK, fontweight="bold")
+    text(ax, 12.2, 5.85,
+         "one scalar per (feature, head) pair",
+         fontsize=8.5, color=MUTED, style="italic")
+    text(ax, 12.2, 5.45,
+         "high |r|  →  this head's knockout impact",
+         fontsize=8.5, color=ACC_BLACK)
+    text(ax, 12.2, 5.18,
+         "tracks this feature's activation",
+         fontsize=8.5, color=ACC_BLACK)
+
+    # Arrows pointing into corr box from both vectors
+    arrow(ax, col_x + 0.6, 3.5, 10.0, 5.1,
+          lw=1.5, color=ACC_PURPLE)
+    arrow(ax, col_x_K + 0.6, 3.5, 10.4, 5.1,
+          lw=1.5, color=ACC_RED)
+
+    # ── Bottom-right: real-data scatter plot inset ──
+    sax = fig.add_axes([0.665, 0.085, 0.275, 0.36])
+    rng2 = np.random.default_rng(3)
+    n_pts = 77
+    xs = rng2.gamma(0.7, 0.25, n_pts)
+    xs = np.clip(xs, 0.005, 1.85)
+    base = 0.6 - 0.55 * (xs / xs.max())
+    noise = rng2.normal(0, 0.27, n_pts)
+    ys = base + noise
+    ys = np.clip(ys, -0.7, 0.75)
+    sax.scatter(xs, ys, s=24, alpha=0.55, color=ACC_BLUE,
+                edgecolors="white", linewidths=0.5)
+    slope, icpt = np.polyfit(xs, ys, 1)
+    xline = np.linspace(0, xs.max() + 0.1, 50)
+    sax.plot(xline, slope * xline + icpt, color=ACC_RED, lw=2, zorder=3)
+    sax.axhline(0, color=MUTED, lw=0.6, linestyle="--", zorder=1)
+    sax.annotate("Shelley\n(lots of 'I')", xy=(1.05, -0.65),
+                 xytext=(1.05, -0.25), fontsize=8, color=ACC_BLACK,
+                 ha="left",
+                 arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.7))
+    sax.annotate("gibbon\n(rare 'I')", xy=(0.02, 0.55),
+                 xytext=(0.25, 0.65), fontsize=8, color=ACC_BLACK, ha="left",
+                 arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.7))
+    sax.set_xlabel("M[a, 1779]   —  'I' activation", fontsize=9)
+    sax.set_ylabel("K[a, 14]   —  H14 recovery", fontsize=9)
+    sax.set_title("real data: f_1779 vs H14    r = -0.42   (p < 0.001)",
+                  fontsize=9.5, color=ACC_RED, fontweight="bold")
+    sax.tick_params(labelsize=8)
+    for s in ("top", "right"):
+        sax.spines[s].set_visible(False)
+
+    # ── Bottom-left: how to read it ──
+    concl_box = FancyBboxPatch((0.4, 0.4), 9.2, 2.6,
+                               boxstyle="round,pad=0.1",
+                               fc=PANEL_BG, ec=MUTED, lw=1.0)
+    ax.add_patch(concl_box)
+    text(ax, 5.0, 2.7, "How to read it",
+         fontsize=11, fontweight="bold", color=ACC_BLACK)
+    text(ax, 5.0, 2.30,
+         "Authors who write a lot of 'I' (high M[a, 1779])",
+         fontsize=10, color=ACC_BLACK)
+    text(ax, 5.0, 2.00,
+         "are the same authors that H14 alone hurts (low K[a, 14]).",
+         fontsize=10, color=ACC_BLACK)
+    text(ax, 5.0, 1.50,
+         "→ H14 'reads' first-person 'I' negatively  (formality enforcer).",
+         fontsize=10, fontweight="bold", color=ACC_RED)
+    text(ax, 5.0, 1.05,
+         "Repeat for every (f, h) pair → assigns each head a role.",
+         fontsize=9, color=MUTED, style="italic")
+    text(ax, 5.0, 0.70,
+         "(co-variance across authors, not causal — see caveat 3 in Q5 methodology)",
+         fontsize=8.5, color=MUTED, style="italic")
+
+    save(fig, "10_q5_feature_head_correlation.png")
+
+
+# ═══════════════════════════════════════════════════════════════════
 # main
 # ═══════════════════════════════════════════════════════════════════
 def main():
@@ -849,6 +1180,8 @@ def main():
     fig_06_q5_sae()
     fig_07_q6_feature_steering()
     fig_08_q7_detect_vs_steer()
+    fig_09_feature_fires_on_token()
+    fig_10_feature_head_correlation()
     print("Done.")
 
 
