@@ -26,6 +26,7 @@ URLS = {
     "streamlit_app": "https://sixteen-voices.streamlit.app",
     "linkedin":       "https://linkedin.com/in/katerina-fajmanova",
     "hackathon_factory": "https://hackathon-factory.cz",   # ← oprav až budeš znát skutečnou URL
+    "methodology":    "https://github.com/moudrkat/sixteen-voices/blob/main/docs/METHODOLOGY_POSTER.md",
 }
 
 # ═══════════════════════════════════════════════════════════════

@@ -1,8 +1,8 @@
 # Methodology per Poster Panel
 
-Detailed methodology for each Q1–Q8 on the poster. Meant as a defensive reference — when someone at the session asks *"how exactly did you measure that?"*, the answer is here.
+Detailed methodology for each of the eight questions (Q1–Q8) on the *Sixteen Voices* poster. If you scanned the QR for "how exactly did she measure that?" — this is the doc.
 
-Each section: **what I did → what I measured → caveats → code pointer**.
+Each section follows the same structure: **what I did → what I measured → caveats → code pointer**. The figures show the matrix operations visually; the prose covers the parameters, metrics, and honest limitations.
 
 ---
 
