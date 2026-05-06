@@ -68,6 +68,35 @@ and inject `A_new`, `B_new` back into the PEFT model. Code: `src/sixteen_voices/
 
 ![SVD refactor](../figures/methodology/01_svd_refactor.png)
 
+#### What is SVD, and why do I need it here?
+
+**Singular Value Decomposition** factorizes *any* matrix `M` (here 1024×1024) into three pieces:
+
+```
+M  =  U · diag(S) · Vh
+       └─┬─┘   └─┬─┘   └┬┘
+       output  scale  input
+        basis  factors  basis
+```
+
+- `U` — orthonormal columns: the directions M maps *to*.
+- `S` — singular values, sorted **largest → smallest**: how much M stretches along each direction.
+- `Vh` — orthonormal rows: the directions M comes *from*.
+
+Geometrically, every linear map is "rotate → stretch → rotate". SVD reads off those three steps. The singular values tell you which directions carry most of the matrix's "energy."
+
+**Why I truncate to top 8.** PEFT requires LoRA updates to be rank-8: a `(1024, 8)` matrix times an `(8, 1024)` matrix. Keeping only the 8 largest singular values gives the **best rank-8 approximation** of any matrix (Eckart–Young theorem). I then absorb the singular values into `B_new`:
+
+```
+B_new = U[:, :8] · diag(S[:8])     # shape (1024, 8)
+A_new = Vh[:8, :]                   # shape (8, 1024)
+ΔW_approx ≈ B_new @ A_new
+```
+
+**For knockout: it's lossless.** The original `ΔW` was already rank ≤ 8 (it came from `B·A` with `B, A` rank 8). Zeroing whole rows of a rank-8 matrix can only *reduce* the rank — it stays ≤ 8. So the rank-8 SVD reconstructs it exactly.
+
+**For transplant: it's lossy.** Recipient ΔW is rank 8, donor ΔW is rank 8, so the hybrid can be up to rank 16. Truncating to 8 keeps the dominant directions but discards some information. Perplexity rises slightly — that's where the cost shows up.
+
 (For LoRA *interpolation* in Q4, I work on `A` and `B` directly — no SVD — because interpolating two rank-8 pairs element-wise also gives a rank-8 pair.)
 
 ---
