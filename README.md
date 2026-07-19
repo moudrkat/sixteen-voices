@@ -116,7 +116,7 @@ All 77 trained adapters and the SAE weights are committed under
 `outputs/` — nothing to download, nothing to train:
 
 ```bash
-pip install -e ".[all]"
+pip install -e .
 streamlit run demos/app_features.py    # SAE feature steering lab
 ```
 
@@ -158,7 +158,7 @@ python scripts/steer_sae_features.py --sae-dir outputs/sae_topk16_2048 --feature
 ## Interactive demos
 
 ```bash
-pip install -e ".[demo]"
+pip install -e .
 streamlit run demos/app_features.py    # SAE feature steering lab
 streamlit run demos/app_steer.py       # Head knockout lab
 streamlit run demos/app_explainer.py   # LoRA + attention explainer
@@ -192,7 +192,7 @@ tests/                    # Unit tests (no model download needed)
 ## Requirements
 
 Python 3.10+, PyTorch, Transformers, PEFT. CPU only — all experiments
-run in minutes to hours. Install with the `pip install -e ".[all]"`
+run in minutes to hours. Install with the `pip install -e .`
 line from Quick start.
 
 ## License
