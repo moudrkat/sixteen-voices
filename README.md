@@ -4,6 +4,12 @@
 
 77 LoRA adapters, 16 heads, 1,232 knockout experiments, a sparse autoencoder — all on CPU.
 
+**Try it live:** [sixteen-voices.streamlit.app](https://sixteen-voices.streamlit.app) · [sixteen-voices-interpolate.streamlit.app](https://sixteen-voices-interpolate.streamlit.app) · [sixteen-voices-poster.streamlit.app](https://sixteen-voices-poster.streamlit.app)
+
+| features | interpolate | poster |
+|---|---|---|
+| ![the features demo live](media/sixteen-voices.png) | ![style interpolation live](media/sixteen-voices-interpolate.png) | ![the poster app live](media/sixteen-voices-poster.png) |
+
 ![Per-head knockout recovery across 77 authors](figures/knockout_strip_clean.png)
 
 *Each dot is one author. H11 (blue) leads, H3 (green) is a consistent second, H14 (red) has the widest spread — essential for some authors, actively harmful for others.*
