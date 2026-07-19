@@ -112,9 +112,17 @@ then move to SAE features for finer-grained decomposition.
 
 ## Quick start
 
+All 77 trained adapters and the SAE weights are committed under
+`outputs/` — nothing to download, nothing to train:
+
 ```bash
 pip install -e ".[all]"
+streamlit run demos/app_features.py    # SAE feature steering lab
+```
 
+Want to reproduce everything from scratch instead?
+
+```bash
 # Download 69 Gutenberg authors + 8 synthetic styles
 make data
 
@@ -184,11 +192,8 @@ tests/                    # Unit tests (no model download needed)
 ## Requirements
 
 Python 3.10+, PyTorch, Transformers, PEFT. CPU only — all experiments
-run in minutes to hours.
-
-```bash
-pip install -e ".[all]"
-```
+run in minutes to hours. Install with the `pip install -e ".[all]"`
+line from Quick start.
 
 ## License
 
